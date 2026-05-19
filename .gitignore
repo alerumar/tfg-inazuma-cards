@@ -1,8 +1,14 @@
-HELP.md
-target/
-.mvn/wrapper/maven-wrapper.jar
+### Backend ###
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+backend/HELP.md
+
+### Frontend ###
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
 
 ### STS ###
 .apt_generated
