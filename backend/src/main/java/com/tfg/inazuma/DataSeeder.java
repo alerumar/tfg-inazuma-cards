@@ -3,6 +3,7 @@ package com.tfg.inazuma;
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.CardType;
 import com.tfg.inazuma.repository.CardRepository;
+import com.tfg.inazuma.service.CardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -17,6 +18,7 @@ import java.net.http.HttpResponse;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +32,17 @@ public class DataSeeder implements CommandLineRunner {
     private static final String SPRITE_BASE_URL =
             "https://raw.githubusercontent.com/realt0w/inazuma-index/main/";
 
+    private static final Map<String, String> COLLECTION_NAMES = Map.of(
+            "IE1", "Inazuma Eleven 1",
+            "IE2", "Inazuma Eleven 2",
+            "IE3", "Inazuma Eleven 3",
+            "GO1", "Inazuma Eleven GO",
+            "GO2", "Inazuma Eleven GO 2",
+            "GO3", "Inazuma Eleven GO 3"
+    );
+
     private final CardRepository cardRepository;
+    private final CardService cardService;
 
     @Override
     public void run(String... args) {
@@ -97,76 +109,41 @@ public class DataSeeder implements CommandLineRunner {
         Integer guard   = extractInt(block, "Guard");
         if (kick == null || control == null || guard == null) return null;
 
-        String position = extractImageField(block, "Position");
+        String position   = extractImageField(block, "Position");
+        String gameCode   = extractString(block, "Game");
         int a = clamp(kick);
         int c = clamp(control);
         int d = clamp(guard);
 
         Card card = new Card();
         card.setName(name);
-        card.setNickname(extractString(block, "Nickname"));
-        card.setDescription(extractString(block, "Description"));
-        card.setTeam(extractString(block, "Team"));
-        card.setGame(extractString(block, "Game"));
+        card.setCollection(COLLECTION_NAMES.getOrDefault(gameCode, gameCode));
+        card.setType(CardType.NORMAL);
         card.setPosition(position);
-        card.setElement(extractImageField(block, "Element"));
-        card.setGender(extractImageField(block, "Gender"));
         card.setAttack(a);
         card.setControl(c);
         card.setDefense(d);
-        card.setRating(calculateRating(position, a, c, d));
-        card.setType(CardType.NORMAL);
-
-        String sprite = extractString(block, "Sprite");
-        if (sprite != null) {
-            card.setSpriteUrl(SPRITE_BASE_URL + sprite.replace("./", ""));
-        }
+        card.setRating(cardService.calculateRating(position, a, c, d));
 
         return card;
     }
 
-    // Clampa el valor al rango 0-99
     private int clamp(int value) {
         return Math.max(0, Math.min(99, value));
     }
 
-    /**
-     * Media ponderada según posición (resultado en 0-99):
-     *
-     * GK: ((D/100)^1.08 × 100 × 0.70) + (C × 0.30)
-     * DF: ((D/100)^1.05 × 100 × 0.60) + (C × 0.30) + (A × 0.10)
-     * MF: ((C/100)^1.05 × 100 × 0.45) + (A × 0.275) + (D × 0.275)
-     * FW: ((A/100)^1.05 × 100 × 0.65) + (C × 0.25) + (D × 0.10)
-     */
-    private int calculateRating(String position, int attack, int control, int defense) {
-        if (position == null) {
-            return clamp((int) Math.round((attack + control + defense) / 3.0));
-        }
-        double rating = switch (position) {
-            case "GK" -> Math.pow(defense / 100.0, 1.08) * 100 * 0.70 + control * 0.30;
-            case "DF" -> Math.pow(defense / 100.0, 1.05) * 100 * 0.60 + control * 0.30 + attack * 0.10;
-            case "MF" -> Math.pow(control / 100.0, 1.05) * 100 * 0.45 + attack * 0.275 + defense * 0.275;
-            case "FW" -> Math.pow(attack  / 100.0, 1.05) * 100 * 0.65 + control * 0.25 + defense * 0.10;
-            default   -> (attack + control + defense) / 3.0;
-        };
-        return clamp((int) Math.round(rating));
-    }
-
-    // Extrae el valor de un campo string: "Key": "value"
     private String extractString(String block, String key) {
         Pattern p = Pattern.compile("\"" + key + "\":\\s*\"(.*?)\"");
         Matcher m = p.matcher(block);
         return m.find() ? m.group(1) : null;
     }
 
-    // Extrae el valor de un campo numérico: "Key": 72
     private Integer extractInt(String block, String key) {
         Pattern p = Pattern.compile("\"" + key + "\":\\s*(\\d+)");
         Matcher m = p.matcher(block);
         return m.find() ? Integer.parseInt(m.group(1)) : null;
     }
 
-    // Extrae el nombre del fichero de imagen sin extensión: "./images/elements/Earth.png" → "Earth"
     private String extractImageField(String block, String key) {
         Pattern p = Pattern.compile("\"" + key + "\":\\s*\"[^\"]*/(\\w+)\\.png\"");
         Matcher m = p.matcher(block);
