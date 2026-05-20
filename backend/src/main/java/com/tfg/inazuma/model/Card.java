@@ -24,11 +24,20 @@ public class Card {
 
     private String collection;   // "Inazuma Eleven 1", "Inazuma Eleven GO Galaxy"...
 
+    private String team;
+
+    private String nickname;
+
+    private String imageUrl;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     private CardType type;       // NORMAL o LEGEND
 
-    @NotBlank
+    @Enumerated(EnumType.STRING)
+    @Column(name = "card_package")
+    private CardPackage cardPackage;  // INAZUMA_ELEVEN o INAZUMA_ELEVEN_GO
+
     private String position;     // GK, DF, MF, FW
 
     private int rating;          // calculado automáticamente (0-99)

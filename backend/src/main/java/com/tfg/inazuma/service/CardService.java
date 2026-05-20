@@ -32,6 +32,9 @@ public class CardService {
         return cardRepository.findById(id).map(card -> {
             card.setName(updated.getName());
             card.setCollection(updated.getCollection());
+            card.setTeam(updated.getTeam());
+            card.setNickname(updated.getNickname());
+            card.setImageUrl(updated.getImageUrl());
             card.setType(updated.getType());
             card.setPosition(updated.getPosition());
             card.setAttack(updated.getAttack());
