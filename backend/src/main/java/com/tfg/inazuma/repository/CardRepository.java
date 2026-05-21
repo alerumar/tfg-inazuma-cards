@@ -13,4 +13,9 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     @Transactional
     @Query(value = "TRUNCATE TABLE cards", nativeQuery = true)
     void truncate();
+
+    @Modifying
+    @Transactional
+    @Query(value = "ALTER TABLE cards AUTO_INCREMENT = 1", nativeQuery = true)
+    void resetAutoIncrement();
 }

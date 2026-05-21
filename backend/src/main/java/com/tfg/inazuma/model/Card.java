@@ -22,7 +22,7 @@ public class Card {
     @Column(nullable = false)
     private String name;
 
-    private String collection;   // "Inazuma Eleven 1", "Inazuma Eleven GO Galaxy"...
+    private String collection;
 
     private String team;
 
@@ -32,15 +32,16 @@ public class Card {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private CardType type;       // NORMAL o LEGEND
+    private CardType type;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "card_package")
-    private CardPackage cardPackage;  // INAZUMA_ELEVEN o INAZUMA_ELEVEN_GO
+    private CardPackage cardPackage;
 
     private String position;     // GK, DF, MF, FW
 
-    private int rating;          // calculado automáticamente (0-99)
+    @Column(nullable = false)
+    private int rating;          // auto-calculado antes de cada INSERT/UPDATE
 
     @Min(0) @Max(99)
     private int attack;
@@ -50,4 +51,27 @@ public class Card {
 
     @Min(0) @Max(99)
     private int defense;
+
+    @PrePersist
+    @PreUpdate
+    private void recomputeRating() {
+        this.rating = computeRating(position, attack, control, defense);
+    }
+
+    /**
+     * GK:  D^1.08 × 0.70 + C × 0.30
+     * DF:  D^1.05 × 0.60 + C × 0.30 + A × 0.10
+     * MF:  C^1.05 × 0.45 + A × 0.275 + D × 0.275
+     * FW:  A^1.05 × 0.65 + C × 0.25  + D × 0.10
+     */
+    public static int computeRating(String position, int attack, int control, int defense) {
+        double r = (position == null) ? (attack + control + defense) / 3.0 : switch (position) {
+            case "GK" -> Math.pow(defense  / 100.0, 1.08) * 100 * 0.70 + control * 0.30;
+            case "DF" -> Math.pow(defense  / 100.0, 1.05) * 100 * 0.60 + control * 0.30 + attack * 0.10;
+            case "MF" -> Math.pow(control  / 100.0, 1.05) * 100 * 0.45 + attack  * 0.275 + defense * 0.275;
+            case "FW" -> Math.pow(attack   / 100.0, 1.05) * 100 * 0.65 + control * 0.25  + defense * 0.10;
+            default   -> (attack + control + defense) / 3.0;
+        };
+        return Math.max(0, Math.min(99, (int) Math.round(r)));
+    }
 }

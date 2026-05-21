@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
-    private static final String WIKI_API     = "https://inazuma-eleven.fandom.com/api.php";
+    private static final String WIKI_API     = "https://inazuma.fandom.com/es/api.php";
     private static final int    DELAY_MS     = 80;
     private static final double GO_DIVISOR   = 2.0;
     private static final String IMAGES_DIR   = "static/images/cards/";
@@ -52,18 +52,16 @@ public class DataSeeder implements CommandLineRunner {
     // ─── DTOs ─────────────────────────────────────────────────────────────────
 
     static class PlayerConfig {
-        public String page;             // nombre doblado (lo pone el usuario)
-        public String wikiPage;         // página canónica de la wiki (se rellena automáticamente)
+        public String page;             // nombre en la wiki española (lo pone el usuario)
         public String team;
         public String nameOverride;     // si se especifica, se usa como nombre de la carta
         public String nickname;         // apodo de la carta
-        public String positionOverride; // fuerza una posición concreta (ej: "DF" para libero)
+        public String positionOverride; // fuerza una posición concreta (ej: "GK" para portero)
     }
 
-    // Fuente de verdad persistida en cards.json
     static class CardData {
-        public String scrapeKey;    // clave de deduplicación (se calcula al raspar)
-        public String sourcePage;   // nombre de la página wiki
+        public String scrapeKey;
+        public String sourcePage;
         public String name;
         public String nickname;
         public String team;
@@ -81,23 +79,23 @@ public class DataSeeder implements CommandLineRunner {
     // ─── Configuración por juego ───────────────────────────────────────────────
 
     private enum GameConfig {
-        IE1("IE1", "Inazuma Eleven 1",    "Inazuma Eleven",                    CardPackage.INAZUMA_ELEVEN,    false),
-        IE2("IE2", "Inazuma Eleven 2",    "Inazuma Eleven 2",                  CardPackage.INAZUMA_ELEVEN,    false),
-        IE3("IE3", "Inazuma Eleven 3",    "Inazuma Eleven 3",                  CardPackage.INAZUMA_ELEVEN,    false),
-        GO1("GO1", "Inazuma Eleven GO",   "Inazuma Eleven GO",                 CardPackage.INAZUMA_ELEVEN_GO, true),
-        GO2("GO2", "Inazuma Eleven GO 2", "Inazuma Eleven GO 2: Chrono Stone", CardPackage.INAZUMA_ELEVEN_GO, true),
-        GO3("GO3", "Inazuma Eleven GO 3", "Inazuma Eleven GO 3: Galaxy",       CardPackage.INAZUMA_ELEVEN_GO, true);
+        IE1("IE1", "Inazuma Eleven 1",    "Estadísticas (Jugador / Original)", CardPackage.INAZUMA_ELEVEN,    false),
+        IE2("IE2", "Inazuma Eleven 2",    "Estadísticas (Jugador / Original)", CardPackage.INAZUMA_ELEVEN,    false),
+        IE3("IE3", "Inazuma Eleven 3",    "Estadísticas (Jugador / Original)", CardPackage.INAZUMA_ELEVEN,    false),
+        GO1("GO1", "Inazuma Eleven GO",   "Estadísticas (Jugador / GO)",       CardPackage.INAZUMA_ELEVEN_GO, true),
+        GO2("GO2", "Inazuma Eleven GO 2", "Estadísticas (Jugador / GO)",       CardPackage.INAZUMA_ELEVEN_GO, true),
+        GO3("GO3", "Inazuma Eleven GO 3", "Estadísticas (Jugador / GO)",       CardPackage.INAZUMA_ELEVEN_GO, true);
 
-        final String configKey, collection, wikiSection;
+        final String configKey, collection, statsTemplate;
         final CardPackage pkg;
         final boolean isGO;
 
-        GameConfig(String configKey, String collection, String wikiSection, CardPackage pkg, boolean isGO) {
-            this.configKey   = configKey;
-            this.collection  = collection;
-            this.wikiSection = wikiSection;
-            this.pkg         = pkg;
-            this.isGO        = isGO;
+        GameConfig(String configKey, String collection, String statsTemplate, CardPackage pkg, boolean isGO) {
+            this.configKey     = configKey;
+            this.collection    = collection;
+            this.statsTemplate = statsTemplate;
+            this.pkg           = pkg;
+            this.isGO          = isGO;
         }
     }
 
@@ -107,70 +105,102 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         try {
             this.httpClient = buildHttpClient();
-
-            Map<String, List<PlayerConfig>> playersConfig = loadPlayersConfig();
             List<CardData> existingCards = loadCardsJson();
-
-            Set<String> scraped = existingCards.stream()
-                    .map(c -> c.scrapeKey != null
-                            ? c.scrapeKey
-                            : c.sourcePage + "|" + c.collection + "|" + (c.team != null ? c.team : "") + "|")
+            Set<String> existingKeys = existingCards.stream()
+                    .map(c -> c.scrapeKey)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
 
-            List<CardData> allCards = new ArrayList<>(existingCards);
-            boolean changed = false;
+            Map<String, List<PlayerConfig>> playersConfig = loadPlayersConfig();
+            List<CardData> newCards = new ArrayList<>();
 
             for (GameConfig game : GameConfig.values()) {
                 List<PlayerConfig> players = playersConfig.getOrDefault(game.configKey, List.of());
-                if (players.isEmpty()) continue;
-
-                log.info("Processing {} ({} players)...", game.collection, players.size());
-
-                boolean playersJsonUpdated = false;
                 for (PlayerConfig pc : players) {
                     String key = computeScrapeKey(pc, game.collection);
-                    if (scraped.contains(key)) {
-                        log.debug("  Skipping {} (already in cards.json)", pc.page);
+                    if (existingKeys.contains(key)) {
+                        log.debug("Skipping already-scraped: {}", key);
                         continue;
                     }
+                    log.info("Scraping: {} / {}", pc.page, game.collection);
                     try {
-                        String prevWikiPage = pc.wikiPage;
                         CardData card = scrapeCard(pc, game);
                         if (card != null) {
-                            allCards.add(card);
-                            scraped.add(key);
-                            changed = true;
-                            if (!Objects.equals(prevWikiPage, pc.wikiPage)) playersJsonUpdated = true;
-                            log.info("  Scraped: {} → {} ({})", pc.page, card.name, card.position);
+                            newCards.add(card);
+                            existingKeys.add(key);
                         } else {
-                            log.warn("  No data found for {} in {}", pc.page, game.collection);
+                            log.warn("  No data: {}", key);
                         }
                     } catch (Exception e) {
-                        log.warn("  Failed {}: {}", pc.page, e.getMessage());
+                        log.warn("  Error {}: {}", key, e.getMessage());
                     }
                 }
-                if (playersJsonUpdated) {
-                    savePlayersConfig(playersConfig);
-                }
             }
 
-            if (changed) {
+            List<CardData> allCards = new ArrayList<>(existingCards);
+            allCards.addAll(newCards);
+
+            sortByCollection(allCards);
+
+            boolean imagesUpdated = updateMissingImages(allCards);
+
+            if (!newCards.isEmpty() || imagesUpdated) {
                 saveCardsJson(allCards);
-                log.info("cards.json updated ({} total cards)", allCards.size());
+                log.info("Saved: {} new cards, images updated: {}", newCards.size(), imagesUpdated);
+            } else {
+                log.info("No changes — {} existing cards", existingCards.size());
             }
 
-            syncDatabase(allCards);
-
+            if (!allCards.isEmpty()) {
+                syncDatabase(allCards);
+            } else {
+                log.warn("No cards to sync");
+            }
         } catch (Exception e) {
             log.error("Seeder failed: {}", e.getMessage(), e);
         }
         System.exit(0); // temporal: quitar cuando se añada la API REST
     }
 
+    private boolean updateMissingImages(List<CardData> cards) {
+        Map<String, List<CardData>> byPage = new LinkedHashMap<>();
+        for (CardData card : cards) {
+            if (card.imageUrl == null && card.sourcePage != null) {
+                byPage.computeIfAbsent(card.sourcePage, k -> new ArrayList<>()).add(card);
+            }
+        }
+        if (byPage.isEmpty()) return false;
+        log.info("Fetching images for {} pages with missing imageUrl...", byPage.size());
+        boolean updated = false;
+        for (Map.Entry<String, List<CardData>> entry : byPage.entrySet()) {
+            try {
+                String wikitext = getWikitext(entry.getKey());
+                if (wikitext == null || wikitext.isBlank()) continue;
+                String imageUrl = getImageUrl(wikitext);
+                if (imageUrl != null) {
+                    entry.getValue().forEach(c -> c.imageUrl = imageUrl);
+                    updated = true;
+                    log.debug("Image set for {}: {}", entry.getKey(), imageUrl);
+                }
+            } catch (Exception e) {
+                log.warn("Could not get image for {}: {}", entry.getKey(), e.getMessage());
+            }
+        }
+        return updated;
+    }
+
     private String computeScrapeKey(PlayerConfig pc, String collection) {
         String name = pc.nameOverride != null ? pc.nameOverride : pc.page;
         String pos  = pc.positionOverride != null ? pc.positionOverride : "";
         return name + "|" + collection + "|" + (pc.team != null ? pc.team : "") + "|" + pos;
+    }
+
+    private void sortByCollection(List<CardData> cards) {
+        Map<String, Integer> order = new LinkedHashMap<>();
+        for (GameConfig g : GameConfig.values()) {
+            order.put(g.collection, order.size());
+        }
+        cards.sort(Comparator.comparingInt(c -> order.getOrDefault(c.collection, 99)));
     }
 
     // ─── Ficheros ──────────────────────────────────────────────────────────────
@@ -202,16 +232,12 @@ public class DataSeeder implements CommandLineRunner {
                 .writeValue(Path.of(CARDS_FILE).toFile(), cards);
     }
 
-    private void savePlayersConfig(Map<String, List<PlayerConfig>> config) throws Exception {
-        objectMapper.writerWithDefaultPrettyPrinter()
-                .writeValue(Path.of(PLAYERS_FILE).toFile(), config);
-    }
-
     // ─── Sincronización con la BD ──────────────────────────────────────────────
 
     private void syncDatabase(List<CardData> cardDataList) {
         log.info("Syncing {} cards with database...", cardDataList.size());
         cardRepository.truncate();
+        cardRepository.resetAutoIncrement();
         List<Card> entities = cardDataList.stream()
                 .map(this::toEntity)
                 .filter(Objects::nonNull)
@@ -233,7 +259,6 @@ public class DataSeeder implements CommandLineRunner {
             card.setAttack(data.attack);
             card.setControl(data.control);
             card.setDefense(data.defense);
-            card.setRating(data.rating);
             card.setImageUrl(data.imageUrl);
             return card;
         } catch (Exception e) {
@@ -245,38 +270,25 @@ public class DataSeeder implements CommandLineRunner {
     // ─── Scraping ──────────────────────────────────────────────────────────────
 
     private CardData scrapeCard(PlayerConfig pc, GameConfig game) throws Exception {
-        // Usa la página ya resuelta si existe, si no prueba el nombre en inglés
-        String page = pc.wikiPage != null ? pc.wikiPage : pc.page;
-        String wikitext = getWikitext(page);
-
-        String position = wikitext != null ? extractPosition(wikitext) : null;
-        PlayerStats stats = (wikitext != null && !wikitext.isBlank())
-                ? extractStats(wikitext, game.wikiSection, game.isGO, position)
-                : null;
-
-        // Si no hay stats, busca la página canónica (nombre japonés) en la wiki
-        if (stats == null) {
-            log.debug("  '{}' sin stats directas, buscando en wiki...", page);
-            String resolved = searchForWikiPage(pc.page, game.wikiSection);
-            if (resolved == null) return null;
-            pc.wikiPage = resolved;
-            wikitext    = getWikitext(resolved);
-            if (wikitext == null || wikitext.isBlank()) return null;
-            position = extractPosition(wikitext);
-            stats    = extractStats(wikitext, game.wikiSection, game.isGO,
-                        pc.positionOverride != null ? pc.positionOverride : position);
-            if (stats == null) return null;
-        } else if (pc.wikiPage == null) {
-            pc.wikiPage = page;
+        String wikitext = getWikitext(pc.page);
+        if (wikitext == null || wikitext.isBlank()) {
+            log.warn("  No wikitext found for '{}'", pc.page);
+            return null;
         }
 
-        // positionOverride tiene prioridad sobre la posición extraída de la wiki
+        String position      = extractPosition(wikitext);
         String finalPosition = pc.positionOverride != null ? pc.positionOverride : position;
+
+        PlayerStats stats = extractStats(wikitext, game.statsTemplate, game.isGO);
+        if (stats == null) {
+            log.warn("  No stats found for '{}' in {}", pc.page, game.collection);
+            return null;
+        }
 
         CardData card    = new CardData();
         card.scrapeKey   = computeScrapeKey(pc, game.collection);
         card.sourcePage  = pc.page;
-        card.name        = pc.nameOverride != null ? pc.nameOverride : extractDubName(wikitext, pc.page);
+        card.name        = pc.nameOverride != null ? pc.nameOverride : pc.page;
         card.nickname    = pc.nickname;
         card.team        = pc.team;
         card.collection  = game.collection;
@@ -286,97 +298,77 @@ public class DataSeeder implements CommandLineRunner {
         card.attack      = stats.attack();
         card.control     = stats.control();
         card.defense     = stats.defense();
-        card.rating      = cardService.calculateRating(finalPosition, stats.attack(), stats.control(), stats.defense());
+        card.rating      = Card.computeRating(finalPosition, stats.attack(), stats.control(), stats.defense());
         card.imageUrl    = getImageUrl(wikitext);
         return card;
-    }
-
-    /** Busca en la wiki el artículo que tiene la sección de stats para el juego dado */
-    private String searchForWikiPage(String name, String gameSection) throws Exception {
-        String url = WIKI_API + "?action=query&list=search&srsearch="
-                + URLEncoder.encode(name, StandardCharsets.UTF_8)
-                + "&srlimit=5&srnamespace=0&format=json";
-        String json = fetch(url);
-        Thread.sleep(DELAY_MS);
-
-        JsonNode results = objectMapper.readTree(json).path("query").path("search");
-        for (JsonNode result : results) {
-            String title    = result.path("title").asText();
-            String wikitext = fetchWikitext(title);
-            Thread.sleep(DELAY_MS);
-            if (wikitext != null && wikitext.contains("|" + gameSection + "|")) {
-                log.debug("  Resolved '{}' → '{}'", name, title);
-                return title;
-            }
-        }
-        return null;
     }
 
     // ─── Extracción de campos ──────────────────────────────────────────────────
 
     private String extractPosition(String wikitext) {
-        Pattern p = Pattern.compile("\\|\\s*position\\s*=\\s*([^\\n|<}]+)");
-        Matcher m = p.matcher(wikitext);
-        if (!m.find()) return null;
-        String raw = m.group(1).trim().toLowerCase();
-        if (raw.contains("goal"))    return "GK";
-        if (raw.contains("forward") || raw.contains("striker")) return "FW";
-        if (raw.contains("midf"))   return "MF";
-        if (raw.contains("def"))    return "DF";
-        return switch (raw) {
-            case "gk"                   -> "GK";
-            case "fw", "st"             -> "FW";
-            case "mf", "cm", "am"       -> "MF";
-            case "df", "cb", "lb", "rb" -> "DF";
-            default                     -> raw.toUpperCase();
-        };
-    }
+        int posField = wikitext.indexOf("|Posición =");
+        if (posField == -1) posField = wikitext.indexOf("|Posición=");
+        if (posField == -1) return null;
 
-    private String extractDubName(String wikitext, String fallback) {
-        Pattern p = Pattern.compile("\\|\\s*name_dub\\s*=\\s*([^\\n|<}]+)");
-        Matcher m = p.matcher(wikitext);
-        if (!m.find()) return fallback;
-        String name = m.group(1).replaceAll("^[*\\s]+", "").trim();
-        return name.isEmpty() ? fallback : name;
+        String region = wikitext.substring(posField, Math.min(posField + 500, wikitext.length()));
+        Pattern p = Pattern.compile("\\{\\{Posición/([A-Za-z]+)\\}\\}");
+        Matcher m = p.matcher(region);
+        if (!m.find()) return null;
+
+        return switch (m.group(1).toUpperCase()) {
+            case "PR"                                        -> "GK";
+            case "DL", "EXT", "EI", "ED"                    -> "FW";
+            case "MC", "MI", "MP", "MO", "MD", "MDC", "MOC"  -> "MF";
+            case "DF", "DC", "LB", "LD", "LI", "LP", "CAR" -> "DF";
+            default                                         -> null;
+        };
     }
 
     // ─── Stats ─────────────────────────────────────────────────────────────────
 
     private record PlayerStats(int attack, int control, int defense) {}
 
-    private PlayerStats extractStats(String wikitext, String gameSection, boolean isGO, String position) {
-        String header = "|" + gameSection + "|";
-        int start = wikitext.indexOf(header);
-        if (start == -1) return null;
+    private PlayerStats extractStats(String wikitext, String templateName, boolean isGO) {
+        // Robust match: optional "Plantilla:" prefix, optional soft-hyphen U+00AD inside
+        // "Estadísticas", flexible whitespace around "/", case-insensitive.
+        // í = í (U+00ED), ­ = soft hyphen (U+00AD).
+        String gameType = isGO ? "GO" : "Original";
+        Pattern tplPat = Pattern.compile(
+                "\\{\\{(?:Plantilla:)?[Ee]stad[­]?ísticas\\s*"
+                + "\\(\\s*Jugador\\s*/\\s*" + Pattern.quote(gameType) + "\\s*\\)");
+        Matcher tplMatcher = tplPat.matcher(wikitext);
+        if (!tplMatcher.find()) return null;
+        int start = tplMatcher.start();
 
-        String section = wikitext.substring(start, Math.min(start + 700, wikitext.length()));
-
-        if (!isGO) {
-            int kick    = extractStat(section, "Kick");
-            int control = extractStat(section, "Control");
-            int guard   = extractStat(section, "Guard");
-            if (kick < 0 || control < 0 || guard < 0) return null;
-            return new PlayerStats(clamp(kick), clamp(control), clamp(guard));
+        // Encuentra el cierre de la plantilla respetando plantillas anidadas
+        int depth = 0, end = wikitext.length();
+        for (int i = start; i < wikitext.length() - 1; i++) {
+            if (wikitext.charAt(i) == '{' && wikitext.charAt(i + 1) == '{') { depth++; i++; }
+            else if (wikitext.charAt(i) == '}' && wikitext.charAt(i + 1) == '}') {
+                if (--depth == 0) { end = i + 2; break; }
+                i++;
+            }
         }
+        String block = wikitext.substring(start, end);
 
-        int kick      = extractStat(section, "Kick");
-        int technique = extractStat(section, "Technique");
-        int block     = extractStat(section, "Block");
-        int catchStat = extractStat(section, "Catch");
-        if (kick < 0 || technique < 0) return null;
+        int tiro    = extractStat(block, "Tiro");
+        int control = extractStat(block, "Control");
+        int defensa = extractStat(block, "Defensa");
 
-        int defense = "GK".equals(position) && catchStat >= 0 ? catchStat : block;
-        if (defense < 0) return null;
+        if (tiro < 0 || control < 0 || defensa < 0) return null;
 
-        return new PlayerStats(
-                normalize(kick,      GO_DIVISOR),
-                normalize(technique, GO_DIVISOR),
-                normalize(defense,   GO_DIVISOR)
-        );
+        if (isGO) {
+            return new PlayerStats(
+                    normalize(tiro,    GO_DIVISOR),
+                    normalize(control, GO_DIVISOR),
+                    normalize(defensa, GO_DIVISOR)
+            );
+        }
+        return new PlayerStats(clamp(tiro), clamp(control), clamp(defensa));
     }
 
     private int extractStat(String text, String statName) {
-        Pattern p = Pattern.compile(Pattern.quote(statName) + "[''']*\\s*:\\s*(\\d+)");
+        Pattern p = Pattern.compile("\\|\\s*" + Pattern.quote(statName) + "\\s*=\\s*(\\d+)");
         Matcher m = p.matcher(text);
         return m.find() ? Integer.parseInt(m.group(1)) : -1;
     }
@@ -384,12 +376,14 @@ public class DataSeeder implements CommandLineRunner {
     // ─── Imágenes ──────────────────────────────────────────────────────────────
 
     private String extractImageFilename(String wikitext) {
-        Pattern p = Pattern.compile(
-                "\\|\\s*image\\s*=\\s*(?:\\[\\[File:)?([^|\\n\\]<}]+\\.(?:png|jpg|jpeg|gif))",
-                Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(wikitext);
-        if (!m.find()) return null;
-        return m.group(1).trim();
+        int idx = wikitext.indexOf("|Imagen");
+        if (idx == -1) idx = wikitext.indexOf("|imagen");
+        if (idx == -1) return null;
+
+        String region = wikitext.substring(idx, Math.min(idx + 1000, wikitext.length()));
+        Pattern p = Pattern.compile("([\\w()\\-. ]+\\.(?:png|jpg|jpeg|gif))", Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(region);
+        return m.find() ? m.group(1).trim() : null;
     }
 
     private String fetchImageUrl(String filename) throws Exception {
@@ -469,7 +463,7 @@ public class DataSeeder implements CommandLineRunner {
                 .header("User-Agent", "InazumaTFG/1.0 (TFG educativo)")
                 .timeout(Duration.ofSeconds(10))
                 .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
     }
 
     // ─── Utilidades ────────────────────────────────────────────────────────────
