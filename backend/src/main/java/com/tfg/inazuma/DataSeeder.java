@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.CardPackage;
+import com.tfg.inazuma.model.CardPosition;
 import com.tfg.inazuma.model.CardType;
 import com.tfg.inazuma.repository.CardRepository;
 import com.tfg.inazuma.service.CardService;
@@ -255,7 +256,7 @@ public class DataSeeder implements CommandLineRunner {
             card.setCollection(data.collection);
             card.setCardPackage(data.cardPackage != null ? CardPackage.valueOf(data.cardPackage) : null);
             card.setType(data.type != null ? CardType.valueOf(data.type) : CardType.NORMAL);
-            card.setPosition(data.position);
+            card.setPosition(parsePosition(data.position));
             card.setAttack(data.attack);
             card.setControl(data.control);
             card.setDefense(data.defense);
@@ -298,12 +299,17 @@ public class DataSeeder implements CommandLineRunner {
         card.attack      = stats.attack();
         card.control     = stats.control();
         card.defense     = stats.defense();
-        card.rating      = Card.computeRating(finalPosition, stats.attack(), stats.control(), stats.defense());
+        card.rating      = Card.computeRating(parsePosition(finalPosition), stats.attack(), stats.control(), stats.defense());
         card.imageUrl    = getImageUrl(wikitext);
         return card;
     }
 
     // ─── Extracción de campos ──────────────────────────────────────────────────
+
+    private static CardPosition parsePosition(String pos) {
+        if (pos == null || pos.isBlank()) return null;
+        try { return CardPosition.valueOf(pos); } catch (IllegalArgumentException e) { return null; }
+    }
 
     private String extractPosition(String wikitext) {
         int posField = wikitext.indexOf("|Posición =");
@@ -316,11 +322,11 @@ public class DataSeeder implements CommandLineRunner {
         if (!m.find()) return null;
 
         return switch (m.group(1).toUpperCase()) {
-            case "PR"                                        -> "GK";
-            case "DL", "EXT", "EI", "ED"                    -> "FW";
-            case "MC", "MI", "MP", "MO", "MD", "MDC", "MOC"  -> "MF";
-            case "DF", "DC", "LB", "LD", "LI", "LP", "CAR" -> "DF";
-            default                                         -> null;
+            case "PR"                                          -> "POR";
+            case "DL", "EXT", "EI", "ED"                      -> "DC";
+            case "MC", "MI", "MP", "MO", "MD", "MDC", "MOC"  -> "MC";
+            case "DF", "DC", "LB", "LD", "LI", "LP", "CAR"   -> "DF";
+            default                                            -> null;
         };
     }
 
