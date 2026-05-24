@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@org.springframework.core.annotation.Order(1)
 public class DataSeeder implements CommandLineRunner {
 
     private static final String WIKI_API     = "https://inazuma.fandom.com/es/api.php";
@@ -160,7 +161,6 @@ public class DataSeeder implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Seeder failed: {}", e.getMessage(), e);
         }
-        System.exit(0); // temporal: quitar cuando se añada la API REST
     }
 
     private boolean updateMissingImages(List<CardData> cards) {
@@ -236,9 +236,11 @@ public class DataSeeder implements CommandLineRunner {
     // ─── Sincronización con la BD ──────────────────────────────────────────────
 
     private void syncDatabase(List<CardData> cardDataList) {
+        if (cardRepository.count() > 0) {
+            log.info("Cards already in database ({} rows), skipping sync.", cardRepository.count());
+            return;
+        }
         log.info("Syncing {} cards with database...", cardDataList.size());
-        cardRepository.truncate();
-        cardRepository.resetAutoIncrement();
         List<Card> entities = cardDataList.stream()
                 .map(this::toEntity)
                 .filter(Objects::nonNull)
