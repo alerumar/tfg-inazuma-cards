@@ -51,10 +51,10 @@ public class MissionSeeder implements CommandLineRunner {
             mission("Colección completa",     "Colecciona todas las cartas",  MissionType.COLLECT_CARDS, (int) totalCards, 800, 0),
 
             // ── Coleccionar leyendas ───────────────────────────────────────
-            /* mission("Primer destello",      "Colecciona 3 cartas Legend",               MissionType.COLLECT_LEGENDS,  3,   50,  6),
+            mission("Primer destello",      "Colecciona 3 cartas Legend",               MissionType.COLLECT_LEGENDS,  3,   50,  6),
             mission("Cazador de leyendas",  "Colecciona 10 cartas Legend",              MissionType.COLLECT_LEGENDS, 10,  150, 12),
             mission("Maestro de leyendas",  "Colecciona 20 cartas Legend",              MissionType.COLLECT_LEGENDS, 20,  300, 18),
-            mission("Legado legendario",    "Colecciona todas las cartas Legend",       MissionType.COLLECT_LEGENDS, (int) totalLegends, 600, 24),*/
+            mission("Legado legendario",    "Colecciona todas las cartas Legend",       MissionType.COLLECT_LEGENDS, (int) totalLegends, 600, 24),
 
             // ── Abrir sobres ───────────────────────────────────────────────
             mission("Abre sobres I",        "Abre 10 sobres",   MissionType.OPEN_PACKS,  10,   50,  6),
