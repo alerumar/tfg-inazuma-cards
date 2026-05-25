@@ -2054,6 +2054,21 @@
   "rating" : 79,
   "imageUrl" : "/images/cards/Zack_Abdulla__T3_Artwork_.png"
 }, {
+  "scrapeKey" : "Edgar Partinus|Inazuma Eleven 3||",
+  "sourcePage" : "Edgar Partinus",
+  "name" : "Edgar Partinus",
+  "nickname" : "Edgar",
+  "team" : "Knights of Queen",
+  "collection" : "Inazuma Eleven 3",
+  "cardPackage" : "INAZUMA_ELEVEN",
+  "type" : "NORMAL",
+  "position" : "DC",
+  "attack" : 89,
+  "control" : 74,
+  "defense" : 79,
+  "rating" : 75,
+  "imageUrl" : "/images/cards/Edgar_legend.png"
+}, {
   "scrapeKey" : "Thiago Torres|Inazuma Eleven 3||",
   "sourcePage" : "Thiago Torres",
   "name" : "Thiago Torres",
