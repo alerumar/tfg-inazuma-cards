@@ -37,7 +37,7 @@ public class PersonService {
     }
 
     public Optional<Person> login(LoginRequest req) {
-        return personRepository.findByEmail(req.email())
+        return personRepository.findByNickname(req.nickname())
                 .filter(p -> passwordEncoder.matches(req.password(), p.getPasswordHash()));
     }
 

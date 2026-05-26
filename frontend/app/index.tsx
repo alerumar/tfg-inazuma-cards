@@ -7,7 +7,7 @@ export default function SplashScreen() {
   const router = useRouter();
 
   return (
-    <Pressable style={styles.root} onPress={() => router.replace('/(tabs)/')}>
+    <Pressable style={styles.root} onPress={() => router.replace('/auth')}>
       <View style={styles.header}>
         <Text style={styles.title}>INAZUMA ELEVEN CARDS</Text>
       </View>
