@@ -72,7 +72,7 @@ export default function ProfileScreen() {
 
   // ── Cerrar sesión ───────────────────────────────────────────────────────────
   const handleLogout = () => {
-    const doLogout = async () => { await logout(); router.replace('/auth'); };
+    const doLogout = async () => { await logout(); router.replace('/'); };
     if (Platform.OS === 'web') {
       // Alert.alert multi-botón no funciona en web → window.confirm
       if ((window as any).confirm('¿Seguro que quieres cerrar la sesión?')) doLogout();
@@ -91,7 +91,7 @@ export default function ProfileScreen() {
       try {
         await apiDeletePerson(user.id);
         await logout();
-        router.replace('/auth');
+        router.replace('/');
       } catch (e: unknown) {
         Alert.alert('Error', e instanceof Error ? e.message : 'Error al eliminar la cuenta');
       } finally {

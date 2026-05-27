@@ -1,5 +1,7 @@
 package com.tfg.inazuma.service;
 
+import com.tfg.inazuma.dto.CardResponse;
+import com.tfg.inazuma.dto.CollectionEntryResponse;
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.Person;
 import com.tfg.inazuma.model.PersonCard;
@@ -10,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +23,24 @@ public class PersonCardService {
     private final PersonCardRepository personCardRepository;
     private final PersonRepository personRepository;
     private final CardRepository cardRepository;
+
+    /** Devuelve TODAS las cartas del juego, marcando cuáles posee el usuario */
+    public List<CollectionEntryResponse> getFullCollection(Long personId) {
+        Person person = findPersonOrThrow(personId);
+        List<Card> allCards = cardRepository.findAllByOrderByIdAsc();
+
+        Map<Long, PersonCard> ownedMap = personCardRepository.findByPerson(person)
+                .stream().collect(Collectors.toMap(pc -> pc.getCard().getId(), pc -> pc));
+
+        return allCards.stream().map(card -> {
+            PersonCard pc = ownedMap.get(card.getId());
+            return new CollectionEntryResponse(
+                    CardResponse.from(card),
+                    pc != null,
+                    pc != null ? pc.getQuantity() : 0
+            );
+        }).toList();
+    }
 
     public List<PersonCard> getCollection(Long personId) {
         Person person = findPersonOrThrow(personId);

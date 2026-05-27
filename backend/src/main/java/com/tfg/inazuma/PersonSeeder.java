@@ -40,9 +40,9 @@ public class PersonSeeder implements CommandLineRunner {
         List<Card>    allCards    = cardRepository.findAll();
         List<Mission> allMissions = missionRepository.findAll();
 
-        // ── Admin (nivel 5, todas las cartas) ─────────────────────────────────
+        // ── Admin (todas las cartas; nivel inicial — sube reclamando misiones) ─
         Person admin = buildPerson("Admin", null, "admin",
-                "admin@inazuma.com", "Admin123!", 5, 0, 1400);
+                "admin@inazuma.com", "Admin123!", 1, 0, 0);
         personRepository.save(admin);
 
         List<PersonCard> adminCards = allCards.stream().map(card -> {

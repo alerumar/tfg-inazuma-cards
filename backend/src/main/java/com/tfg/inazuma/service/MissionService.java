@@ -13,9 +13,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class MissionService {
 
-    private static final int XP_PER_LEVEL      = 200;
-    private static final int XP_INCREMENT      = 100;
-    private static final int POINTS_ON_LEVEL   = 12;
+    private static final int XP_PER_LEVEL    = 200;
+    private static final int XP_INCREMENT    = 100;
+    private static final int POINTS_ON_LEVEL = 12;
 
     private final MissionRepository       missionRepository;
     private final PersonMissionRepository personMissionRepository;
@@ -23,17 +23,11 @@ public class MissionService {
 
     // ─── Admin: CRUD de misiones ──────────────────────────────────────────────
 
-    public List<Mission> findAll() {
-        return missionRepository.findAll();
-    }
+    public List<Mission> findAll() { return missionRepository.findAll(); }
 
-    public Optional<Mission> findById(Long id) {
-        return missionRepository.findById(id);
-    }
+    public Optional<Mission> findById(Long id) { return missionRepository.findById(id); }
 
-    public Mission create(Mission mission) {
-        return missionRepository.save(mission);
-    }
+    public Mission create(Mission mission) { return missionRepository.save(mission); }
 
     public boolean delete(Long id) {
         if (!missionRepository.existsById(id)) return false;
@@ -41,10 +35,10 @@ public class MissionService {
         return true;
     }
 
-    // ─── Asignación a jugadores ───────────────────────────────────────────────
+    // ─── Asignación ───────────────────────────────────────────────────────────
 
     public PersonMission assign(Long personId, Long missionId) {
-        Person person = findPersonOrThrow(personId);
+        Person person  = findPersonOrThrow(personId);
         Mission mission = missionRepository.findById(missionId)
                 .orElseThrow(() -> new IllegalArgumentException("Misión no encontrada"));
 
@@ -61,12 +55,11 @@ public class MissionService {
         return personMissionRepository.findByPerson(findPersonOrThrow(personId));
     }
 
-    // ─── Progreso ─────────────────────────────────────────────────────────────
+    // ─── Progreso (solo incrementa; la recompensa se reclama manualmente) ─────
 
     @Transactional
     public void recordEvent(Person person, MissionType type) {
         personMissionRepository.incrementProgress(person, type);
-        claimCompletedRewards(person, type);
     }
 
     @Transactional
@@ -74,18 +67,27 @@ public class MissionService {
         recordEvent(findPersonOrThrow(personId), type);
     }
 
-    private void claimCompletedRewards(Person person, MissionType type) {
-        List<PersonMission> justCompleted = personMissionRepository
-                .findByPerson(person).stream()
-                .filter(pm -> pm.getMission().getType() == type)
-                .filter(pm -> pm.getProgress() >= pm.getMission().getGoal())
-                .toList();
+    // ─── Reclamación manual ───────────────────────────────────────────────────
 
-        for (PersonMission pm : justCompleted) {
-            Mission mission = pm.getMission();
-            grantRewards(person, mission.getRewardExperience(), mission.getRewardPoints());
-        }
+    @Transactional
+    public PersonMission claim(Long personId, Long personMissionId) {
+        PersonMission pm = personMissionRepository.findById(personMissionId)
+                .orElseThrow(() -> new IllegalArgumentException("Entrada de misión no encontrada"));
+
+        if (!pm.getPerson().getId().equals(personId))
+            throw new IllegalArgumentException("La misión no pertenece a este jugador");
+        if (pm.getProgress() < pm.getMission().getGoal())
+            throw new IllegalArgumentException("La misión aún no está completada");
+        if (pm.isClaimed())
+            throw new IllegalArgumentException("Las recompensas ya han sido reclamadas");
+
+        Mission mission = pm.getMission();
+        grantRewards(pm.getPerson(), mission.getRewardExperience(), mission.getRewardPoints());
+        pm.setClaimed(true);
+        return personMissionRepository.save(pm);
     }
+
+    // ─── Recompensas ─────────────────────────────────────────────────────────
 
     private void grantRewards(Person person, int xp, int points) {
         person.setPackPoints(person.getPackPoints() + points);
@@ -94,7 +96,7 @@ public class MissionService {
         int remaining = xp;
         while (remaining > 0) {
             int xpForNext = xpForNextLevel(person.getLevel());
-            int gap = xpForNext - person.getExperience();
+            int gap       = xpForNext - person.getExperience();
             if (remaining >= gap) {
                 remaining -= gap;
                 person.setLevel(person.getLevel() + 1);
@@ -105,7 +107,6 @@ public class MissionService {
                 remaining = 0;
             }
         }
-
         personRepository.save(person);
     }
 

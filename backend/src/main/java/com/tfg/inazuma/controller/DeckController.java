@@ -1,6 +1,7 @@
 package com.tfg.inazuma.controller;
 
-import com.tfg.inazuma.dto.CardResponse;
+import com.tfg.inazuma.dto.CreateDeckRequest;
+import com.tfg.inazuma.dto.DeckCardResponse;
 import com.tfg.inazuma.dto.DeckResponse;
 import com.tfg.inazuma.service.DeckService;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +18,16 @@ public class DeckController {
 
     private final DeckService deckService;
 
+    private List<DeckCardResponse> getCardResponses(Long deckId) {
+        return deckService.getCards(deckId).stream()
+                .map(DeckCardResponse::from)
+                .toList();
+    }
+
     @GetMapping
     public List<DeckResponse> getDecks(@PathVariable Long personId) {
         return deckService.getDecks(personId).stream()
-                .map(deck -> DeckResponse.from(deck,
-                        deckService.getCards(deck.getId()).stream()
-                                .map(dc -> CardResponse.from(dc.getCard())).toList()))
+                .map(deck -> DeckResponse.from(deck, getCardResponses(deck.getId())))
                 .toList();
     }
 
@@ -30,21 +35,17 @@ public class DeckController {
     public ResponseEntity<DeckResponse> getDeck(@PathVariable Long personId,
                                                 @PathVariable Long deckId) {
         return deckService.findById(deckId)
-                .map(deck -> ResponseEntity.ok(DeckResponse.from(deck,
-                        deckService.getCards(deckId).stream()
-                                .map(dc -> CardResponse.from(dc.getCard())).toList())))
+                .map(deck -> ResponseEntity.ok(DeckResponse.from(deck, getCardResponses(deckId))))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<?> createDeck(@PathVariable Long personId,
-                                        @RequestBody Map<String, String> body) {
+                                        @RequestBody CreateDeckRequest body) {
         try {
-            String name = body.get("name");
-            if (name == null || name.isBlank())
-                return ResponseEntity.badRequest().body("El nombre es obligatorio");
-            var deck = deckService.createDeck(personId, name);
-            return ResponseEntity.ok(DeckResponse.from(deck, List.of()));
+            var deck = deckService.createDeck(personId, body.name(),
+                    body.cardIds() != null ? body.cardIds() : List.of());
+            return ResponseEntity.ok(DeckResponse.from(deck, getCardResponses(deck.getId())));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -59,9 +60,7 @@ public class DeckController {
             if (name == null || name.isBlank())
                 return ResponseEntity.badRequest().body("El nombre es obligatorio");
             var deck = deckService.renameDeck(personId, deckId, name);
-            return ResponseEntity.ok(DeckResponse.from(deck,
-                    deckService.getCards(deckId).stream()
-                            .map(dc -> CardResponse.from(dc.getCard())).toList()));
+            return ResponseEntity.ok(DeckResponse.from(deck, getCardResponses(deckId)));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -72,7 +71,8 @@ public class DeckController {
                                      @PathVariable Long deckId,
                                      @PathVariable Long cardId) {
         try {
-            return ResponseEntity.ok(CardResponse.from(deckService.addCard(personId, deckId, cardId).getCard()));
+            var dc = deckService.addCard(personId, deckId, cardId);
+            return ResponseEntity.ok(DeckCardResponse.from(dc));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

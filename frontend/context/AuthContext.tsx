@@ -5,6 +5,11 @@ import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const STORAGE_KEY = 'inazuma_user';
 
+export interface LevelUpInfo {
+  previousLevel: number;
+  newLevel: number;
+}
+
 interface AuthContextValue {
   user: PersonResponse | null;
   loading: boolean;
@@ -12,13 +17,16 @@ interface AuthContextValue {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updated: PersonResponse) => Promise<void>;
+  levelUpInfo: LevelUpInfo | null;
+  clearLevelUp: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser]       = useState<PersonResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser]               = useState<PersonResponse | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [levelUpInfo, setLevelUpInfo] = useState<LevelUpInfo | null>(null);
 
   // Restaurar sesión al arrancar la app
   useEffect(() => {
@@ -48,11 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateUser = async (updated: PersonResponse) => {
+    // Detectar subida de nivel antes de persistir
+    if (user && updated.level > user.level) {
+      setLevelUpInfo({ previousLevel: user.level, newLevel: updated.level });
+    }
     await persist(updated);
   };
 
+  const clearLevelUp = () => setLevelUpInfo(null);
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, levelUpInfo, clearLevelUp }}>
       {children}
     </AuthContext.Provider>
   );

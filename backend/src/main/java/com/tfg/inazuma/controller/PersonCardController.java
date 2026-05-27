@@ -1,5 +1,6 @@
 package com.tfg.inazuma.controller;
 
+import com.tfg.inazuma.dto.CollectionEntryResponse;
 import com.tfg.inazuma.dto.PersonCardResponse;
 import com.tfg.inazuma.service.PersonCardService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,12 @@ import java.util.Map;
 public class PersonCardController {
 
     private final PersonCardService personCardService;
+
+    /** Todas las cartas del juego + si el usuario las posee */
+    @GetMapping("/full")
+    public List<CollectionEntryResponse> getFullCollection(@PathVariable Long personId) {
+        return personCardService.getFullCollection(personId);
+    }
 
     @GetMapping
     public List<PersonCardResponse> getCollection(@PathVariable Long personId) {

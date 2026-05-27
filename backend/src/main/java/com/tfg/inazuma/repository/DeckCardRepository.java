@@ -18,4 +18,7 @@ public interface DeckCardRepository extends JpaRepository<DeckCard, Long> {
     int countLegendsByDeck(@Param("deck") Deck deck);
 
     void deleteByDeck(Deck deck);
+
+    @Query("SELECT COUNT(dc) FROM DeckCard dc WHERE dc.deck = :deck AND dc.card.id = :cardId")
+    int countByDeckAndCardId(@Param("deck") Deck deck, @Param("cardId") Long cardId);
 }

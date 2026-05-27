@@ -27,4 +27,8 @@ public class PersonMission {
 
     @Column(nullable = false)
     private int progress = 0;
+
+    /** true cuando el jugador ha reclamado las recompensas manualmente */
+    @Column(nullable = false)
+    private boolean claimed = false;
 }

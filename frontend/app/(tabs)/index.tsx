@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/colors';
+import { AppHeader } from '../../components/AppHeader';
 import { BASE_URL } from '../../constants/api';
-import { useAuth } from '../../context/AuthContext';
+import { Colors } from '../../constants/colors';
 
 const IMG = (path: string) => ({ uri: `${BASE_URL}/images/${encodeURIComponent(path)}` });
 
@@ -13,30 +12,9 @@ const PACK_GO  = IMG('Sobre GO.jpg');
 const SHOP_IMG = IMG('Tienda.jpg');
 
 export default function HomeScreen() {
-  const { user } = useAuth();
-  const router   = useRouter();
-
-  const avatarUri = user?.profilePhoto
-    ? { uri: `${BASE_URL}${user.profilePhoto}` }
-    : IMG('default_profile.png');
-
   return (
     <SafeAreaView style={styles.root}>
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <View style={styles.header}>
-        <Pressable style={styles.headerBtn}>
-          <Ionicons name="settings-outline" size={28} color={Colors.textDark} />
-        </Pressable>
-
-        <Pressable onPress={() => router.push('/profile')}>
-          <Image source={avatarUri} style={styles.avatar} />
-        </Pressable>
-
-        <Pressable style={styles.pointsBadge}>
-          <Ionicons name="hourglass-outline" size={16} color={Colors.primary} />
-          <Text style={styles.pointsText}>{user?.packPoints ?? 0}</Text>
-        </Pressable>
-      </View>
+      <AppHeader avatarSize={64} />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Sobres ─────────────────────────────────────────────── */}

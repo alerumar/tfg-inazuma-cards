@@ -1,18 +1,25 @@
 import { useRouter } from 'expo-router';
-import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const splashImage = require('../assets/images/Portada_1.jpg');
 
 export default function SplashScreen() {
-  const router = useRouter();
+  const router  = useRouter();
+  const insets  = useSafeAreaInsets();
 
   return (
-    <Pressable style={styles.root} onPress={() => router.replace('/auth')}>
+    <Pressable
+      style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+      onPress={() => router.replace('/auth')}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>INAZUMA ELEVEN CARDS</Text>
       </View>
 
-      <ImageBackground source={splashImage} style={styles.image} resizeMode="cover" />
+      <View style={styles.imageWrap}>
+        <Image source={splashImage} style={styles.image} resizeMode="contain" />
+      </View>
 
       <View style={styles.footer}>
         <Text style={styles.hint}>Toca para empezar</Text>
@@ -27,9 +34,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 16,
+    height: 72,
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 1,
     backgroundColor: '#fff',
   },
   title: {
@@ -39,13 +47,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textAlign: 'center',
   },
-  image: {
+  imageWrap: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  image: {
     width: '100%',
+    height: '100%',
   },
   footer: {
-    paddingVertical: 24,
+    height: 72,
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 1,
     backgroundColor: '#fff',
   },
   hint: {

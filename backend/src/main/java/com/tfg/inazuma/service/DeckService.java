@@ -36,15 +36,23 @@ public class DeckService {
         return deckCardRepository.findByDeck(deck);
     }
 
-    public Deck createDeck(Long personId, String name) {
+    @Transactional
+    public Deck createDeck(Long personId, String name, List<Long> cardIds) {
         Person person = findPersonOrThrow(personId);
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("El nombre es obligatorio");
         if (deckRepository.countByPerson(person) >= MAX_DECKS)
             throw new IllegalArgumentException("Límite de " + MAX_DECKS + " barajas alcanzado");
 
         Deck deck = new Deck();
         deck.setPerson(person);
         deck.setName(name);
-        return deckRepository.save(deck);
+        deckRepository.save(deck);
+
+        for (Long cardId : cardIds) {
+            addCard(personId, deck.getId(), cardId);
+        }
+        return deck;
     }
 
     public Deck renameDeck(Long personId, Long deckId, String name) {
@@ -60,7 +68,16 @@ public class DeckService {
         validateOwner(deck, personId);
         Card card = findCardOrThrow(cardId);
 
-        validatePersonOwnsCard(deck.getPerson(), card);
+        // Comprobar que el jugador posee la carta y obtener su cantidad
+        PersonCard pc = personCardRepository.findByPersonAndCard(deck.getPerson(), card)
+                .orElseThrow(() -> new IllegalArgumentException("No tienes esta carta en tu colección"));
+
+        // No se puede añadir más copias de las que posees
+        int timesInDeck = deckCardRepository.countByDeckAndCardId(deck, cardId);
+        if (timesInDeck >= pc.getQuantity())
+            throw new IllegalArgumentException(
+                    "Solo tienes " + pc.getQuantity() + " copia" + (pc.getQuantity() != 1 ? "s" : "")
+                    + " de \"" + card.getName() + "\"");
 
         if (deckCardRepository.countByDeck(deck) >= MAX_CARDS)
             throw new IllegalArgumentException("La baraja ya tiene " + MAX_CARDS + " cartas");
@@ -91,11 +108,6 @@ public class DeckService {
         validateOwner(deck, personId);
         deckCardRepository.deleteByDeck(deck);
         deckRepository.delete(deck);
-    }
-
-    private void validatePersonOwnsCard(Person person, Card card) {
-        personCardRepository.findByPersonAndCard(person, card)
-                .orElseThrow(() -> new IllegalArgumentException("No tienes esta carta en tu colección"));
     }
 
     private void validateOwner(Deck deck, Long personId) {

@@ -1,9 +1,11 @@
 package com.tfg.inazuma.controller;
 
+import com.tfg.inazuma.dto.ClaimRewardResponse;
 import com.tfg.inazuma.dto.MissionResponse;
 import com.tfg.inazuma.dto.PersonMissionResponse;
 import com.tfg.inazuma.model.Mission;
 import com.tfg.inazuma.service.MissionService;
+import com.tfg.inazuma.service.PersonService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import java.util.List;
 public class MissionController {
 
     private final MissionService missionService;
+    private final PersonService  personService;
 
     // ─── Admin ────────────────────────────────────────────────────────────────
 
@@ -49,6 +52,18 @@ public class MissionController {
     public List<PersonMissionResponse> getPersonMissions(@PathVariable Long personId) {
         return missionService.getPersonMissions(personId).stream()
                 .map(PersonMissionResponse::from).toList();
+    }
+
+    /** Reclamar recompensas de una misión completada. Devuelve misión + jugador actualizados. */
+    @PostMapping("/api/persons/{personId}/missions/{personMissionId}/claim")
+    public ResponseEntity<?> claim(@PathVariable Long personId, @PathVariable Long personMissionId) {
+        try {
+            var pm = missionService.claim(personId, personMissionId);
+            var person = personService.toResponse(pm.getPerson());
+            return ResponseEntity.ok(new ClaimRewardResponse(PersonMissionResponse.from(pm), person));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/api/persons/{personId}/missions/{missionId}")
