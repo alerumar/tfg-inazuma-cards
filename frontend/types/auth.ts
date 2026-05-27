@@ -13,6 +13,8 @@ export interface PersonResponse {
   accumulatedPacks: number;
   lastPackDate: string | null;
   lastDailyReward: string | null;
+  cardCount: number;
+  friendCount: number;
 }
 
 export interface LoginRequest {

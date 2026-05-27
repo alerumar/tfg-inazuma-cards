@@ -23,4 +23,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     Optional<Friendship> findBetween(@Param("a") Person a, @Param("b") Person b);
 
     boolean existsByRequesterAndReceiver(Person requester, Person receiver);
+
+    @Query("SELECT COUNT(f) FROM Friendship f WHERE (f.requester = :person OR f.receiver = :person) AND f.status = :status")
+    long countByPersonAndStatus(@Param("person") Person person, @Param("status") FriendshipStatus status);
 }

@@ -19,9 +19,12 @@ public record PersonResponse(
         int packPoints,
         int accumulatedPacks,
         LocalDateTime lastPackDate,
-        LocalDate lastDailyReward
+        LocalDate lastDailyReward,
+        int cardCount,
+        int friendCount
 ) {
-    public static PersonResponse from(Person p) {
+    /** Versión completa con conteos */
+    public static PersonResponse from(Person p, int cardCount, int friendCount) {
         return new PersonResponse(
                 p.getId(),
                 p.getPlayerId(),
@@ -36,7 +39,14 @@ public record PersonResponse(
                 p.getPackPoints(),
                 p.getAccumulatedPacks(),
                 p.getLastPackDate(),
-                p.getLastDailyReward()
+                p.getLastDailyReward(),
+                cardCount,
+                friendCount
         );
+    }
+
+    /** Compatibilidad hacia atrás — los conteos se calcularán a 0 */
+    public static PersonResponse from(Person p) {
+        return from(p, 0, 0);
     }
 }
