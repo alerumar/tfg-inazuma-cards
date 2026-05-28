@@ -2427,7 +2427,7 @@
   "control" : 98,
   "defense" : 93,
   "rating" : 75,
-  "imageUrl" : "/images/cards/Paolo_legend.png"
+  "imageUrl" : "/images/cards/Paolo_legend.jpeg"
 }, {
   "scrapeKey" : "Mac Robingo|Inazuma Eleven 3||",
   "sourcePage" : "Mac Robingo",
@@ -3492,7 +3492,7 @@
   "control" : 93,
   "defense" : 99,
   "rating" : 73,
-  "imageUrl" : "/images/cards/Goldiel.png"
+  "imageUrl" : "/images/cards/Goldie_legend.png"
 }, {
   "scrapeKey" : "Zanark Avalonic (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Zanark Avalonic",
@@ -3507,7 +3507,7 @@
   "control" : 98,
   "defense" : 85,
   "rating" : 69,
-  "imageUrl" : "/images/cards/Zanark__Artwork_.PNG"
+  "imageUrl" : "/images/cards/Zanark_legend.png"
 }, {
   "scrapeKey" : "Arion Sherwind (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Arion Sherwind",
@@ -3522,7 +3522,7 @@
   "control" : 99,
   "defense" : 91,
   "rating" : 44,
-  "imageUrl" : "/images/cards/Arion_Galaxy__Artwork_.png"
+  "imageUrl" : "/images/cards/Arion_legend.png"
 }, {
   "scrapeKey" : "Riccardo Di Rigo (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Riccardo Di Rigo",
@@ -3537,7 +3537,7 @@
   "control" : 99,
   "defense" : 90,
   "rating" : 47,
-  "imageUrl" : "/images/cards/Riccardo__Artwork_Galaxy_.png"
+  "imageUrl" : "/images/cards/Riccardo_miximax.png"
 }, {
   "scrapeKey" : "Victor Blade (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Victor Blade",
@@ -3552,7 +3552,7 @@
   "control" : 97,
   "defense" : 86,
   "rating" : 56,
-  "imageUrl" : "/images/cards/Artwork_-_Victor__Galaxy_-_Anime_.png"
+  "imageUrl" : "/images/cards/Victor_miximax.png"
 }, {
   "scrapeKey" : "Fei Rune (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Fei Rune",
@@ -3567,7 +3567,7 @@
   "control" : 98,
   "defense" : 93,
   "rating" : 61,
-  "imageUrl" : "/images/cards/Fei__Artwork_.png"
+  "imageUrl" : "/images/cards/Fei_legend.png"
 }, {
   "scrapeKey" : "Ryoma Nishiki (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Ryoma Nishiki",
@@ -3582,7 +3582,7 @@
   "control" : 96,
   "defense" : 89,
   "rating" : 42,
-  "imageUrl" : "/images/cards/Roma__Artwork_2_.png"
+  "imageUrl" : "/images/cards/Roma_legend.png"
 }, {
   "scrapeKey" : "Sol Daystar (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Sol Daystar",
@@ -3597,7 +3597,7 @@
   "control" : 98,
   "defense" : 88,
   "rating" : 55,
-  "imageUrl" : "/images/cards/Sol__CS_Artwork_.png"
+  "imageUrl" : "/images/cards/Sol_legend.png"
 }, {
   "scrapeKey" : "Jean-Pierre Lapin (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Jean-Pierre Lapin",
@@ -3612,7 +3612,7 @@
   "control" : 93,
   "defense" : 98,
   "rating" : 62,
-  "imageUrl" : "/images/cards/Artwork_-_JP__Sitio_oficial_-_Anime_.png"
+  "imageUrl" : "/images/cards/JP_legend.png"
 }, {
   "scrapeKey" : "Sor (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Sor",
@@ -3627,7 +3627,7 @@
   "control" : 88,
   "defense" : 97,
   "rating" : 67,
-  "imageUrl" : "/images/cards/Sor__Artwork_.png"
+  "imageUrl" : "/images/cards/Sor_legend.png"
 }, {
   "scrapeKey" : "Gabriel García (Chrono Storm)|Inazuma Eleven GO 2|Chrono Storm|",
   "sourcePage" : "Gabriel García",
@@ -3642,7 +3642,7 @@
   "control" : 94,
   "defense" : 96,
   "rating" : 70,
-  "imageUrl" : "/images/cards/Gabi__Artwork-VJ_.png"
+  "imageUrl" : "/images/cards/Gabi_legend.png"
 }, {
   "scrapeKey" : "Arion Sherwind|Inazuma Eleven GO 2||",
   "sourcePage" : "Arion Sherwind",
@@ -3657,7 +3657,7 @@
   "control" : 95,
   "defense" : 86,
   "rating" : 75,
-  "imageUrl" : "/images/cards/Arion_legend.png"
+  "imageUrl" : "/images/cards/Arion_legend_2.jpeg"
 }, {
   "scrapeKey" : "Terry Archibald|Inazuma Eleven GO 3||",
   "sourcePage" : "Terry Archibald",

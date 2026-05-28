@@ -27,6 +27,7 @@ function RootStack() {
         <Stack.Screen name="notifications" options={{ headerShown: false }} />
         <Stack.Screen name="deck/new"      options={{ headerShown: false }} />
         <Stack.Screen name="deck/[id]"     options={{ headerShown: false }} />
+        <Stack.Screen name="shop"          options={{ headerShown: false }} />
       </Stack>
 
       {/* Modal de subida de nivel — aparece sobre cualquier pantalla */}

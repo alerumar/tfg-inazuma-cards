@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,9 +45,12 @@ public class PackService {
         if (person.getAccumulatedPacks() <= 0)
             throw new IllegalStateException("No tienes sobres disponibles");
 
+        boolean wasAtMax = person.getAccumulatedPacks() >= MAX_ACCUMULATED;
         person.setAccumulatedPacks(person.getAccumulatedPacks() - 1);
-        if (person.getAccumulatedPacks() < MAX_ACCUMULATED)
+        // Only start the timer now if it wasn't already running (i.e. we were at max capacity)
+        if (wasAtMax) {
             person.setLastPackDate(LocalDateTime.now());
+        }
 
         personRepository.save(person);
         return doOpenPack(person, type);
@@ -64,8 +68,14 @@ public class PackService {
         if (person.getPackPoints() < cost)
             throw new IllegalStateException("No tienes suficientes puntos (necesitas " + cost + ")");
 
+        // Advance the timer by what we paid for minus what was already remaining.
+        // overpay = minutes bought (cost×30) − minutes still left → set lastPackDate
+        // so that elapsed = overpay, giving remaining = 360 − overpay for the next pack.
+        long remaining = minutesUntilNextPack(person);
+        long minutesBought = (long) cost * 30;
+        long overpay = minutesBought - remaining;          // always ≥ 0 because cost = ceil(remaining/30)
         person.setPackPoints(person.getPackPoints() - cost);
-        person.setLastPackDate(LocalDateTime.now());
+        person.setLastPackDate(LocalDateTime.now().minusMinutes(overpay));
         personRepository.save(person);
 
         return doOpenPack(person, type);
@@ -76,13 +86,13 @@ public class PackService {
     @Transactional
     public int claimDailyReward(Long personId) {
         Person person = findPersonOrThrow(personId);
-        LocalDate today = LocalDate.now();
+        LocalDate rewardDay = currentRewardDay();
 
-        if (today.equals(person.getLastDailyReward()))
+        if (rewardDay.equals(person.getLastDailyReward()))
             throw new IllegalStateException("Ya reclamaste el regalo de hoy");
 
         person.setPackPoints(person.getPackPoints() + DAILY_REWARD_POINTS);
-        person.setLastDailyReward(today);
+        person.setLastDailyReward(rewardDay);
         personRepository.save(person);
         return DAILY_REWARD_POINTS;
     }
@@ -94,16 +104,18 @@ public class PackService {
         syncAccumulatedPacks(person);
         personRepository.save(person);
 
-        long minutesUntilNext = minutesUntilNextPack(person);
-        int cost = person.getAccumulatedPacks() > 0 ? 0 : pointsCost(person);
-        boolean dailyAvailable = !LocalDate.now().equals(person.getLastDailyReward());
+        long minutesUntilNext  = minutesUntilNextPack(person);
+        int  cost              = person.getAccumulatedPacks() > 0 ? 0 : pointsCost(person);
+        boolean dailyAvailable = !currentRewardDay().equals(person.getLastDailyReward());
+        long minutesDailyReset = minutesUntilDailyReset(person);
 
         return new PackStatus(
                 person.getAccumulatedPacks(),
                 person.getPackPoints(),
                 minutesUntilNext,
                 cost,
-                dailyAvailable
+                dailyAvailable,
+                minutesDailyReset
         );
     }
 
@@ -112,7 +124,8 @@ public class PackService {
             int packPoints,
             long minutesUntilNextPack,
             int pointsCostNow,
-            boolean dailyRewardAvailable
+            boolean dailyRewardAvailable,
+            long minutesUntilDailyReset
     ) {}
 
     // ─── Lógica interna ───────────────────────────────────────────────────────
@@ -175,12 +188,14 @@ public class PackService {
     }
 
     private void syncAccumulatedPacks(Person person) {
+        // Si ya está al máximo no hay nada que calcular
+        if (person.getAccumulatedPacks() >= MAX_ACCUMULATED) return;
+
+        // Timer aún no iniciado (solo puede ocurrir si lastPackDate es null con < MAX packs)
         if (person.getLastPackDate() == null) {
             person.setLastPackDate(LocalDateTime.now());
-            person.setAccumulatedPacks(1);
             return;
         }
-        if (person.getAccumulatedPacks() >= MAX_ACCUMULATED) return;
 
         long minutesPassed = ChronoUnit.MINUTES.between(person.getLastPackDate(), LocalDateTime.now());
         int newPacks = (int) (minutesPassed / (HOURS_PER_PACK * 60));
@@ -204,6 +219,27 @@ public class PackService {
         long minutes = minutesUntilNextPack(person);
         int cost = (int) Math.ceil(minutes / 30.0);
         return Math.max(1, Math.min(cost, POINTS_FULL_PACK));
+    }
+
+    /**
+     * Día de recompensa activo: hoy si ya son las 09:00, ayer si todavía no.
+     * El "día de recompensa" va de las 09:00 a las 08:59 del día siguiente.
+     */
+    private LocalDate currentRewardDay() {
+        LocalDateTime now = LocalDateTime.now();
+        return now.toLocalTime().isBefore(LocalTime.of(9, 0))
+                ? now.toLocalDate().minusDays(1)
+                : now.toLocalDate();
+    }
+
+    /**
+     * Minutos hasta el próximo corte de las 09:00.
+     * Devuelve 0 si la recompensa ya está disponible.
+     */
+    private long minutesUntilDailyReset(Person person) {
+        if (!currentRewardDay().equals(person.getLastDailyReward())) return 0;
+        LocalDateTime nextReset = currentRewardDay().plusDays(1).atTime(LocalTime.of(9, 0));
+        return Math.max(0, ChronoUnit.MINUTES.between(LocalDateTime.now(), nextReset));
     }
 
     private static final int XP_PER_LEVEL  = 200;

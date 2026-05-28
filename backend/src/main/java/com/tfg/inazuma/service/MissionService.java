@@ -37,6 +37,18 @@ public class MissionService {
 
     // ─── Asignación ───────────────────────────────────────────────────────────
 
+    /** Asigna todas las misiones existentes a un usuario recién registrado. */
+    @Transactional
+    public void assignAllToNewPerson(Person person) {
+        List<Mission> all = missionRepository.findAll();
+        for (Mission mission : all) {
+            PersonMission pm = new PersonMission();
+            pm.setPerson(person);
+            pm.setMission(mission);
+            personMissionRepository.save(pm);
+        }
+    }
+
     public PersonMission assign(Long personId, Long missionId) {
         Person person  = findPersonOrThrow(personId);
         Mission mission = missionRepository.findById(missionId)

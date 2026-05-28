@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { AppHeader } from '../../components/AppHeader';
 import { CardCell, CARD_ASPECT } from '../../components/CardCell';
 import {
@@ -60,14 +60,14 @@ export default function CollectionScreen() {
     return entries.filter(e => e.card.name.toLowerCase().includes(q));
   }, [entries, searchQuery]);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (!user) return;
     setLoading(true);
     apiGetFullCollection(user.id)
       .then(setEntries)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, [user?.id]);
+  }, [user?.id]));
 
   if (!user) return null;
 
@@ -125,7 +125,6 @@ export default function CollectionScreen() {
                 key={entry.card.id}
                 card={entry.card}
                 owned={entry.owned}
-                quantity={entry.quantity}
                 cardNumber={numberMap.get(entry.card.id)}
                 width={CELL_W}
                 onPress={() => setSelected({
@@ -212,7 +211,6 @@ function CardGrid({
           key={entry.card.id}
           card={entry.card}
           owned={entry.owned}
-          quantity={entry.quantity}
           cardNumber={startIndex + i + 1}
           width={CELL_W}
           onPress={() => onPress(entry, startIndex + i + 1)}
@@ -293,6 +291,7 @@ function CardDetailModal({
           <View style={styles.detailCard}>
             <Text style={styles.detailCardTitle}>Detalles</Text>
             <DetailRow label="Nombre"     value={card.name} />
+            <DetailRow label="Equipo"     value={card.team ?? '—'} />
             <DetailRow label="Colección"  value={card.collection ?? '—'} />
             <DetailRow label="Rareza"     value={RARITY[card.type] ?? card.type} />
             <DetailRow label="Posición"   value={card.position ? POSITION[card.position] ?? card.position : '—'} />

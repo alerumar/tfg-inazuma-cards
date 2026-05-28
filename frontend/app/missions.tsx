@@ -11,9 +11,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { RewardItem, RewardModal } from '../components/RewardModal';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 import { apiClaimMission, apiGetMissions } from '../services/missionService';
+import { PersonResponse } from '../types/auth';
 import { MissionType, PersonMissionData } from '../types/missions';
 
 // ── Iconos y labels por tipo ──────────────────────────────────────────────────
@@ -34,7 +36,12 @@ export default function MissionsScreen() {
   const { user, updateUser } = useAuth();
   const [missions,  setMissions]  = useState<PersonMissionData[]>([]);
   const [loading,   setLoading]   = useState(true);
-  const [claiming,  setClaiming]  = useState<number | null>(null); // id reclamándose
+  const [claiming,  setClaiming]  = useState<number | null>(null);
+
+  // Modal de recompensa
+  const [rewardVisible, setRewardVisible] = useState(false);
+  const [rewardItems,   setRewardItems]   = useState<RewardItem[]>([]);
+  const [pendingUser,   setPendingUser]   = useState<PersonResponse | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -51,19 +58,43 @@ export default function MissionsScreen() {
     try {
       const result = await apiClaimMission(user.id, pm.id);
       // Actualiza la misión en la lista local
-      setMissions(prev =>
-        prev.map(m => m.id === pm.id ? result.mission : m),
-      );
-      // Actualiza XP y puntos del usuario
-      await updateUser(result.person);
-      Alert.alert(
-        '🎉 ¡Recompensa reclamada!',
-        `Has ganado ${pm.mission.rewardExperience} XP${pm.mission.rewardPoints > 0 ? ` y ${pm.mission.rewardPoints} puntos de sobre` : ''}.`,
-      );
+      setMissions(prev => prev.map(m => m.id === pm.id ? result.mission : m));
+
+      // Construye los ítems de recompensa
+      const items: RewardItem[] = [];
+      if (pm.mission.rewardExperience > 0) {
+        items.push({
+          icon:  'trophy-outline',
+          label: 'Experiencia',
+          value: `+${pm.mission.rewardExperience} XP`,
+          color: '#F59E0B',
+        });
+      }
+      if (pm.mission.rewardPoints > 0) {
+        items.push({
+          icon:  'hourglass-outline',
+          label: 'Puntos abre-sobre',
+          value: `+${pm.mission.rewardPoints}`,
+          color: Colors.primary,
+        });
+      }
+
+      // Guardamos el usuario actualizado para aplicarlo al cerrar el modal
+      setPendingUser(result.person);
+      setRewardItems(items);
+      setRewardVisible(true);
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : 'Error al reclamar');
     } finally {
       setClaiming(null);
+    }
+  };
+
+  const handleRewardClose = async () => {
+    setRewardVisible(false);
+    if (pendingUser) {
+      await updateUser(pendingUser);
+      setPendingUser(null);
     }
   };
 
@@ -144,6 +175,15 @@ export default function MissionsScreen() {
           <View style={{ height: 16 }} />
         </ScrollView>
       )}
+
+      {/* Modal de recompensa — aparece antes del modal de nivel */}
+      <RewardModal
+        visible={rewardVisible}
+        rewards={rewardItems}
+        subtitle="Misión completada"
+        onClose={handleRewardClose}
+      />
+
     </SafeAreaView>
   );
 }

@@ -66,6 +66,12 @@ export async function apiChangePassword(
   }
 }
 
+export async function apiGetPerson(personId: number): Promise<PersonResponse> {
+  const res = await fetch(`${BASE_URL}/api/persons/${personId}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function apiDeletePerson(personId: number): Promise<void> {
   const res = await fetch(`${BASE_URL}/api/persons/${personId}`, { method: 'DELETE' });
   if (!res.ok && res.status !== 204) {

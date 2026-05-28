@@ -28,6 +28,7 @@ public class PersonService {
     private final PersonRepository        personRepository;
     private final PersonCardRepository    personCardRepository;
     private final FriendshipRepository    friendshipRepository;
+    private final MissionService          missionService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final Random random = new Random();
@@ -56,7 +57,15 @@ public class PersonService {
         person.setNickname(req.nickname());
         person.setEmail(req.email());
         person.setPasswordHash(passwordEncoder.encode(req.password()));
-        return personRepository.save(person);
+        // El usuario empieza con los 3 sobres gratuitos ya disponibles.
+        // lastPackDate queda null; el timer arrancará cuando abra el primer sobre.
+        person.setAccumulatedPacks(3);
+        Person saved = personRepository.save(person);
+
+        // Asignar todas las misiones existentes al nuevo usuario
+        missionService.assignAllToNewPerson(saved);
+
+        return saved;
     }
 
     public Optional<Person> login(LoginRequest req) {
