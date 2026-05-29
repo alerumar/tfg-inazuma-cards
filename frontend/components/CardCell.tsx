@@ -33,6 +33,8 @@ interface CardCellProps {
   disabled?: boolean;
   removable?: boolean;
   loading?: boolean;
+  /** Si true, oculta el panel de nombre+stats y el badge de rating (para miniaturas) */
+  compact?: boolean;
 }
 
 export function CardCell({
@@ -46,6 +48,7 @@ export function CardCell({
   disabled = false,
   removable = false,
   loading = false,
+  compact = false,
 }: CardCellProps) {
   const height   = Math.round(width * CARD_ASPECT);
   const isLegend = card.type === 'LEGEND';
@@ -73,20 +76,24 @@ export function CardCell({
             resizeMode="contain"
           />
 
-          {/* Rating badge (top-left) */}
-          <View style={[styles.ratingBadge, isLegend && styles.ratingBadgeLegend]}>
-            <Text style={styles.ratingText}>{card.rating}</Text>
-          </View>
-
-          {/* Panel inferior: nombre + stats juntos y bien separados */}
-          <View style={styles.bottomPanel}>
-            <Text style={styles.nameText} numberOfLines={1}>{card.name}</Text>
-            <View style={styles.statsRow}>
-              <StatChip value={card.attack}  bg={ATQ_COLOR} />
-              <StatChip value={card.control} bg={CTL_COLOR} />
-              <StatChip value={card.defense} bg={DEF_COLOR} />
+          {/* Rating badge (top-left) — oculto en modo compact */}
+          {!compact && (
+            <View style={[styles.ratingBadge, isLegend && styles.ratingBadgeLegend]}>
+              <Text style={styles.ratingText}>{card.rating}</Text>
             </View>
-          </View>
+          )}
+
+          {/* Panel inferior: nombre + stats — oculto en modo compact */}
+          {!compact && (
+            <View style={styles.bottomPanel}>
+              <Text style={styles.nameText} numberOfLines={1}>{card.name}</Text>
+              <View style={styles.statsRow}>
+                <StatChip value={card.attack}  bg={ATQ_COLOR} />
+                <StatChip value={card.control} bg={CTL_COLOR} />
+                <StatChip value={card.defense} bg={DEF_COLOR} />
+              </View>
+            </View>
+          )}
 
           {/* Cantidad (top-right) */}
           {quantity != null && (alwaysShowQuantity ? quantity >= 1 : quantity > 1) && (

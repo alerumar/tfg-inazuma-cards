@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -40,17 +41,19 @@ const avatarUri = (p: PersonResponse) =>
 
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function SocialScreen() {
-  const { user, showFriendRequestBadge, setPendingFriendRequests } = useAuth();
-  const [tab, setTab] = useState<Tab>('requests');
+  const { user, showFriendRequestBadge, setPendingFriendRequests, dismissFriendRequests } = useAuth();
+  const [tab, setTab] = useState<Tab>('friends');
 
-  // Refresco inmediato al enfocar la pantalla (el polling ya lo hace cada 20 s,
-  // pero así el badge se actualiza nada más abrir Social sin esperar el siguiente tick)
+  // Al enfocar: refresco inmediato del conteo de solicitudes.
+  // Al perder foco: dismiss automático del badge (sin necesidad de interactuar).
   useFocusEffect(useCallback(() => {
     if (!user) return;
     apiGetPendingReceived(user.id)
       .then(list => setPendingFriendRequests(list.length))
       .catch(() => {});
-  }, [user?.id, setPendingFriendRequests]));
+    // cleanup: cuando el usuario navega fuera de Social, ocultar el badge
+    return () => { dismissFriendRequests(); };
+  }, [user?.id, setPendingFriendRequests, dismissFriendRequests]));
 
   if (!user) return null;
 
@@ -75,18 +78,19 @@ export default function SocialScreen() {
 // ── Pestaña: Amigos (RF-14, RF-15) ───────────────────────────────────────────
 function FriendsTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert, showConfirm } = useDialog();
-  const [friends, setFriends] = useState<FriendshipData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [removing, setRemoving] = useState<number | null>(null);
+  const [friends,    setFriends]    = useState<FriendshipData[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [removing,   setRemoving]   = useState<number | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
     try {
       setFriends(await apiGetFriends(user.id));
     } catch (e) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al cargar amigos');
     } finally {
-      setLoading(false);
+      setLoading(false); setRefreshing(false);
     }
   }, [user.id]);
 
@@ -122,7 +126,11 @@ function FriendsTab({ user }: { user: PersonResponse }) {
       </View>
     );
     return (
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
+      >
         {friends.map(f => {
           const friend = getFriend(f, user.id);
           return (
@@ -203,23 +211,24 @@ function RequestsTab({ user, hasPendingRequests }: {
 function ReceivedTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert } = useDialog();
   const { dismissFriendRequests } = useAuth();
-  const [requests, setRequests] = useState<FriendshipData[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [acting,   setActing]   = useState<number | null>(null);
+  const [requests,   setRequests]   = useState<FriendshipData[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [acting,     setActing]     = useState<number | null>(null);
 
   // El usuario está viendo esta pestaña → limpiar el badge al salir (sin necesidad de interactuar)
   useEffect(() => {
     return () => { dismissFriendRequests(); };
   }, [dismissFriendRequests]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
     try {
       setRequests(await apiGetPendingReceived(user.id));
     } catch (e) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al cargar solicitudes');
     } finally {
-      setLoading(false);
+      setLoading(false); setRefreshing(false);
     }
   }, [user.id]);
 
@@ -258,7 +267,11 @@ function ReceivedTab({ user }: { user: PersonResponse }) {
       </View>
     );
     return (
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
+      >
         {requests.map(f => (
           <View key={f.id} style={styles.card}>
             <Image source={avatarUri(f.requester)} style={styles.avatar} />
@@ -301,14 +314,16 @@ function SentTab({ user }: { user: PersonResponse }) {
   const [loading, setLoading] = useState(true);
   const [acting,  setActing]  = useState<number | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
     try {
       setSent(await apiGetPendingSent(user.id));
     } catch (e) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al cargar solicitudes');
     } finally {
-      setLoading(false);
+      setLoading(false); setRefreshing(false);
     }
   }, [user.id]);
 
@@ -342,7 +357,11 @@ function SentTab({ user }: { user: PersonResponse }) {
       </View>
     );
     return (
-      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
+      >
         {sent.map(f => (
           <View key={f.id} style={styles.card}>
             <Image source={avatarUri(f.receiver)} style={styles.avatar} />

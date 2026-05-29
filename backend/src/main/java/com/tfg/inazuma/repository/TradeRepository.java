@@ -16,4 +16,8 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
                                    @Param("statuses") List<TradeStatus> statuses);
 
     List<Trade> findByInitiatorOrReceiverOrderByDateDesc(Person initiator, Person receiver);
+
+    /** Todos los intercambios activos globalmente (para calcular qué personas están ocupadas). */
+    @Query("SELECT t FROM Trade t WHERE t.status IN (:statuses)")
+    List<Trade> findAllActive(@Param("statuses") List<TradeStatus> statuses);
 }

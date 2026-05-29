@@ -13,12 +13,7 @@ import { BASE_URL } from '../constants/api';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
 
-interface Props {
-  /** Tamaño del avatar en px (default 56) */
-  avatarSize?: number;
-}
-
-export function AppHeader({ avatarSize = 56 }: Props) {
+export function AppHeader() {
   const router          = useRouter();
   const { user, unreadNotifications, claimableMissions } = useAuth();
   const [open, setOpen] = useState(false);
@@ -49,13 +44,7 @@ export function AppHeader({ avatarSize = 56 }: Props) {
         </Pressable>
 
         <Pressable onPress={() => router.push('/profile')}>
-          <Image
-            source={avatarUri}
-            style={[
-              styles.avatar,
-              { width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 },
-            ]}
-          />
+          <Image source={avatarUri} style={styles.avatar} />
         </Pressable>
 
         <View style={styles.pointsBadge}>
@@ -146,7 +135,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    height: 72,
     borderBottomWidth: 1,
     borderBottomColor: Colors.primaryLight,
   },
@@ -170,6 +159,9 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     borderWidth: 2.5,
     borderColor: Colors.primary,
     backgroundColor: Colors.primaryLight,

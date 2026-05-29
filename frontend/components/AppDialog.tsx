@@ -149,13 +149,13 @@ const s = StyleSheet.create({
   cancelBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 14,
     borderWidth: 1.5, borderColor: Colors.border,
-    alignItems: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  cancelBtnText: { fontSize: 14, fontWeight: '600', color: Colors.textMid },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: Colors.textMid, textAlign: 'center' },
   confirmBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 14,
-    backgroundColor: Colors.primary, alignItems: 'center',
+    backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center',
   },
-  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  confirmBtnText: { fontSize: 14, fontWeight: '700', color: '#fff', textAlign: 'center' },
   destructiveBtn: { backgroundColor: Colors.error },
 });

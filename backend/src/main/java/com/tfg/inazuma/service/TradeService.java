@@ -24,6 +24,7 @@ public class TradeService {
     private final PersonCardRepository personCardRepository;
     private final FriendshipRepository friendshipRepository;
     private final MissionService       missionService;
+    private final NotificationService  notificationService;
 
     @Transactional
     public Trade propose(Long initiatorId, Long receiverId, Long cardId) {
@@ -62,7 +63,14 @@ public class TradeService {
 
         if (receiverCardId == null) {
             trade.setStatus(TradeStatus.REJECTED_BY_RECEIVER);
-            return tradeRepository.save(trade);
+            tradeRepository.save(trade);
+            // RF-63: notificar al iniciador que su propuesta fue rechazada
+            notificationService.create(
+                trade.getInitiator(), trade.getReceiver(),
+                "TRADE_REJECTED",
+                trade.getReceiver().getNickname() + " ha rechazado tu propuesta de intercambio"
+            );
+            return trade;
         }
 
         Card card = findCardOrThrow(receiverCardId);
@@ -80,6 +88,33 @@ public class TradeService {
         return tradeRepository.save(trade);
     }
 
+    /** El iniciador retira su propuesta mientras el receptor aún no ha respondido. */
+    @Transactional
+    public Trade initiatorCancel(Long tradeId, Long initiatorId) {
+        Trade trade = findTradeOrThrow(tradeId);
+        validateInitiator(trade, initiatorId);
+        if (trade.getStatus() != TradeStatus.PENDING_RESPONSE)
+            throw new IllegalArgumentException("Solo puedes retirar la propuesta antes de que el receptor responda");
+        trade.setStatus(TradeStatus.REJECTED_BY_INITIATOR);
+        tradeRepository.save(trade);
+        // RF-63: notificar al receptor que la propuesta fue retirada
+        notificationService.create(
+            trade.getReceiver(), trade.getInitiator(),
+            "TRADE_WITHDRAWN",
+            trade.getInitiator().getNickname() + " ha retirado su propuesta de intercambio"
+        );
+        return trade;
+    }
+
+    /** IDs de todas las personas actualmente en un intercambio activo. */
+    public List<Long> getActiveParticipantIds() {
+        List<Trade> active = tradeRepository.findAllActive(ACTIVE_STATUSES);
+        return active.stream()
+                .flatMap(t -> java.util.stream.Stream.of(t.getInitiator().getId(), t.getReceiver().getId()))
+                .distinct()
+                .toList();
+    }
+
     @Transactional
     public Trade initiatorConfirm(Long tradeId, Long initiatorId, boolean accept) {
         Trade trade = findTradeOrThrow(tradeId);
@@ -89,12 +124,33 @@ public class TradeService {
 
         if (!accept) {
             trade.setStatus(TradeStatus.REJECTED_BY_INITIATOR);
-            return tradeRepository.save(trade);
+            tradeRepository.save(trade);
+            // RF-63: notificar al receptor que el iniciador canceló tras recibir su oferta
+            notificationService.create(
+                trade.getReceiver(), trade.getInitiator(),
+                "TRADE_CANCELLED",
+                trade.getInitiator().getNickname() + " ha cancelado el intercambio tras recibir tu oferta"
+            );
+            return trade;
         }
 
         executeSwap(trade);
         trade.setStatus(TradeStatus.COMPLETED);
         tradeRepository.save(trade);
+
+        // RF-63: notificar a ambos del intercambio completado
+        notificationService.create(
+            trade.getInitiator(), trade.getReceiver(),
+            "TRADE_COMPLETED",
+            "¡Intercambio completado! Has recibido " + trade.getReceiverCard().getName()
+                + " de " + trade.getReceiver().getNickname()
+        );
+        notificationService.create(
+            trade.getReceiver(), trade.getInitiator(),
+            "TRADE_COMPLETED",
+            "¡Intercambio completado! Has recibido " + trade.getInitiatorCard().getName()
+                + " de " + trade.getInitiator().getNickname()
+        );
 
         missionService.recordEvent(trade.getInitiator(), MissionType.COMPLETE_TRADES);
         missionService.recordEvent(trade.getReceiver(), MissionType.COMPLETE_TRADES);

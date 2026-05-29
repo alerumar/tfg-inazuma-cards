@@ -5,6 +5,7 @@ import { apiHeartbeat, apiLogin, apiRegister } from '../services/authService';
 import { apiGetPendingReceived } from '../services/friendshipService';
 import { apiGetMissions } from '../services/missionService';
 import { apiGetUnreadCount } from '../services/notificationService';
+import { apiGetActiveTrades } from '../services/tradeService';
 import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const STORAGE_KEY = 'inazuma_user';
@@ -42,6 +43,16 @@ interface AuthContextValue {
   setUnreadNotifications: (n: number) => void;
   /** Número de misiones completadas pero sin reclamar. */
   claimableMissions: number;
+  /** Llamar desde missions.tsx tras reclamar para actualizar el badge al instante. */
+  setClaimableMissions: (n: number) => void;
+  /** Intercambios activos donde el usuario tiene que actuar (recibir o confirmar). */
+  pendingTrades: number;
+  /**
+   * Lanza un poll inmediato de todos los badges (solicitudes, notificaciones,
+   * misiones e intercambios). Llámalo tras cualquier acción que cambie estos
+   * contadores para que el punto rojo se actualice al instante sin esperar los 20 s.
+   */
+  refreshBadges: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -58,9 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Ref para detectar si el conteo ha SUBIDO (= nueva solicitud). */
   const pendingCountRef = useRef(0);
 
-  // ── Notificaciones y misiones (badges globales) ──────────────────────────────
+  // ── Notificaciones, misiones e intercambios (badges globales) ───────────────
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [claimableMissions,   setClaimableMissions]   = useState(0);
+  const [pendingTrades,       setPendingTrades]       = useState(0);
 
   /**
    * Actualiza el conteo de solicitudes pendientes.
@@ -107,27 +119,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ── Polling cada 20 s: solicitudes de amistad + notificaciones no leídas ────
-  useEffect(() => {
-    const poll = async () => {
-      if (!userRef.current) return;
-      try {
-        const [friendList, unread, missions] = await Promise.all([
-          apiGetPendingReceived(userRef.current.id),
-          apiGetUnreadCount(userRef.current.id),
-          apiGetMissions(userRef.current.id),
-        ]);
-        setPendingFriendRequests(friendList.length);
-        setUnreadNotifications(unread);
-        setClaimableMissions(missions.filter(m => m.completed && !m.claimed).length);
-      } catch {
-        // Silent fail — no bloquear la app si el servidor no responde
-      }
-    };
+  const poll = useCallback(async () => {
+    if (!userRef.current) return;
+    try {
+      const [friendList, unread, missions, activeTrades] = await Promise.all([
+        apiGetPendingReceived(userRef.current.id),
+        apiGetUnreadCount(userRef.current.id),
+        apiGetMissions(userRef.current.id),
+        apiGetActiveTrades(userRef.current.id),
+      ]);
+      setPendingFriendRequests(friendList.length);
+      setUnreadNotifications(unread);
+      setClaimableMissions(missions.filter(m => m.completed && !m.claimed).length);
+      // Intercambios donde YO tengo que actuar
+      const uid = userRef.current.id;
+      setPendingTrades(activeTrades.filter(t =>
+        (t.receiver.id === uid && t.status === 'PENDING_RESPONSE') ||
+        (t.initiator.id === uid && t.status === 'PENDING_CONFIRMATION')
+      ).length);
+    } catch {
+      // Silent fail — no bloquear la app si el servidor no responde
+    }
+  }, [setPendingFriendRequests]); // setPendingFriendRequests es estable (useCallback sin deps)
 
+  const refreshBadges = useCallback(() => { poll(); }, [poll]);
+
+  useEffect(() => {
     poll(); // Comprobación inmediata al montar
     const interval = setInterval(poll, 20_000);
     return () => clearInterval(interval);
-  }, [setPendingFriendRequests]); // setPendingFriendRequests es estable (useCallback sin deps)
+  }, [poll]);
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   const persist = async (p: PersonResponse) => {
@@ -154,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setFriendRequestsDismissed(false);
     setUnreadNotifications(0);
     setClaimableMissions(0);
+    setPendingTrades(0);
   };
 
   const updateUser = async (updated: PersonResponse) => {
@@ -172,7 +194,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       pendingFriendRequests, setPendingFriendRequests,
       showFriendRequestBadge, dismissFriendRequests,
       unreadNotifications, setUnreadNotifications,
-      claimableMissions,
+      claimableMissions, setClaimableMissions,
+      pendingTrades, refreshBadges,
     }}>
       {children}
     </AuthContext.Provider>

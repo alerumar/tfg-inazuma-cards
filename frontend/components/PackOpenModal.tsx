@@ -40,18 +40,21 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
   const scaleAnim   = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
-  // Reiniciar cuando se abra con nuevas cartas
+  // Reiniciar SOLO cuando la visibilidad cambia a true — no depende de cards
+  // para evitar la race condition cuando se abre un segundo sobre
   useEffect(() => {
-    if (visible && cards.length > 0) {
+    if (visible) {
       setCurrentIdx(0);
       scaleAnim.setValue(1);
       opacityAnim.setValue(1);
     }
-  }, [visible, cards]);
+  }, [visible]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!visible || cards.length === 0 || !packType) return null;
 
-  const current    = cards[currentIdx];
+  const current = cards[currentIdx];
+  // Guardia defensiva: si currentIdx aún no se ha reseteado, esperamos al siguiente frame
+  if (!current) return null;
   const isLast     = currentIdx === cards.length - 1;
   const remaining  = cards.length - currentIdx - 1; // cartas detrás de la actual
 

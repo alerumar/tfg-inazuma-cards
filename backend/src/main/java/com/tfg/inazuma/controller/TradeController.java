@@ -50,6 +50,18 @@ public class TradeController {
         }
     }
 
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<?> initiatorCancel(@PathVariable Long id, @RequestBody Map<String, Long> body) {
+        try {
+            Long initiatorId = body.get("initiatorId");
+            if (initiatorId == null)
+                return ResponseEntity.badRequest().body("initiatorId es obligatorio");
+            return ResponseEntity.ok(TradeResponse.from(tradeService.initiatorCancel(id, initiatorId)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PatchMapping("/{id}/confirm")
     public ResponseEntity<?> initiatorConfirm(@PathVariable Long id, @RequestBody Map<String, Object> body) {
         try {
@@ -59,6 +71,11 @@ public class TradeController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/active-participant-ids")
+    public List<Long> getActiveParticipantIds() {
+        return tradeService.getActiveParticipantIds();
     }
 
     @GetMapping("/persons/{personId}/history")

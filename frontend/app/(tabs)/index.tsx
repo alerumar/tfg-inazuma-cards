@@ -5,6 +5,7 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,6 +45,7 @@ export default function HomeScreen() {
 
   const [status,        setStatus]        = useState<PackStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
+  const [refreshing,    setRefreshing]    = useState(false);
   const [opening,       setOpening]       = useState(false);
   const [modalVisible,  setModalVisible]  = useState(false);
   const [cards,         setCards]         = useState<PackCardResult[]>([]);
@@ -124,6 +126,7 @@ export default function HomeScreen() {
 
   const handleFinish = async () => {
     setModalVisible(false);
+    setCards([]);   // limpia estado para evitar re-render con índice obsoleto
     fetchStatus();
     // Refresca usuario para detectar subida de nivel
     if (user) {
@@ -154,9 +157,20 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <AppHeader avatarSize={64} />
+      <AppHeader />
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); fetchStatus(); setRefreshing(false); }}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
+      >
 
         {/* ── Sección sobres ─────────────────────────────────────── */}
         <View style={styles.packSection}>

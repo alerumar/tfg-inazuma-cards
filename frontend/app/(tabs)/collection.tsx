@@ -9,6 +9,7 @@ import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,6 +43,7 @@ export default function CollectionScreen() {
   const { user }      = useAuth();
   const [entries,     setEntries]     = useState<CollectionEntry[]>([]);
   const [loading,     setLoading]     = useState(true);
+  const [refreshing,  setRefreshing]  = useState(false);
   const [error,       setError]       = useState<string | null>(null);
   const [selected,    setSelected]    = useState<{ entry: CollectionEntry; number: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,14 +62,16 @@ export default function CollectionScreen() {
     return entries.filter(e => e.card.name.toLowerCase().includes(q));
   }, [entries, searchQuery]);
 
-  useFocusEffect(useCallback(() => {
+  const loadCollection = useCallback((isRefresh = false) => {
     if (!user) return;
-    setLoading(true);
+    if (isRefresh) setRefreshing(true); else setLoading(true);
     apiGetFullCollection(user.id)
       .then(setEntries)
       .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [user?.id]));
+      .finally(() => { setLoading(false); setRefreshing(false); });
+  }, [user?.id]);
+
+  useFocusEffect(useCallback(() => { loadCollection(); }, [loadCollection]));
 
   if (!user) return null;
 
@@ -80,7 +84,7 @@ export default function CollectionScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <AppHeader avatarSize={46} />
+      <AppHeader />
 
       {/* Barra de búsqueda */}
       {!loading && !error && (
@@ -115,7 +119,9 @@ export default function CollectionScreen() {
         </View>
       ) : searchResults !== null ? (
         /* ── Resultados de búsqueda ── */
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadCollection(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
+        >
           <Text style={styles.searchCount}>
             {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''}
           </Text>
@@ -142,7 +148,9 @@ export default function CollectionScreen() {
         </ScrollView>
       ) : (
         /* ── Vista normal por secciones ── */
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadCollection(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
+        >
           <SectionHeader
             title="Inazuma Eleven"
             owned={ie1.filter(e => e.owned).length}
@@ -244,7 +252,7 @@ function CardDetailModal({
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <SafeAreaView style={styles.detailRoot}>
-        <AppHeader avatarSize={46} />
+        <AppHeader />
 
         <ScrollView
           contentContainerStyle={styles.detailScroll}
@@ -405,6 +413,8 @@ const styles = StyleSheet.create({
   detailNoImgNum: { fontSize: 28, fontWeight: '700', color: Colors.border },
 
   // Rating badge grande
+  ratingBadge:       { position: 'absolute', zIndex: 2, backgroundColor: Colors.primary },
+  ratingBadgeLegend: { backgroundColor: '#F9A825' },
   ratingBadgeLg: { top: 4, left: 4, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
   ratingTextLg:  { fontSize: 13, fontWeight: '900', color: '#fff' },
 

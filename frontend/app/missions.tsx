@@ -32,8 +32,8 @@ const TYPE_ICON: Record<MissionType, React.ComponentProps<typeof Ionicons>['name
 
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function MissionsScreen() {
-  const router               = useRouter();
-  const { user, updateUser } = useAuth();
+  const router                              = useRouter();
+  const { user, updateUser, setClaimableMissions } = useAuth();
   const { dialogCfg, showAlert } = useDialog();
   const [missions,  setMissions]  = useState<PersonMissionData[]>([]);
   const [loading,   setLoading]   = useState(true);
@@ -59,7 +59,10 @@ export default function MissionsScreen() {
     try {
       const result = await apiClaimMission(user.id, pm.id);
       // Actualiza la misión en la lista local
-      setMissions(prev => prev.map(m => m.id === pm.id ? result.mission : m));
+      const updated = missions.map(m => m.id === pm.id ? result.mission : m);
+      setMissions(updated);
+      // Actualiza el badge global al instante (sin esperar al polling de 20s)
+      setClaimableMissions(updated.filter(m => m.completed && !m.claimed).length);
 
       // Construye los ítems de recompensa
       const items: RewardItem[] = [];

@@ -29,7 +29,7 @@ function TabIcon({
 }
 
 export default function TabsLayout() {
-  const { showFriendRequestBadge } = useAuth();
+  const { showFriendRequestBadge, pendingTrades } = useAuth();
 
   return (
     <Tabs
@@ -75,7 +75,7 @@ export default function TabsLayout() {
         name="matches"
         options={{
           tabBarIcon: ({ color, size, focused }) =>
-            <TabIcon name="swap-horizontal-outline" color={color} size={size} focused={focused} />,
+            <TabIcon name="swap-horizontal-outline" color={color} size={size} focused={focused} hasDot={pendingTrades > 0} />,
         }}
       />
     </Tabs>

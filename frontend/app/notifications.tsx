@@ -24,11 +24,19 @@ import { NotificationData, NotificationType } from '../types/notifications';
 const TYPE_ICON: Record<NotificationType, React.ComponentProps<typeof Ionicons>['name']> = {
   FRIEND_REQUEST_ACCEPTED: 'person-add',
   FRIEND_REQUEST_REJECTED: 'person-remove-outline',
+  TRADE_COMPLETED:         'checkmark-done-circle',
+  TRADE_REJECTED:          'close-circle-outline',
+  TRADE_CANCELLED:         'ban-outline',
+  TRADE_WITHDRAWN:         'arrow-undo-circle-outline',
 };
 
 const TYPE_COLOR: Record<NotificationType, string> = {
   FRIEND_REQUEST_ACCEPTED: '#22C55E',
   FRIEND_REQUEST_REJECTED: '#EF4444',
+  TRADE_COMPLETED:         '#3B82F6',
+  TRADE_REJECTED:          '#EF4444',
+  TRADE_CANCELLED:         '#9E9E9E',
+  TRADE_WITHDRAWN:         '#F59E0B',
 };
 
 // ── Tiempo relativo ───────────────────────────────────────────────────────────
