@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../../components/AppDialog';
 import { AppHeader } from '../../components/AppHeader';
 import { PackOpenModal } from '../../components/PackOpenModal';
 import { BASE_URL } from '../../constants/api';
@@ -40,6 +40,7 @@ function formatMinutes(minutes: number): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { user, updateUser } = useAuth();
+  const { dialogCfg, showAlert, showConfirm } = useDialog();
 
   const [status,        setStatus]        = useState<PackStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -98,7 +99,7 @@ export default function HomeScreen() {
       setOpenPackType(type);
       setModalVisible(true);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al abrir el sobre');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al abrir el sobre');
     } finally {
       setOpening(false);
     }
@@ -109,13 +110,11 @@ export default function HomeScreen() {
 
     // Si no hay sobres gratis, pedir confirmación antes de gastar puntos
     if (status.accumulatedPacks === 0) {
-      Alert.alert(
+      showConfirm(
         '¿Canjear puntos?',
         `¿Seguro que quieres gastar ${localCost} punto${localCost !== 1 ? 's' : ''} para abrir este sobre?`,
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Abrir sobre', style: 'default', onPress: () => doOpenPack(type) },
-        ],
+        () => doOpenPack(type),
+        { confirmLabel: 'Abrir sobre' },
       );
       return;
     }
@@ -296,6 +295,8 @@ export default function HomeScreen() {
         packType={openPackType}
         onFinish={handleFinish}
       />
+
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }

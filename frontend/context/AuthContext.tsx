@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { apiLogin, apiRegister } from '../services/authService';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
+import { apiHeartbeat, apiLogin, apiRegister } from '../services/authService';
+import { apiGetPendingReceived } from '../services/friendshipService';
+import { apiGetMissions } from '../services/missionService';
+import { apiGetUnreadCount } from '../services/notificationService';
 import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const STORAGE_KEY = 'inazuma_user';
@@ -19,6 +23,25 @@ interface AuthContextValue {
   updateUser: (updated: PersonResponse) => Promise<void>;
   levelUpInfo: LevelUpInfo | null;
   clearLevelUp: () => void;
+  /**
+   * Número real de solicitudes de amistad recibidas pendientes.
+   * Actualizado por el polling y por useFocusEffect de SocialScreen.
+   */
+  pendingFriendRequests: number;
+  setPendingFriendRequests: (n: number) => void;
+  /**
+   * true cuando hay solicitudes Y el usuario no las ha "visto" desde la última
+   * que llegó. Se usa para mostrar el badge en el nav y en las pestañas.
+   */
+  showFriendRequestBadge: boolean;
+  /** Llamar cuando el usuario ha visto la pestaña de recibidas (limpia el badge). */
+  dismissFriendRequests: () => void;
+  /** Número de notificaciones no leídas. */
+  unreadNotifications: number;
+  /** Llamar desde la pantalla de notificaciones tras marcar todas como leídas. */
+  setUnreadNotifications: (n: number) => void;
+  /** Número de misiones completadas pero sin reclamar. */
+  claimableMissions: number;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -27,6 +50,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]               = useState<PersonResponse | null>(null);
   const [loading, setLoading]         = useState(true);
   const [levelUpInfo, setLevelUpInfo] = useState<LevelUpInfo | null>(null);
+  const userRef                       = useRef<PersonResponse | null>(null);
+
+  // ── Badge de solicitudes de amistad ─────────────────────────────────────────
+  const [pendingFriendRequests, setPendingFriendRequests_] = useState(0);
+  const [friendRequestsDismissed, setFriendRequestsDismissed] = useState(false);
+  /** Ref para detectar si el conteo ha SUBIDO (= nueva solicitud). */
+  const pendingCountRef = useRef(0);
+
+  // ── Notificaciones y misiones (badges globales) ──────────────────────────────
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [claimableMissions,   setClaimableMissions]   = useState(0);
+
+  /**
+   * Actualiza el conteo de solicitudes pendientes.
+   * Si el número sube, resetea el dismiss para que el badge vuelva a aparecer.
+   */
+  const setPendingFriendRequests = useCallback((n: number) => {
+    if (n > pendingCountRef.current) {
+      setFriendRequestsDismissed(false);
+    }
+    pendingCountRef.current = n;
+    setPendingFriendRequests_(n);
+  }, []);
+
+  /** El usuario ha visto las solicitudes → ocultar el badge hasta la próxima nueva. */
+  const dismissFriendRequests = useCallback(() => setFriendRequestsDismissed(true), []);
+
+  const showFriendRequestBadge = pendingFriendRequests > 0 && !friendRequestsDismissed;
+
+  // Sincronizar ref para acceder al user actual desde callbacks sin re-crear intervalos
+  useEffect(() => { userRef.current = user; }, [user]);
 
   // Restaurar sesión al arrancar la app
   useEffect(() => {
@@ -35,6 +89,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Heartbeat: avisa al servidor cada 30 s para mantener el estado online ──
+  useEffect(() => {
+    const tick = () => { if (userRef.current) apiHeartbeat(userRef.current.id); };
+
+    tick(); // Ping inmediato al montar
+    const interval = setInterval(tick, 30_000);
+
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') tick();
+    });
+
+    return () => {
+      clearInterval(interval);
+      sub.remove();
+    };
+  }, []);
+
+  // ── Polling cada 20 s: solicitudes de amistad + notificaciones no leídas ────
+  useEffect(() => {
+    const poll = async () => {
+      if (!userRef.current) return;
+      try {
+        const [friendList, unread, missions] = await Promise.all([
+          apiGetPendingReceived(userRef.current.id),
+          apiGetUnreadCount(userRef.current.id),
+          apiGetMissions(userRef.current.id),
+        ]);
+        setPendingFriendRequests(friendList.length);
+        setUnreadNotifications(unread);
+        setClaimableMissions(missions.filter(m => m.completed && !m.claimed).length);
+      } catch {
+        // Silent fail — no bloquear la app si el servidor no responde
+      }
+    };
+
+    poll(); // Comprobación inmediata al montar
+    const interval = setInterval(poll, 20_000);
+    return () => clearInterval(interval);
+  }, [setPendingFriendRequests]); // setPendingFriendRequests es estable (useCallback sin deps)
+
+  // ── Auth ─────────────────────────────────────────────────────────────────────
   const persist = async (p: PersonResponse) => {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(p));
     setUser(p);
@@ -53,10 +148,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await AsyncStorage.removeItem(STORAGE_KEY);
     setUser(null);
+    // Resetear todos los badges al cerrar sesión
+    pendingCountRef.current = 0;
+    setPendingFriendRequests_(0);
+    setFriendRequestsDismissed(false);
+    setUnreadNotifications(0);
+    setClaimableMissions(0);
   };
 
   const updateUser = async (updated: PersonResponse) => {
-    // Detectar subida de nivel antes de persistir
     if (user && updated.level > user.level) {
       setLevelUpInfo({ previousLevel: user.level, newLevel: updated.level });
     }
@@ -66,7 +166,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearLevelUp = () => setLevelUpInfo(null);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, levelUpInfo, clearLevelUp }}>
+    <AuthContext.Provider value={{
+      user, loading, login, register, logout, updateUser,
+      levelUpInfo, clearLevelUp,
+      pendingFriendRequests, setPendingFriendRequests,
+      showFriendRequestBadge, dismissFriendRequests,
+      unreadNotifications, setUnreadNotifications,
+      claimableMissions,
+    }}>
       {children}
     </AuthContext.Provider>
   );

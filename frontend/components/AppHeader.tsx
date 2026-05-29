@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Image,
   Modal,
@@ -12,7 +12,6 @@ import {
 import { BASE_URL } from '../constants/api';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
-import { apiGetMissions } from '../services/missionService';
 
 interface Props {
   /** Tamaño del avatar en px (default 56) */
@@ -21,25 +20,12 @@ interface Props {
 
 export function AppHeader({ avatarSize = 56 }: Props) {
   const router          = useRouter();
-  const { user }        = useAuth();
+  const { user, unreadNotifications, claimableMissions } = useAuth();
   const [open, setOpen] = useState(false);
-
-  // ── Contadores de pendientes ────────────────────────────────────────────────
-  const [claimable,     setClaimable]     = useState(0); // misiones completadas sin reclamar
-  const unreadNotifications               = 0;           // placeholder hasta implementar notificaciones
-
-  const refreshBadges = () => {
-    if (!user) return;
-    apiGetMissions(user.id)
-      .then(ms => setClaimable(ms.filter(m => m.completed && !m.claimed).length))
-      .catch(() => {});
-  };
-
-  useEffect(refreshBadges, [user?.id]);
 
   if (!user) return null;
 
-  const hasMissionsPending      = claimable > 0;
+  const hasMissionsPending      = claimableMissions > 0;
   const hasNotificationsPending = unreadNotifications > 0;
   const hasAnyPending           = hasMissionsPending || hasNotificationsPending;
 
@@ -49,10 +35,7 @@ export function AppHeader({ avatarSize = 56 }: Props) {
 
   const go = (path: string) => { setOpen(false); router.push(path as any); };
 
-  const handleOpenMenu = () => {
-    refreshBadges(); // refrescar al abrir por si cambió algo
-    setOpen(true);
-  };
+  const handleOpenMenu = () => setOpen(true);
 
   return (
     <>

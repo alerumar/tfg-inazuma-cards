@@ -57,7 +57,7 @@ export function CardCell({
       style={({ pressed }) => [
         styles.cell,
         { width, height },
-        isLegend && owned && styles.cellLegend,
+        isLegend && styles.cellLegend,
         disabled && styles.cellDisabled,
         pressed && !disabled && onPress && styles.cellPressed,
       ]}
@@ -103,7 +103,7 @@ export function CardCell({
           )}
         </>
       ) : (
-        <Text style={styles.cardNumber}>{numStr}</Text>
+        <Text style={[styles.cardNumber, isLegend && styles.cardNumberLegend]}>{numStr}</Text>
       )}
 
       {/* Spinner de carga */}
@@ -136,7 +136,8 @@ const styles = StyleSheet.create({
   cellDisabled: { opacity: 0.35 },
   cellPressed:  { opacity: 0.75 },
 
-  cardNumber: { fontSize: 12, fontWeight: '600', color: Colors.border, letterSpacing: 1 },
+  cardNumber:       { fontSize: 12, fontWeight: '600', color: Colors.border, letterSpacing: 1 },
+  cardNumberLegend: { color: '#C8860D' },
 
   // Rating
   ratingBadge: {

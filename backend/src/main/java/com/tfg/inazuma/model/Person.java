@@ -61,4 +61,7 @@ public class Person {
     private LocalDateTime lastPackDate;
 
     private LocalDate lastDailyReward;
+
+    /** Última vez que el usuario hizo login — usado para calcular estado online */
+    private LocalDateTime lastSeen;
 }

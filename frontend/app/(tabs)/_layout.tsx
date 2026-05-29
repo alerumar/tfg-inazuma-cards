@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
 import { ColorValue, View, StyleSheet } from 'react-native';
 import { Colors } from '../../constants/colors';
+import { useAuth } from '../../context/AuthContext';
 
 type IoniconsName = ComponentProps<typeof Ionicons>['name'];
 
@@ -11,20 +12,25 @@ function TabIcon({
   color,
   size,
   focused,
+  hasDot,
 }: {
   name: IoniconsName;
   color: ColorValue;
   size: number;
   focused: boolean;
+  hasDot?: boolean;
 }) {
   return (
     <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
       <Ionicons name={name} color={focused ? Colors.primary : color as string} size={size} />
+      {hasDot && <View style={styles.navDot} />}
     </View>
   );
 }
 
 export default function TabsLayout() {
+  const { showFriendRequestBadge } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
@@ -62,7 +68,7 @@ export default function TabsLayout() {
         name="social"
         options={{
           tabBarIcon: ({ color, size, focused }) =>
-            <TabIcon name="people-outline" color={color} size={size} focused={focused} />,
+            <TabIcon name="people-outline" color={color} size={size} focused={focused} hasDot={showFriendRequestBadge} />,
         }}
       />
       <Tabs.Screen
@@ -86,5 +92,13 @@ const styles = StyleSheet.create({
   },
   iconWrapActive: {
     backgroundColor: Colors.primaryLight,
+  },
+  navDot: {
+    position: 'absolute',
+    top: 8, right: 8,
+    width: 8, height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5, borderColor: '#FFFFFF',
   },
 });

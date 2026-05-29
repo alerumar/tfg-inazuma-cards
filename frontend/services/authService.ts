@@ -72,6 +72,15 @@ export async function apiGetPerson(personId: number): Promise<PersonResponse> {
   return res.json();
 }
 
+/** RF-15: heartbeat — avisa al servidor de que el usuario sigue activo */
+export async function apiHeartbeat(personId: number): Promise<void> {
+  try {
+    await fetch(`${BASE_URL}/api/persons/${personId}/heartbeat`, { method: 'PATCH' });
+  } catch {
+    // silencioso — un fallo de red no debe bloquear la app
+  }
+}
+
 export async function apiDeletePerson(personId: number): Promise<void> {
   const res = await fetch(`${BASE_URL}/api/persons/${personId}`, { method: 'DELETE' });
   if (!res.ok && res.status !== 204) {

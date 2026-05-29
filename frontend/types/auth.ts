@@ -15,6 +15,7 @@ export interface PersonResponse {
   lastDailyReward: string | null;
   cardCount: number;
   friendCount: number;
+  online: boolean;
 }
 
 export interface LoginRequest {

@@ -86,6 +86,13 @@ public class PersonController {
         }
     }
 
+    /** RF-15: heartbeat — mantiene al usuario marcado como online mientras usa la app */
+    @PatchMapping("/{id}/heartbeat")
+    public ResponseEntity<Void> heartbeat(@PathVariable Long id) {
+        personService.heartbeat(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         return personService.delete(id)

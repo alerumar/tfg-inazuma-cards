@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -17,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../components/AppDialog';
 import { BASE_URL } from '../constants/api';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +31,7 @@ export default function ProfileScreen() {
   const router                        = useRouter();
   const { user, updateUser, logout }  = useAuth();
 
+  const { dialogCfg, showAlert, showConfirm } = useDialog();
   const [uploading,    setUploading]    = useState(false);
   const [showEdit,     setShowEdit]     = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,7 +50,7 @@ export default function ProfileScreen() {
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permiso denegado', 'Necesitamos acceso a tu galería para cambiar la foto.');
+      showAlert('Permiso denegado', 'Necesitamos acceso a tu galería para cambiar la foto.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -64,7 +65,7 @@ export default function ProfileScreen() {
       const updated = await apiUploadPhoto(user.id, result.assets[0].uri);
       await updateUser(updated);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al subir la foto');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al subir la foto');
     } finally {
       setUploading(false);
     }
@@ -72,42 +73,32 @@ export default function ProfileScreen() {
 
   // ── Cerrar sesión ───────────────────────────────────────────────────────────
   const handleLogout = () => {
-    const doLogout = async () => { await logout(); router.replace('/'); };
-    if (Platform.OS === 'web') {
-      // Alert.alert multi-botón no funciona en web → window.confirm
-      if ((window as any).confirm('¿Seguro que quieres cerrar la sesión?')) doLogout();
-    } else {
-      Alert.alert('Cerrar sesión', '¿Seguro que quieres cerrar la sesión?', [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Cerrar sesión', style: 'destructive', onPress: doLogout },
-      ]);
-    }
+    showConfirm(
+      'Cerrar sesión',
+      '¿Seguro que quieres cerrar la sesión?',
+      async () => { await logout(); router.replace('/'); },
+      { confirmLabel: 'Cerrar sesión', destructive: true },
+    );
   };
 
   // ── Eliminar cuenta ─────────────────────────────────────────────────────────
   const handleDelete = () => {
-    const doDelete = async () => {
-      setDeleting(true);
-      try {
-        await apiDeletePerson(user.id);
-        await logout();
-        router.replace('/');
-      } catch (e: unknown) {
-        Alert.alert('Error', e instanceof Error ? e.message : 'Error al eliminar la cuenta');
-      } finally {
-        setDeleting(false);
-      }
-    };
-
-    const msg = 'Esta acción es irreversible. Se borrarán todos tus datos, cartas y progreso. ¿Continuar?';
-    if (Platform.OS === 'web') {
-      if ((window as any).confirm(`⚠️ Eliminar cuenta\n\n${msg}`)) doDelete();
-    } else {
-      Alert.alert('⚠️ Eliminar cuenta', msg, [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Eliminar para siempre', style: 'destructive', onPress: doDelete },
-      ]);
-    }
+    showConfirm(
+      '⚠️ Eliminar cuenta',
+      'Esta acción es irreversible. Se borrarán todos tus datos, cartas y progreso. ¿Continuar?',
+      async () => {
+        setDeleting(true);
+        try {
+          await apiDeletePerson(user.id);
+          await logout();
+          router.replace('/');
+        } catch (e: unknown) {
+          showAlert('Error', e instanceof Error ? e.message : 'Error al eliminar la cuenta');
+          setDeleting(false);
+        }
+      },
+      { confirmLabel: 'Eliminar para siempre', destructive: true },
+    );
   };
 
   return (
@@ -228,6 +219,8 @@ export default function ProfileScreen() {
         userId={user.id}
         onClose={() => setShowPassword(false)}
       />
+
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }
@@ -242,6 +235,7 @@ interface EditModalProps {
 }
 
 function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
+  const { dialogCfg, showAlert } = useDialog();
   const [name,     setName]     = useState(user.name);
   const [surname,  setSurname]  = useState(user.surname ?? '');
   const [nickname, setNickname] = useState(user.nickname);
@@ -249,9 +243,9 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
   const [saving,   setSaving]   = useState(false);
 
   const handleSave = async () => {
-    if (!name.trim())     { Alert.alert('Error', 'El nombre no puede estar vacío.');  return; }
-    if (!nickname.trim()) { Alert.alert('Error', 'El usuario no puede estar vacío.'); return; }
-    if (!email.trim())    { Alert.alert('Error', 'El correo no puede estar vacío.');  return; }
+    if (!name.trim())     { showAlert('Error', 'El nombre no puede estar vacío.');  return; }
+    if (!nickname.trim()) { showAlert('Error', 'El usuario no puede estar vacío.'); return; }
+    if (!email.trim())    { showAlert('Error', 'El correo no puede estar vacío.');  return; }
     setSaving(true);
     try {
       const updated = await apiUpdatePerson(user.id, {
@@ -263,7 +257,7 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
       await onSaved(updated);
       onClose();
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al guardar');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al guardar los cambios');
     } finally {
       setSaving(false);
     }
@@ -289,6 +283,7 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
           </View>
         </View>
       </KeyboardAvoidingView>
+      <AppDialog {...dialogCfg} />
     </Modal>
   );
 }
@@ -296,6 +291,7 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
 // ── Modal cambiar contraseña ──────────────────────────────────────────────────
 
 function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId: number; onClose: () => void }) {
+  const { dialogCfg, showAlert } = useDialog();
   const [current,  setCurrent]  = useState('');
   const [next,     setNext]     = useState('');
   const [confirm,  setConfirm]  = useState('');
@@ -304,17 +300,17 @@ function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId:
   const reset = () => { setCurrent(''); setNext(''); setConfirm(''); };
 
   const handleSave = async () => {
-    if (!current) { Alert.alert('Error', 'Introduce tu contraseña actual.');           return; }
-    if (next.length < 6) { Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres.'); return; }
-    if (next !== confirm) { Alert.alert('Error', 'Las contraseñas nuevas no coinciden.'); return; }
+    if (!current)         { showAlert('Error', 'Introduce tu contraseña actual.');                       return; }
+    if (next.length < 6)  { showAlert('Error', 'La nueva contraseña debe tener al menos 6 caracteres.'); return; }
+    if (next !== confirm)  { showAlert('Error', 'Las contraseñas nuevas no coinciden.');                  return; }
     setSaving(true);
     try {
       await apiChangePassword(userId, current, next);
-      Alert.alert('¡Listo!', 'Contraseña cambiada correctamente.');
+      showAlert('¡Listo!', 'Contraseña cambiada correctamente.');
       reset();
       onClose();
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al cambiar la contraseña');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al cambiar la contraseña');
     } finally {
       setSaving(false);
     }
@@ -325,8 +321,8 @@ function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId:
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.modalCard}>
           <Text style={styles.modalTitle}>Cambiar contraseña</Text>
-          <Field label="Contraseña actual"   value={current} onChange={setCurrent} secure />
-          <Field label="Nueva contraseña"    value={next}    onChange={setNext}    secure />
+          <Field label="Contraseña actual"    value={current} onChange={setCurrent} secure />
+          <Field label="Nueva contraseña"     value={next}    onChange={setNext}    secure />
           <Field label="Confirmar contraseña" value={confirm} onChange={setConfirm} secure />
           <View style={styles.modalButtons}>
             <Pressable style={[styles.btn, styles.btnSecondary]} onPress={() => { reset(); onClose(); }} disabled={saving}>
@@ -339,6 +335,7 @@ function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId:
           </View>
         </View>
       </KeyboardAvoidingView>
+      <AppDialog {...dialogCfg} />
     </Modal>
   );
 }

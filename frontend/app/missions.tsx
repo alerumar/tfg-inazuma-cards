@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../components/AppDialog';
 import { RewardItem, RewardModal } from '../components/RewardModal';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
@@ -32,8 +32,9 @@ const TYPE_ICON: Record<MissionType, React.ComponentProps<typeof Ionicons>['name
 
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function MissionsScreen() {
-  const router              = useRouter();
+  const router               = useRouter();
   const { user, updateUser } = useAuth();
+  const { dialogCfg, showAlert } = useDialog();
   const [missions,  setMissions]  = useState<PersonMissionData[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [claiming,  setClaiming]  = useState<number | null>(null);
@@ -47,7 +48,7 @@ export default function MissionsScreen() {
     if (!user) return;
     apiGetMissions(user.id)
       .then(setMissions)
-      .catch(e => Alert.alert('Error', e.message))
+      .catch(e => showAlert('Error', e.message))
       .finally(() => setLoading(false));
   }, [user?.id]);
 
@@ -84,7 +85,7 @@ export default function MissionsScreen() {
       setRewardItems(items);
       setRewardVisible(true);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al reclamar');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al reclamar la recompensa');
     } finally {
       setClaiming(null);
     }
@@ -183,7 +184,7 @@ export default function MissionsScreen() {
         subtitle="Misión completada"
         onClose={handleRewardClose}
       />
-
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }

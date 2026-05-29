@@ -6,7 +6,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../components/AppDialog';
 import { RewardItem, RewardModal } from '../components/RewardModal';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
@@ -42,6 +42,7 @@ function timeLeft(targetMs: number): { h: number; m: number } {
 export default function ShopScreen() {
   const router               = useRouter();
   const { user, updateUser } = useAuth();
+  const { dialogCfg, showAlert } = useDialog();
 
   const [status,        setStatus]        = useState<PackStatus | null>(null);
   const [loading,       setLoading]       = useState(true);
@@ -112,7 +113,7 @@ export default function ShopScreen() {
       }]);
       setRewardVisible(true);
     } catch (e) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al reclamar');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al reclamar la recompensa');
     } finally {
       setClaiming(false);
     }
@@ -247,7 +248,7 @@ export default function ShopScreen() {
         subtitle="Recompensa diaria reclamada"
         onClose={handleRewardClose}
       />
-
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }

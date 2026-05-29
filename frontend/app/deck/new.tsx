@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   Pressable,
@@ -14,6 +13,7 @@ import {
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../../components/AppDialog';
 import { CardCell, CARD_ASPECT } from '../../components/CardCell';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
@@ -45,6 +45,7 @@ const SLOT_H    = Math.round(SLOT_W * CARD_ASPECT);
 export default function NewDeckScreen() {
   const router   = useRouter();
   const { user } = useAuth();
+  const { dialogCfg, showAlert } = useDialog();
 
   const [collection,  setCollection]  = useState<CollectionEntry[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -58,7 +59,7 @@ export default function NewDeckScreen() {
     if (!user) return;
     apiGetFullCollection(user.id)
       .then(setCollection)
-      .catch(e => Alert.alert('Error', e.message))
+      .catch(e => showAlert('Error', e.message))
       .finally(() => setLoading(false));
   }, [user?.id]);
 
@@ -88,19 +89,18 @@ export default function NewDeckScreen() {
 
   const handleSelect = (card: CardData) => {
     if (isFull) {
-      Alert.alert('Baraja llena', `Solo puedes seleccionar ${MAX_CARDS} cartas.`);
+      showAlert('Baraja llena', `Solo puedes seleccionar ${MAX_CARDS} cartas.`);
       return;
     }
     if (card.type === 'LEGEND' && legendCount >= MAX_LEGENDS) {
-      Alert.alert('Límite de leyendas', `Solo puedes incluir ${MAX_LEGENDS} cartas Legend por baraja.`);
+      showAlert('Límite de leyendas', `Solo puedes incluir ${MAX_LEGENDS} cartas Legend por baraja.`);
       return;
     }
-    // Comprobar copias disponibles
     const alreadySelected = selectedCountMap.get(card.id) ?? 0;
     const entry = collection.find(e => e.card.id === card.id);
     const owned = entry?.quantity ?? 0;
     if (alreadySelected >= owned) {
-      Alert.alert(
+      showAlert(
         'Sin copias disponibles',
         `Solo tienes ${owned} copia${owned !== 1 ? 's' : ''} de "${card.name}" y ya las has usado todas.`,
       );
@@ -119,7 +119,7 @@ export default function NewDeckScreen() {
       await apiCreateDeck(user.id, deckName.trim(), selected.map(c => c.id));
       router.back();
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al crear la baraja');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al crear la baraja');
     } finally {
       setCreating(false);
     }
@@ -272,6 +272,7 @@ export default function NewDeckScreen() {
           }}
         />
       )}
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }

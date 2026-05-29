@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../components/AppDialog';
 import { CardCell, CARD_ASPECT } from '../components/CardCell';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +33,7 @@ const SLOT_H    = Math.round(SLOT_W * CARD_ASPECT);
 export default function DecksScreen() {
   const router   = useRouter();
   const { user } = useAuth();
+  const { dialogCfg, showAlert } = useDialog();
   const [decks,   setDecks]   = useState<DeckData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,7 +42,7 @@ export default function DecksScreen() {
     setLoading(true);
     apiGetDecks(user.id)
       .then(setDecks)
-      .catch(e => Alert.alert('Error', e.message))
+      .catch(e => showAlert('Error', e.message))
       .finally(() => setLoading(false));
   }, [user?.id]);
 
@@ -131,6 +132,7 @@ export default function DecksScreen() {
           <Ionicons name="add" size={30} color="#fff" />
         </Pressable>
       )}
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }

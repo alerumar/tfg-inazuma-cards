@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   FlatList,
   Modal,
@@ -15,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppDialog, useDialog } from '../../components/AppDialog';
 import { CardCell, CARD_ASPECT } from '../../components/CardCell';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
@@ -56,6 +56,8 @@ export default function DeckEditorScreen() {
   const { id }     = useLocalSearchParams<{ id: string }>();
   const deckId     = Number(id);
 
+  const { dialogCfg, showAlert, showConfirm } = useDialog();
+
   const [deck,          setDeck]          = useState<DeckData | null>(null);
   const [collection,    setCollection]    = useState<CollectionEntry[]>([]);
   const [loading,       setLoading]       = useState(true);
@@ -74,10 +76,9 @@ export default function DeckEditorScreen() {
     const unsub = (navigation as any).addListener('beforeRemove', (e: any) => {
       if (!deck || deck.cards.length >= MIN_CARDS) return;
       e.preventDefault();
-      Alert.alert(
+      showAlert(
         'Baraja incompleta',
         `La baraja tiene ${deck.cards.length} de ${MIN_CARDS} cartas. Añade más cartas antes de salir.`,
-        [{ text: 'OK' }],
       );
     });
     return unsub;
@@ -87,7 +88,7 @@ export default function DeckEditorScreen() {
     if (!user) return;
     Promise.all([apiGetDeck(user.id, deckId), apiGetFullCollection(user.id)])
       .then(([d, col]) => { setDeck(d); setCollection(col); })
-      .catch(e => Alert.alert('Error', e.message))
+      .catch(e => showAlert('Error', e.message))
       .finally(() => setLoading(false));
   }, [user?.id, deckId]);
 
@@ -128,7 +129,7 @@ export default function DeckEditorScreen() {
         ? { ...prev, cards: prev.cards.filter(e => e.deckCardId !== entry.deckCardId) }
         : prev);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al eliminar');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al eliminar carta');
     } finally {
       setActionId(null);
     }
@@ -149,7 +150,7 @@ export default function DeckEditorScreen() {
         cards: prev.cards.map(e => e.deckCardId === target.deckCardId ? newEntry : e),
       } : prev);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al cambiar carta');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al cambiar carta');
       // Si el swap falla a medias, refrescamos el estado real
       try {
         const refreshed = await apiGetDeck(user.id, deckId);
@@ -162,12 +163,12 @@ export default function DeckEditorScreen() {
 
   /** Añadir carta en modo normal (baraja incompleta) */
   const handleAdd = async (cardId: number) => {
-    if (isFull) { Alert.alert('Baraja llena', `Máximo ${MAX_CARDS} cartas.`); return; }
+    if (isFull) { showAlert('Baraja llena', `Solo puedes tener ${MAX_CARDS} cartas.`); return; }
     const alreadyInDeck = deckCountMap.get(cardId) ?? 0;
     const entry = collection.find(e => e.card.id === cardId);
     const owned = entry?.quantity ?? 0;
     if (alreadyInDeck >= owned) {
-      Alert.alert('Sin copias disponibles', `Ya usaste todas las copias de esta carta.`);
+      showAlert('Sin copias disponibles', 'Ya usaste todas las copias de esta carta.');
       return;
     }
     setActionId(cardId);
@@ -175,7 +176,7 @@ export default function DeckEditorScreen() {
       const newEntry = await apiAddCardToDeck(user.id, deckId, cardId);
       setDeck(prev => prev ? { ...prev, cards: [...prev.cards, newEntry] } : prev);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al añadir');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al añadir carta');
     } finally {
       setActionId(null);
     }
@@ -193,24 +194,26 @@ export default function DeckEditorScreen() {
       setDeck(prev => prev ? { ...prev, name: updated.name } : prev);
       setRenameVisible(false);
     } catch (e: unknown) {
-      Alert.alert('Error', e instanceof Error ? e.message : 'Error al renombrar');
+      showAlert('Error', e instanceof Error ? e.message : 'Error al renombrar la baraja');
     } finally {
       setRenaming(false);
     }
   };
 
   const handleDelete = () => {
-    const doDelete = async () => {
-      setDeleting(true);
-      try { await apiDeleteDeck(user.id, deckId); router.back(); }
-      catch (e: unknown) {
-        Alert.alert('Error', e instanceof Error ? e.message : 'Error');
-        setDeleting(false);
-      }
-    };
-    Alert.alert('Eliminar baraja', '¿Eliminar esta baraja? No se puede deshacer.',
-      [{ text: 'Cancelar', style: 'cancel' },
-       { text: 'Eliminar', style: 'destructive', onPress: doDelete }]);
+    showConfirm(
+      'Eliminar baraja',
+      '¿Seguro que quieres eliminar esta baraja? No se puede deshacer.',
+      async () => {
+        setDeleting(true);
+        try { await apiDeleteDeck(user.id, deckId); router.back(); }
+        catch (e: unknown) {
+          showAlert('Error', e instanceof Error ? e.message : 'Error al eliminar la baraja');
+          setDeleting(false);
+        }
+      },
+      { confirmLabel: 'Eliminar', destructive: true },
+    );
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -456,6 +459,8 @@ export default function DeckEditorScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <AppDialog {...dialogCfg} />
     </SafeAreaView>
   );
 }

@@ -68,9 +68,21 @@ public class PersonService {
         return saved;
     }
 
+    /** Actualiza lastSeen → mantiene al usuario marcado como online */
+    public void heartbeat(Long id) {
+        personRepository.findById(id).ifPresent(p -> {
+            p.setLastSeen(java.time.LocalDateTime.now());
+            personRepository.save(p);
+        });
+    }
+
     public Optional<Person> login(LoginRequest req) {
         return personRepository.findByNickname(req.nickname())
-                .filter(p -> passwordEncoder.matches(req.password(), p.getPasswordHash()));
+                .filter(p -> passwordEncoder.matches(req.password(), p.getPasswordHash()))
+                .map(p -> {
+                    p.setLastSeen(java.time.LocalDateTime.now());
+                    return personRepository.save(p);
+                });
     }
 
     public Optional<Person> findById(Long id) {

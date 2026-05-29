@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/persons/{personId}/friendships")
 @RequiredArgsConstructor
@@ -75,5 +77,14 @@ public class FriendshipController {
     public List<FriendshipResponse> getPendingSent(@PathVariable Long personId) {
         return friendshipService.getPendingSent(personId).stream()
                 .map(FriendshipResponse::from).toList();
+    }
+
+    /** RF-20: búsqueda de usuarios por nickname o playerId */
+    @GetMapping("/search")
+    public ResponseEntity<?> search(@PathVariable Long personId,
+                                    @RequestParam String q) {
+        if (q == null || q.trim().length() < 2)
+            return ResponseEntity.badRequest().body("Escribe al menos 2 caracteres para buscar");
+        return ResponseEntity.ok(friendshipService.searchPersons(personId, q.trim()));
     }
 }

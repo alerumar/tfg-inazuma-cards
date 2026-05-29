@@ -21,10 +21,13 @@ public record PersonResponse(
         LocalDateTime lastPackDate,
         LocalDate lastDailyReward,
         int cardCount,
-        int friendCount
+        int friendCount,
+        boolean online          // true si lastSeen en los últimos 15 minutos
 ) {
     /** Versión completa con conteos */
     public static PersonResponse from(Person p, int cardCount, int friendCount) {
+        boolean isOnline = p.getLastSeen() != null
+                && p.getLastSeen().isAfter(LocalDateTime.now().minusMinutes(2));
         return new PersonResponse(
                 p.getId(),
                 p.getPlayerId(),
@@ -41,7 +44,8 @@ public record PersonResponse(
                 p.getLastPackDate(),
                 p.getLastDailyReward(),
                 cardCount,
-                friendCount
+                friendCount,
+                isOnline
         );
     }
 
