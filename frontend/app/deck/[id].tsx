@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Modal,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -25,6 +25,7 @@ import {
   apiGetDeck,
   apiRemoveCardFromDeck,
   apiRenameDeck,
+  apiSwapCardInDeck,
 } from '../../services/deckService';
 import { CollectionEntry } from '../../types/collection';
 import { DeckCardEntry, DeckData } from '../../types/decks';
@@ -135,27 +136,20 @@ export default function DeckEditorScreen() {
     }
   };
 
-  /** Intercambiar la carta del swapTarget por una nueva del picker */
+  /** Intercambiar la carta del swapTarget por una nueva del picker (operación atómica). */
   const handleSwap = async (newCardId: number) => {
     if (!swapTarget) return;
     const target = swapTarget;
     setSwapTarget(null);
     setActionId(target.deckCardId);
     try {
-      // Quitar primero (baraja queda en 4) y luego añadir (vuelve a 5)
-      await apiRemoveCardFromDeck(user.id, deckId, target.deckCardId);
-      const newEntry = await apiAddCardToDeck(user.id, deckId, newCardId);
+      const updatedEntry = await apiSwapCardInDeck(user.id, deckId, target.deckCardId, newCardId);
       setDeck(prev => prev ? {
         ...prev,
-        cards: prev.cards.map(e => e.deckCardId === target.deckCardId ? newEntry : e),
+        cards: prev.cards.map(e => e.deckCardId === target.deckCardId ? updatedEntry : e),
       } : prev);
     } catch (e: unknown) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al cambiar carta');
-      // Si el swap falla a medias, refrescamos el estado real
-      try {
-        const refreshed = await apiGetDeck(user.id, deckId);
-        setDeck(refreshed);
-      } catch {}
     } finally {
       setActionId(null);
     }
@@ -165,10 +159,9 @@ export default function DeckEditorScreen() {
   const handleAdd = async (cardId: number) => {
     if (isFull) { showAlert('Baraja llena', `Solo puedes tener ${MAX_CARDS} cartas.`); return; }
     const alreadyInDeck = deckCountMap.get(cardId) ?? 0;
-    const entry = collection.find(e => e.card.id === cardId);
-    const owned = entry?.quantity ?? 0;
-    if (alreadyInDeck >= owned) {
-      showAlert('Sin copias disponibles', 'Ya usaste todas las copias de esta carta.');
+    if (alreadyInDeck >= 1) {
+      const name = collection.find(e => e.card.id === cardId)?.card.name ?? 'Esta carta';
+      showAlert('Carta duplicada', `"${name}" ya está en la baraja.`);
       return;
     }
     setActionId(cardId);
@@ -251,173 +244,149 @@ export default function DeckEditorScreen() {
         </Pressable>
       </View>
 
-      <FlatList
-        data={filteredCards}
-        keyExtractor={item => String(item.card.id)}
-        numColumns={PICK_COLS}
+      <ScrollView
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.row}
-        ListHeaderComponent={
-          <>
-            {/* ── Slots ── */}
-            <View style={styles.slotsSection}>
-              <View style={styles.slotsSectionHeader}>
-                <Text style={styles.sectionTitle}>Cartas en la baraja</Text>
-                <Text style={[styles.slotCount, isFull && styles.slotCountFull]}>
-                  {cardCount} / {MAX_CARDS}
-                  {legendCount > 0 ? `  ★ ${legendCount}/${MAX_LEGENDS}` : ''}
-                </Text>
-              </View>
-
-              <View style={styles.slotsRow}>
-                {Array.from({ length: MAX_CARDS }, (_, idx) => {
-                  const entry      = deck.cards[idx] ?? null;
-                  const isSelected = swapTarget?.deckCardId === entry?.deckCardId;
-                  const dimmed     = swapTarget !== null && !isSelected;
-                  return entry ? (
-                    <View key={idx} style={{ position: 'relative' }}>
-                      <CardCell
-                        card={entry.card}
-                        owned
-                        width={SLOT_W}
-                        loading={actionId === entry.deckCardId}
-                        onPress={() => handleSlotPress(entry)}
-                      />
-                      {/* Ring de selección */}
-                      {isSelected && (
-                        <View
-                          style={[StyleSheet.absoluteFill, styles.slotSelectionRing]}
-                          pointerEvents="none"
-                        />
-                      )}
-                      {/* Dim de los no seleccionados */}
-                      {dimmed && (
-                        <View
-                          style={[StyleSheet.absoluteFill, styles.slotDimOverlay]}
-                          pointerEvents="none"
-                        />
-                      )}
-                    </View>
-                  ) : (
-                    <View key={idx} style={styles.slotEmpty}>
-                      <Ionicons name="add" size={22} color={Colors.border} />
-                    </View>
-                  );
-                })}
-              </View>
-
-              {/* ── Banner según estado ── */}
-              {swapTarget ? (
-                <View style={styles.swapBanner}>
-                  <View style={styles.swapBannerInfo}>
-                    <Ionicons name="swap-horizontal" size={15} color={Colors.primary} />
-                    <Text style={styles.swapBannerText} numberOfLines={1}>
-                      Reemplazando{' '}
-                      <Text style={styles.swapBannerName}>{swapTarget.card.name}</Text>
-                    </Text>
-                  </View>
-                  <View style={styles.swapBannerBtns}>
-                    <Pressable
-                      style={styles.swapRemoveBtn}
-                      onPress={() => handleRemoveDirect(swapTarget)}
-                    >
-                      <Ionicons name="trash-outline" size={13} color={Colors.error} />
-                      <Text style={styles.swapRemoveText}>Quitar</Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.swapCancelBtn}
-                      onPress={() => setSwapTarget(null)}
-                    >
-                      <Text style={styles.swapCancelText}>Cancelar</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ) : isFull ? (
-                <View style={styles.fullBanner}>
-                  <Ionicons name="checkmark-circle" size={14} color="#2E7D32" />
-                  <Text style={styles.fullBannerText}>
-                    Baraja completa — pulsa una carta para cambiarla
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-
-            {/* ── Filtros ── */}
-            <View style={styles.filterSection}>
-              <Text style={styles.sectionTitle}>
-                {swapTarget
-                  ? 'Elige la carta de reemplazo'
-                  : isFull ? 'Cartas de tu colección' : 'Añadir carta'}
-              </Text>
-
-              {/* Búsqueda */}
-              <View style={styles.searchBarWrap}>
-                <Ionicons name="search" size={15} color={Colors.textLight} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Buscar por nombre..."
-                  placeholderTextColor={Colors.textLight}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  returnKeyType="search"
-                  autoCorrect={false}
-                />
-                {searchQuery.length > 0 && (
-                  <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                    <Ionicons name="close-circle" size={17} color={Colors.textLight} />
-                  </Pressable>
-                )}
-              </View>
-
-              <View style={styles.filterRow}>
-                {POSITIONS.map(pos => (
-                  <Pressable
-                    key={pos}
-                    style={[styles.filterChip, posFilter === pos && styles.filterChipActive]}
-                    onPress={() => setPosFilter(pos)}
-                  >
-                    <Text style={[styles.filterChipText, posFilter === pos && styles.filterChipTextActive]}>
-                      {pos === 'ALL' ? 'Todos' : pos}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          </>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyPicker}>
-            <Text style={styles.emptyPickerText}>
-              {isFull && !swapTarget
-                ? 'La baraja ya está completa'
-                : 'No tienes cartas de esta posición'}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Slots ── */}
+        <View style={styles.slotsSection}>
+          <View style={styles.slotsSectionHeader}>
+            <Text style={styles.sectionTitle}>Cartas en la baraja</Text>
+            <Text style={[styles.slotCount, isFull && styles.slotCountFull]}>
+              {cardCount} / {MAX_CARDS}
+              {legendCount > 0 ? `  ★ ${legendCount}/${MAX_LEGENDS}` : ''}
             </Text>
           </View>
-        }
-        renderItem={({ item }) => {
-          const usedInDeck = deckCountMap.get(item.card.id) ?? 0;
-          // En modo swap: la carta del slot se va a liberar, así que "devolvemos" 1 copia
-          const adjustedUsed = (swapTarget?.card.id === item.card.id)
-            ? Math.max(0, usedInDeck - 1)
-            : usedInDeck;
-          const available    = item.quantity - adjustedUsed;
-          const noMoreCopies = available <= 0;
-          // En modo swap: ignoramos isFull (el deck pasa por 4 temporalmente)
-          const isDisabled   = swapTarget ? noMoreCopies : (isFull || noMoreCopies);
-          return (
-            <CardCell
-              card={item.card}
-              owned={item.owned}
-              quantity={available}
-              alwaysShowQuantity
-              width={PICK_W}
-              disabled={isDisabled}
-              loading={actionId === item.card.id}
-              onPress={() => handlePickerPress(item)}
+
+          <View style={styles.slotsRow}>
+            {Array.from({ length: MAX_CARDS }, (_, idx) => {
+              const entry      = deck.cards[idx] ?? null;
+              const isSelected = swapTarget?.deckCardId === entry?.deckCardId;
+              const dimmed     = swapTarget !== null && !isSelected;
+              return entry ? (
+                <View key={idx} style={{ position: 'relative' }}>
+                  <CardCell
+                    card={entry.card}
+                    owned
+                    width={SLOT_W}
+                    loading={actionId === entry.deckCardId}
+                    onPress={() => handleSlotPress(entry)}
+                  />
+                  {isSelected && (
+                    <View style={[StyleSheet.absoluteFill, styles.slotSelectionRing]} pointerEvents="none" />
+                  )}
+                  {dimmed && (
+                    <View style={[StyleSheet.absoluteFill, styles.slotDimOverlay]} pointerEvents="none" />
+                  )}
+                </View>
+              ) : (
+                <View key={idx} style={styles.slotEmpty}>
+                  <Ionicons name="add" size={22} color={Colors.border} />
+                </View>
+              );
+            })}
+          </View>
+
+          {swapTarget ? (
+            <View style={styles.swapBanner}>
+              <View style={styles.swapBannerInfo}>
+                <Ionicons name="swap-horizontal" size={15} color={Colors.primary} />
+                <Text style={styles.swapBannerText} numberOfLines={1}>
+                  Reemplazando{' '}
+                  <Text style={styles.swapBannerName}>{swapTarget.card.name}</Text>
+                </Text>
+              </View>
+              <View style={styles.swapBannerBtns}>
+                <Pressable style={styles.swapRemoveBtn} onPress={() => handleRemoveDirect(swapTarget)}>
+                  <Ionicons name="trash-outline" size={13} color={Colors.error} />
+                  <Text style={styles.swapRemoveText}>Quitar</Text>
+                </Pressable>
+                <Pressable style={styles.swapCancelBtn} onPress={() => setSwapTarget(null)}>
+                  <Text style={styles.swapCancelText}>Cancelar</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : isFull ? (
+            <View style={styles.fullBanner}>
+              <Ionicons name="checkmark-circle" size={14} color="#2E7D32" />
+              <Text style={styles.fullBannerText}>
+                Baraja completa — pulsa una carta para cambiarla
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        {/* ── Filtros ── */}
+        <View style={styles.filterSection}>
+          <Text style={styles.sectionTitle}>
+            {swapTarget ? 'Elige la carta de reemplazo' : isFull ? 'Cartas de tu colección' : 'Añadir carta'}
+          </Text>
+          <View style={styles.searchBarWrap}>
+            <Ionicons name="search" size={15} color={Colors.textLight} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar por nombre..."
+              placeholderTextColor={Colors.textLight}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              autoCorrect={false}
             />
-          );
-        }}
-      />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={17} color={Colors.textLight} />
+              </Pressable>
+            )}
+          </View>
+          <View style={styles.filterRow}>
+            {POSITIONS.map(pos => (
+              <Pressable
+                key={pos}
+                style={[styles.filterChip, posFilter === pos && styles.filterChipActive]}
+                onPress={() => setPosFilter(pos)}
+              >
+                <Text style={[styles.filterChipText, posFilter === pos && styles.filterChipTextActive]}>
+                  {pos === 'ALL' ? 'Todos' : pos}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Grid de cartas (sin reciclado) ── */}
+        {filteredCards.length === 0 ? (
+          <View style={styles.emptyPicker}>
+            <Text style={styles.emptyPickerText}>
+              {isFull && !swapTarget ? 'La baraja ya está completa' : 'No tienes cartas de esta posición'}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.gridInner}>
+            {filteredCards.map(item => {
+              const usedInDeck   = deckCountMap.get(item.card.id) ?? 0;
+              const adjustedUsed = (swapTarget?.card.id === item.card.id)
+                ? Math.max(0, usedInDeck - 1) : usedInDeck;
+              const noMoreCopies = adjustedUsed >= 1;
+              const available    = noMoreCopies ? 0 : item.quantity;
+              const isDisabled   = swapTarget ? noMoreCopies : (isFull || noMoreCopies);
+              return (
+                <CardCell
+                  key={String(item.card.id)}
+                  card={item.card}
+                  owned={item.owned}
+                  quantity={available}
+                  alwaysShowQuantity
+                  width={PICK_W}
+                  disabled={isDisabled}
+                  loading={actionId === item.card.id}
+                  onPress={() => handlePickerPress(item)}
+                />
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
 
       {/* ── Modal renombrar ── */}
       <Modal
@@ -481,6 +450,7 @@ const styles = StyleSheet.create({
   headerName:    { fontSize: 17, fontWeight: '700', color: Colors.textDark, flex: 1 },
 
   listContent: { paddingHorizontal: H_PAD, paddingBottom: 24 },
+  gridInner:   { flexDirection: 'row', flexWrap: 'wrap', gap: PICK_GAP },
   row:         { gap: PICK_GAP, marginBottom: PICK_GAP },
 
   slotsSection:       { paddingVertical: 14, gap: 10 },

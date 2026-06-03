@@ -6,6 +6,8 @@ import { apiGetPendingReceived } from '../services/friendshipService';
 import { apiGetMissions } from '../services/missionService';
 import { apiGetUnreadCount } from '../services/notificationService';
 import { apiGetActiveTrades } from '../services/tradeService';
+import { apiGetPendingInvites } from '../services/matchService';
+import { apiGetPackStatus } from '../services/packService';
 import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const STORAGE_KEY = 'inazuma_user';
@@ -22,6 +24,14 @@ interface AuthContextValue {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updated: PersonResponse) => Promise<void>;
+  /**
+   * Igual que updateUser pero NO muestra el modal de subida de nivel de inmediato.
+   * El modal queda en espera hasta que se llame a releaseLevelUp().
+   * Úsalo en pantallas donde no quieres interrumpir la experiencia (p.ej. pantalla de partida).
+   */
+  persistUser: (updated: PersonResponse) => Promise<void>;
+  /** Muestra el modal de subida de nivel si quedó pendiente tras un persistUser. */
+  releaseLevelUp: () => void;
   levelUpInfo: LevelUpInfo | null;
   clearLevelUp: () => void;
   /**
@@ -47,6 +57,10 @@ interface AuthContextValue {
   setClaimableMissions: (n: number) => void;
   /** Intercambios activos donde el usuario tiene que actuar (recibir o confirmar). */
   pendingTrades: number;
+  /** Invitaciones a partida pendientes donde el usuario es el receptor. */
+  pendingGameInvites: number;
+  /** true cuando el usuario aún no ha reclamado el regalo diario. */
+  dailyRewardAvailable: boolean;
   /**
    * Lanza un poll inmediato de todos los badges (solicitudes, notificaciones,
    * misiones e intercambios). Llámalo tras cualquier acción que cambie estos
@@ -62,6 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading]         = useState(true);
   const [levelUpInfo, setLevelUpInfo] = useState<LevelUpInfo | null>(null);
   const userRef                       = useRef<PersonResponse | null>(null);
+  /** Subida de nivel guardada pero no mostrada todavía (usada por persistUser). */
+  const pendingLevelUpRef             = useRef<LevelUpInfo | null>(null);
 
   // ── Badge de solicitudes de amistad ─────────────────────────────────────────
   const [pendingFriendRequests, setPendingFriendRequests_] = useState(0);
@@ -72,7 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Notificaciones, misiones e intercambios (badges globales) ───────────────
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [claimableMissions,   setClaimableMissions]   = useState(0);
-  const [pendingTrades,       setPendingTrades]       = useState(0);
+  const [pendingTrades,         setPendingTrades]         = useState(0);
+  const [pendingGameInvites,    setPendingGameInvites]    = useState(0);
+  const [dailyRewardAvailable,  setDailyRewardAvailable] = useState(false);
 
   /**
    * Actualiza el conteo de solicitudes pendientes.
@@ -118,37 +136,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // ── Polling cada 20 s: solicitudes de amistad + notificaciones no leídas ────
+  // ── Polling cada 20 s: solicitudes + notificaciones + misiones + intercambios ─
   const poll = useCallback(async () => {
     if (!userRef.current) return;
     try {
-      const [friendList, unread, missions, activeTrades] = await Promise.all([
+      const [friendList, unread, missions, activeTrades, packStatus] = await Promise.all([
         apiGetPendingReceived(userRef.current.id),
         apiGetUnreadCount(userRef.current.id),
         apiGetMissions(userRef.current.id),
         apiGetActiveTrades(userRef.current.id),
+        apiGetPackStatus(userRef.current.id),
       ]);
       setPendingFriendRequests(friendList.length);
       setUnreadNotifications(unread);
       setClaimableMissions(missions.filter(m => m.completed && !m.claimed).length);
-      // Intercambios donde YO tengo que actuar
       const uid = userRef.current.id;
       setPendingTrades(activeTrades.filter(t =>
         (t.receiver.id === uid && t.status === 'PENDING_RESPONSE') ||
         (t.initiator.id === uid && t.status === 'PENDING_CONFIRMATION')
       ).length);
+      setDailyRewardAvailable(packStatus.dailyRewardAvailable);
     } catch {
       // Silent fail — no bloquear la app si el servidor no responde
     }
-  }, [setPendingFriendRequests]); // setPendingFriendRequests es estable (useCallback sin deps)
+  }, [setPendingFriendRequests]);
 
-  const refreshBadges = useCallback(() => { poll(); }, [poll]);
+  // ── Poll rápido cada 3 s: solo invitaciones de partida ────────────────────────
+  // Las invitaciones deben llegar al receptor en < 3 s; el resto de badges
+  // no necesita esa frecuencia y se mantiene en el ciclo de 20 s.
+  const pollGameInvites = useCallback(async () => {
+    if (!userRef.current) return;
+    try {
+      const invites = await apiGetPendingInvites(userRef.current.id);
+      setPendingGameInvites(invites.length);
+    } catch { /* silent */ }
+  }, []);
+
+  const refreshBadges = useCallback(() => { poll(); pollGameInvites(); }, [poll, pollGameInvites]);
 
   useEffect(() => {
-    poll(); // Comprobación inmediata al montar
-    const interval = setInterval(poll, 20_000);
+    poll();
+    const interval = setInterval(poll, 5_000);
     return () => clearInterval(interval);
   }, [poll]);
+
+  useEffect(() => {
+    pollGameInvites();
+    const interval = setInterval(pollGameInvites, 3_000);
+    return () => clearInterval(interval);
+  }, [pollGameInvites]);
 
   // ── Auth ─────────────────────────────────────────────────────────────────────
   const persist = async (p: PersonResponse) => {
@@ -176,6 +212,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUnreadNotifications(0);
     setClaimableMissions(0);
     setPendingTrades(0);
+    setPendingGameInvites(0);
+    setDailyRewardAvailable(false);
   };
 
   const updateUser = async (updated: PersonResponse) => {
@@ -185,17 +223,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await persist(updated);
   };
 
-  const clearLevelUp = () => setLevelUpInfo(null);
+  /**
+   * Persiste los datos del usuario sin mostrar el modal de subida de nivel.
+   * Si hay subida de nivel, la guarda en pendingLevelUpRef para mostrarla
+   * cuando se llame a releaseLevelUp().
+   */
+  const persistUser = async (updated: PersonResponse) => {
+    if (user && updated.level > user.level) {
+      pendingLevelUpRef.current = { previousLevel: user.level, newLevel: updated.level };
+    }
+    await persist(updated);
+  };
+
+  /** Muestra el modal de subida de nivel si quedó en espera tras un persistUser(). */
+  const releaseLevelUp = useCallback(() => {
+    if (pendingLevelUpRef.current) {
+      setLevelUpInfo(pendingLevelUpRef.current);
+      pendingLevelUpRef.current = null;
+    }
+  }, []);
+
+  const clearLevelUp = () => {
+    setLevelUpInfo(null);
+    pendingLevelUpRef.current = null; // limpiar también cualquier pendiente
+  };
 
   return (
     <AuthContext.Provider value={{
       user, loading, login, register, logout, updateUser,
+      persistUser, releaseLevelUp,
       levelUpInfo, clearLevelUp,
       pendingFriendRequests, setPendingFriendRequests,
       showFriendRequestBadge, dismissFriendRequests,
       unreadNotifications, setUnreadNotifications,
       claimableMissions, setClaimableMissions,
-      pendingTrades, refreshBadges,
+      pendingTrades, pendingGameInvites, dailyRewardAvailable, refreshBadges,
     }}>
       {children}
     </AuthContext.Provider>

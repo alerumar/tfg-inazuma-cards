@@ -41,7 +41,7 @@ function timeLeft(targetMs: number): { h: number; m: number } {
 
 export default function ShopScreen() {
   const router               = useRouter();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, refreshBadges } = useAuth();
   const { dialogCfg, showAlert } = useDialog();
 
   const [status,        setStatus]        = useState<PackStatus | null>(null);
@@ -127,6 +127,7 @@ export default function ShopScreen() {
       setPendingUser(null);
     }
     await fetchStatus();
+    refreshBadges(); // actualiza el badge de la pestaña de inicio al instante
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────

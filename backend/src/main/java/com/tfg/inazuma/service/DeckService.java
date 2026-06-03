@@ -68,16 +68,14 @@ public class DeckService {
         validateOwner(deck, personId);
         Card card = findCardOrThrow(cardId);
 
-        // Comprobar que el jugador posee la carta y obtener su cantidad
-        PersonCard pc = personCardRepository.findByPersonAndCard(deck.getPerson(), card)
-                .orElseThrow(() -> new IllegalArgumentException("No tienes esta carta en tu colección"));
+        // Comprobar que el jugador posee la carta
+        if (!personCardRepository.findByPersonAndCard(deck.getPerson(), card).isPresent())
+            throw new IllegalArgumentException("No tienes esta carta en tu colección");
 
-        // No se puede añadir más copias de las que posees
-        int timesInDeck = deckCardRepository.countByDeckAndCardId(deck, cardId);
-        if (timesInDeck >= pc.getQuantity())
+        // No se puede añadir la misma carta dos veces a la misma baraja
+        if (deckCardRepository.countByDeckAndCardId(deck, cardId) >= 1)
             throw new IllegalArgumentException(
-                    "Solo tienes " + pc.getQuantity() + " copia" + (pc.getQuantity() != 1 ? "s" : "")
-                    + " de \"" + card.getName() + "\"");
+                    "\"" + card.getName() + "\" ya está en esta baraja");
 
         if (deckCardRepository.countByDeck(deck) >= MAX_CARDS)
             throw new IllegalArgumentException("La baraja ya tiene " + MAX_CARDS + " cartas");
@@ -89,6 +87,48 @@ public class DeckService {
         dc.setDeck(deck);
         dc.setCard(card);
         return deckCardRepository.save(dc);
+    }
+
+    /**
+     * Intercambia una carta de la baraja por otra en una sola transacción.
+     * Si la nueva carta no cumple las validaciones, la baraja queda intacta.
+     */
+    @Transactional
+    public DeckCard swapCard(Long personId, Long deckId, Long deckCardId, Long newCardId) {
+        Deck deck = findDeckOrThrow(deckId);
+        validateOwner(deck, personId);
+
+        DeckCard target = deckCardRepository.findById(deckCardId)
+                .orElseThrow(() -> new IllegalArgumentException("Carta de baraja no encontrada"));
+        if (!target.getDeck().getId().equals(deckId))
+            throw new IllegalArgumentException("La carta no pertenece a esta baraja");
+
+        Card newCard = findCardOrThrow(newCardId);
+
+        // El jugador debe poseer la nueva carta
+        if (!personCardRepository.findByPersonAndCard(deck.getPerson(), newCard).isPresent())
+            throw new IllegalArgumentException("No tienes esta carta en tu colección");
+
+        // No se puede añadir una carta que ya esté en la baraja
+        // (salvo que sea la misma que se está reemplazando)
+        boolean replacingItself = target.getCard().getId().equals(newCardId);
+        if (!replacingItself && deckCardRepository.countByDeckAndCardId(deck, newCardId) >= 1)
+            throw new IllegalArgumentException(
+                    "\"" + newCard.getName() + "\" ya está en esta baraja");
+
+        // Validar límite de leyendas descontando la carta que se va a reemplazar
+        if (newCard.getType() == CardType.LEGEND) {
+            int currentLegends   = deckCardRepository.countLegendsByDeck(deck);
+            int legendsAfterSwap = currentLegends
+                    - (target.getCard().getType() == CardType.LEGEND ? 1 : 0);
+            if (legendsAfterSwap >= MAX_LEGENDS)
+                throw new IllegalArgumentException(
+                        "La baraja ya tiene " + MAX_LEGENDS + " cartas Legend");
+        }
+
+        // Todo correcto: actualizar la carta en el mismo registro (sin borrar/crear)
+        target.setCard(newCard);
+        return deckCardRepository.save(target);
     }
 
     @Transactional

@@ -18,6 +18,10 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final PersonRepository       personRepository;
 
+    /** Tipos de notificación que se gestionan de forma dinámica y no deben aparecer en la lista. */
+    private static final List<String> EXCLUDED_TYPES =
+            List.of("GAME_INVITE", "GAME_INVITE_ACCEPTED", "GAME_INVITE_REJECTED");
+
     /** Crea y persiste una notificación. */
     public Notification create(Person recipient, Person actor, String type, String message) {
         Notification n = new Notification();
@@ -30,17 +34,23 @@ public class NotificationService {
         return notificationRepository.save(n);
     }
 
-    /** Devuelve todas las notificaciones del usuario (más reciente primero). */
+    /** Devuelve todas las notificaciones del usuario (más reciente primero), excluyendo las de partida. */
     public List<NotificationResponse> getForUser(Long personId) {
         Person person = findOrThrow(personId);
         return notificationRepository.findByRecipientOrderByCreatedAtDesc(person)
-                .stream().map(NotificationResponse::from).toList();
+                .stream()
+                .filter(n -> !EXCLUDED_TYPES.contains(n.getType()))
+                .map(NotificationResponse::from)
+                .toList();
     }
 
-    /** Cuenta las notificaciones no leídas del usuario. */
+    /** Cuenta las notificaciones no leídas del usuario, excluyendo las de partida. */
     public long countUnread(Long personId) {
         Person person = findOrThrow(personId);
-        return notificationRepository.countByRecipientAndReadFalse(person);
+        return notificationRepository.findByRecipientOrderByCreatedAtDesc(person)
+                .stream()
+                .filter(n -> !EXCLUDED_TYPES.contains(n.getType()) && !n.isRead())
+                .count();
     }
 
     /** Marca todas las notificaciones del usuario como leídas. */

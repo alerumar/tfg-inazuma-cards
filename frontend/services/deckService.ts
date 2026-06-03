@@ -63,6 +63,28 @@ export async function apiAddCardToDeck(
   return res.json();
 }
 
+/**
+ * Intercambia la carta deckCardId por newCardId en una sola llamada atómica.
+ * Si la nueva carta viola alguna regla, la baraja queda intacta.
+ */
+export async function apiSwapCardInDeck(
+  personId: number,
+  deckId: number,
+  deckCardId: number,
+  newCardId: number,
+): Promise<DeckCardEntry> {
+  const res = await fetch(
+    `${BASE_URL}/api/persons/${personId}/decks/${deckId}/cards/${deckCardId}/swap`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newCardId }),
+    },
+  );
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function apiRemoveCardFromDeck(
   personId: number,
   deckId: number,

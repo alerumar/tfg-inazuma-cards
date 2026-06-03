@@ -40,7 +40,7 @@ function formatMinutes(minutes: number): string {
 // ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, dailyRewardAvailable } = useAuth();
   const { dialogCfg, showAlert, showConfirm } = useDialog();
 
   const [status,        setStatus]        = useState<PackStatus | null>(null);
@@ -261,7 +261,7 @@ export default function HomeScreen() {
                 {status.accumulatedPacks === 0 && (
                   <>
                     <View style={styles.statusRow}>
-                      <Ionicons name="flash" size={14} color="#F59E0B" />
+                      <Ionicons name="hourglass-outline" size={14} color="#F59E0B" />
                       <Text style={styles.statusPointsText}>
                         Coste ahora:{' '}
                         <Text style={styles.statusPointsBold}>{localCost} pts</Text>
@@ -269,7 +269,7 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                     <View style={styles.statusRow}>
-                      <Ionicons name="star" size={14} color={status.packPoints >= localCost ? '#22C55E' : '#EF4444'} />
+                      <Ionicons name="hourglass-outline" size={14} color={status.packPoints >= localCost ? '#22C55E' : '#EF4444'} />
                       <Text style={styles.statusPointsText}>
                         Tus puntos:{' '}
                         <Text style={[
@@ -298,6 +298,7 @@ export default function HomeScreen() {
             <Text style={styles.shopLabel}>Tienda</Text>
           </View>
           <Image source={SHOP_IMG} style={styles.shopImage} resizeMode="contain" />
+          {dailyRewardAvailable && <View style={styles.shopDot} />}
         </Pressable>
 
       </ScrollView>
@@ -383,4 +384,14 @@ const styles = StyleSheet.create({
   },
   shopLabel: { fontSize: 18, fontWeight: '700', color: Colors.textDark },
   shopImage: { width: '60%', height: '100%' },
+
+  // Badge de regalo diario
+  shopDot: {
+    position: 'absolute',
+    top: 12, right: 12,
+    width: 14, height: 14,
+    borderRadius: 7,
+    backgroundColor: '#EF4444',
+    borderWidth: 2, borderColor: '#FFFFFF',
+  },
 });

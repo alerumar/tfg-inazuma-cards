@@ -64,12 +64,13 @@ export default function NotificationsScreen() {
     if (!user) return;
     setLoading(true);
     // Cargar notificaciones y marcar todas como leídas en paralelo
+    const EXCLUDED = ['GAME_INVITE', 'GAME_INVITE_ACCEPTED', 'GAME_INVITE_REJECTED'];
     Promise.all([
       apiGetNotifications(user.id),
       apiMarkAllRead(user.id),
     ])
       .then(([data]) => {
-        setNotifications(data);
+        setNotifications(data.filter(n => !EXCLUDED.includes(n.type)));
         setUnreadNotifications(0); // actualizar badge inmediatamente
       })
       .catch(console.warn)

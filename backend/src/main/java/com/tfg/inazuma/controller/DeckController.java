@@ -78,6 +78,23 @@ public class DeckController {
         }
     }
 
+    /** Intercambia una carta del slot por otra en una sola transacción atómica. */
+    @PatchMapping("/{deckId}/cards/{deckCardId}/swap")
+    public ResponseEntity<?> swapCard(@PathVariable Long personId,
+                                      @PathVariable Long deckId,
+                                      @PathVariable Long deckCardId,
+                                      @RequestBody Map<String, Long> body) {
+        try {
+            Long newCardId = body.get("newCardId");
+            if (newCardId == null)
+                return ResponseEntity.badRequest().body("newCardId es obligatorio");
+            var dc = deckService.swapCard(personId, deckId, deckCardId, newCardId);
+            return ResponseEntity.ok(DeckCardResponse.from(dc));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @DeleteMapping("/{deckId}/cards/{deckCardId}")
     public ResponseEntity<?> removeCard(@PathVariable Long personId,
                                         @PathVariable Long deckId,

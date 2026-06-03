@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/persons/{personId}/friendships")
 @RequiredArgsConstructor
@@ -63,8 +61,7 @@ public class FriendshipController {
 
     @GetMapping
     public List<FriendshipResponse> getFriends(@PathVariable Long personId) {
-        return friendshipService.getFriends(personId).stream()
-                .map(FriendshipResponse::from).toList();
+        return friendshipService.getFriends(personId);
     }
 
     @GetMapping("/pending/received")

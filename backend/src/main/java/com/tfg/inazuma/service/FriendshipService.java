@@ -1,12 +1,11 @@
 package com.tfg.inazuma.service;
 
+import com.tfg.inazuma.dto.FriendshipResponse;
 import com.tfg.inazuma.dto.PersonSearchResult;
 import com.tfg.inazuma.dto.PersonResponse;
-import com.tfg.inazuma.model.Friendship;
-import com.tfg.inazuma.model.FriendshipStatus;
-import com.tfg.inazuma.model.MissionType;
-import com.tfg.inazuma.model.Person;
+import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.FriendshipRepository;
+import com.tfg.inazuma.repository.MatchRepository;
 import com.tfg.inazuma.repository.PersonRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +20,7 @@ public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
     private final PersonRepository     personRepository;
+    private final MatchRepository      matchRepository;
     private final MissionService       missionService;
     private final NotificationService  notificationService;
 
@@ -89,9 +89,29 @@ public class FriendshipService {
         friendshipRepository.delete(friendship);
     }
 
-    public List<Friendship> getFriends(Long personId) {
+    /**
+     * Devuelve los amigos aceptados con el flag {@code inActiveMatch} a true
+     * cuando el amigo tiene una partida activa (PENDING_INVITE / WAITING_READY / IN_PROGRESS).
+     * Esto permite al cliente mostrar "En partida" sin tener que hacer una segunda llamada.
+     */
+    public List<FriendshipResponse> getFriends(Long personId) {
         Person person = findPersonOrThrow(personId);
-        return friendshipRepository.findByPersonAndStatus(person, FriendshipStatus.ACCEPTED);
+        return friendshipRepository.findByPersonAndStatus(person, FriendshipStatus.ACCEPTED)
+                .stream()
+                .map(f -> {
+                    Person friend = f.getRequester().getId().equals(personId)
+                            ? f.getReceiver()
+                            : f.getRequester();
+                    boolean friendInMatch = !matchRepository.findActiveForPerson(friend).isEmpty();
+                    PersonResponse requesterDto = f.getRequester().getId().equals(personId)
+                            ? PersonResponse.from(f.getRequester())           // yo (sin partida activa del amigo)
+                            : PersonResponse.from(f.getRequester(), 0, 0, friendInMatch);
+                    PersonResponse receiverDto  = f.getReceiver().getId().equals(personId)
+                            ? PersonResponse.from(f.getReceiver())
+                            : PersonResponse.from(f.getReceiver(), 0, 0, friendInMatch);
+                    return new FriendshipResponse(f.getId(), requesterDto, receiverDto, f.getStatus());
+                })
+                .toList();
     }
 
     public List<Friendship> getPendingReceived(Long personId) {

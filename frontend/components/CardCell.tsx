@@ -71,6 +71,7 @@ export function CardCell({
         <>
           {/* Imagen — ocupa casi toda la celda */}
           <Image
+            key={card.imageUrl}
             source={{ uri: `${BASE_URL}${card.imageUrl}` }}
             style={{ width, height: height - 4 }}
             resizeMode="contain"

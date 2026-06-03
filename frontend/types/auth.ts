@@ -16,6 +16,8 @@ export interface PersonResponse {
   cardCount: number;
   friendCount: number;
   online: boolean;
+  /** true si el jugador tiene una partida activa (PENDING_INVITE / WAITING_READY / IN_PROGRESS). */
+  inActiveMatch: boolean;
 }
 
 export interface LoginRequest {

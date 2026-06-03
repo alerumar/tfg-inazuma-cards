@@ -29,7 +29,7 @@ function TabIcon({
 }
 
 export default function TabsLayout() {
-  const { showFriendRequestBadge, pendingTrades } = useAuth();
+  const { showFriendRequestBadge, pendingTrades, pendingGameInvites, dailyRewardAvailable } = useAuth();
 
   return (
     <Tabs
@@ -54,7 +54,7 @@ export default function TabsLayout() {
         name="index"
         options={{
           tabBarIcon: ({ color, size, focused }) =>
-            <TabIcon name="home-outline" color={color} size={size} focused={focused} />,
+            <TabIcon name="home-outline" color={color} size={size} focused={focused} hasDot={dailyRewardAvailable} />,
         }}
       />
       <Tabs.Screen
@@ -75,7 +75,7 @@ export default function TabsLayout() {
         name="matches"
         options={{
           tabBarIcon: ({ color, size, focused }) =>
-            <TabIcon name="swap-horizontal-outline" color={color} size={size} focused={focused} hasDot={pendingTrades > 0} />,
+            <TabIcon name="swap-horizontal-outline" color={color} size={size} focused={focused} hasDot={pendingTrades > 0 || pendingGameInvites > 0} />,
         }}
       />
     </Tabs>

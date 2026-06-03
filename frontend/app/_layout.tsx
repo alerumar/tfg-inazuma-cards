@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { Colors } from '../constants/colors';
+import GameBanner from '../components/GameBanner';
 
 export default function RootLayout() {
   return (
@@ -31,7 +32,12 @@ function RootStack() {
         <Stack.Screen name="trades"           options={{ headerShown: false }} />
         <Stack.Screen name="trade/new"        options={{ headerShown: false }} />
         <Stack.Screen name="trade/[id]/respond" options={{ headerShown: false }} />
+        <Stack.Screen name="game"             options={{ headerShown: false }} />
+        <Stack.Screen name="game/[id]"        options={{ headerShown: false }} />
       </Stack>
+
+      {/* Banner global de invitaciones a partida */}
+      <GameBanner />
 
       {/* Modal de subida de nivel — aparece sobre cualquier pantalla */}
       <Modal

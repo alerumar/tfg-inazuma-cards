@@ -4,8 +4,26 @@ import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const HEADERS = { 'Content-Type': 'application/json' };
 
+/** fetch con timeout — evita que en Android la petición cuelgue sin error visible. */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = 8000,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (e: any) {
+    if (e?.name === 'AbortError') throw new Error('No se pudo conectar con el servidor. Comprueba tu conexión.');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function apiLogin(data: LoginRequest): Promise<PersonResponse> {
-  const res = await fetch(`${BASE_URL}/api/persons/login`, {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/persons/login`, {
     method: 'POST',
     headers: HEADERS,
     body: JSON.stringify(data),
@@ -20,7 +38,7 @@ export async function apiLogin(data: LoginRequest): Promise<PersonResponse> {
 }
 
 export async function apiRegister(data: RegisterRequest): Promise<PersonResponse> {
-  const res = await fetch(`${BASE_URL}/api/persons/register`, {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/persons/register`, {
     method: 'POST',
     headers: HEADERS,
     body: JSON.stringify(data),

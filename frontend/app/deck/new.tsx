@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -97,13 +97,8 @@ export default function NewDeckScreen() {
       return;
     }
     const alreadySelected = selectedCountMap.get(card.id) ?? 0;
-    const entry = collection.find(e => e.card.id === card.id);
-    const owned = entry?.quantity ?? 0;
-    if (alreadySelected >= owned) {
-      showAlert(
-        'Sin copias disponibles',
-        `Solo tienes ${owned} copia${owned !== 1 ? 's' : ''} de "${card.name}" y ya las has usado todas.`,
-      );
+    if (alreadySelected >= 1) {
+      showAlert('Carta duplicada', `"${card.name}" ya está en la baraja.`);
       return;
     }
     setSelected(prev => [...prev, card]);
@@ -243,34 +238,37 @@ export default function NewDeckScreen() {
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       ) : (
-        <FlatList
-          data={filteredCards}
-          keyExtractor={item => String(item.card.id)}
-          numColumns={PICK_COLS}
+        <ScrollView
           contentContainerStyle={styles.grid}
-          columnWrapperStyle={styles.row}
-          ListEmptyComponent={
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filteredCards.length === 0 ? (
             <View style={styles.emptyPicker}>
               <Text style={styles.emptyPickerText}>No tienes cartas de esta posición</Text>
             </View>
-          }
-          renderItem={({ item }) => {
-            const usedCopies   = selectedCountMap.get(item.card.id) ?? 0;
-            const available    = item.quantity - usedCopies;
-            const noMoreCopies = available <= 0;
-            return (
-              <CardCell
-                card={item.card}
-                owned={item.owned}
-                quantity={available}
-                alwaysShowQuantity
-                width={PICK_W}
-                disabled={isFull || noMoreCopies}
-                onPress={() => handleSelect(item.card)}
-              />
-            );
-          }}
-        />
+          ) : (
+            <View style={styles.gridInner}>
+              {filteredCards.map(item => {
+                const usedCopies   = selectedCountMap.get(item.card.id) ?? 0;
+                const noMoreCopies = usedCopies >= 1;
+                const available    = noMoreCopies ? 0 : item.quantity;
+                return (
+                  <CardCell
+                    key={String(item.card.id)}
+                    card={item.card}
+                    owned={item.owned}
+                    quantity={available}
+                    alwaysShowQuantity
+                    width={PICK_W}
+                    disabled={isFull || noMoreCopies}
+                    onPress={() => handleSelect(item.card)}
+                  />
+                );
+              })}
+            </View>
+          )}
+        </ScrollView>
       )}
       <AppDialog {...dialogCfg} />
     </SafeAreaView>
@@ -334,8 +332,8 @@ const styles = StyleSheet.create({
   filterChipText:       { fontSize: 12, fontWeight: '700', color: Colors.textMid },
   filterChipTextActive: { color: '#fff' },
 
-  grid: { paddingHorizontal: H_PAD, paddingBottom: 24, paddingTop: 4 },
-  row:  { gap: PICK_GAP, marginBottom: PICK_GAP },
+  grid:      { paddingHorizontal: H_PAD, paddingBottom: 24, paddingTop: 4 },
+  gridInner: { flexDirection: 'row', flexWrap: 'wrap', gap: PICK_GAP },
 
   emptyPicker:     { padding: 32, alignItems: 'center' },
   emptyPickerText: { fontSize: 14, color: Colors.textLight, textAlign: 'center' },
