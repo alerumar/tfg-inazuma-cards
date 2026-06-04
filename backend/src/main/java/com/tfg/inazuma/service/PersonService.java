@@ -7,12 +7,11 @@ import com.tfg.inazuma.dto.RegisterRequest;
 import com.tfg.inazuma.dto.UpdatePersonRequest;
 import com.tfg.inazuma.model.FriendshipStatus;
 import com.tfg.inazuma.model.Person;
-import com.tfg.inazuma.repository.FriendshipRepository;
-import com.tfg.inazuma.repository.PersonCardRepository;
-import com.tfg.inazuma.repository.PersonRepository;
+import com.tfg.inazuma.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -28,6 +27,14 @@ public class PersonService {
     private final PersonRepository        personRepository;
     private final PersonCardRepository    personCardRepository;
     private final FriendshipRepository    friendshipRepository;
+    private final NotificationRepository  notificationRepository;
+    private final TradeRepository         tradeRepository;
+    private final PersonMissionRepository personMissionRepository;
+    private final DeckCardRepository      deckCardRepository;
+    private final DeckRepository          deckRepository;
+    private final MatchTurnRepository     matchTurnRepository;
+    private final MatchRoundRepository    matchRoundRepository;
+    private final MatchRepository         matchRepository;
     private final MissionService          missionService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -133,8 +140,31 @@ public class PersonService {
         personRepository.save(person);
     }
 
+    @Transactional
     public boolean delete(Long id) {
         if (!personRepository.existsById(id)) return false;
+
+        // Orden estricto: hijos antes que padres para no violar FKs
+        // 1. MatchTurn → MatchRound → Match (árbol más profundo)
+        matchTurnRepository.deleteByMatchPlayer(id);
+        matchRoundRepository.deleteByMatchPlayer(id);
+        matchRepository.nullifyWinner(id);
+        matchRepository.deleteByPlayer(id);
+
+        // 2. Notificaciones, intercambios y amistades
+        notificationRepository.deleteByPersonId(id);
+        tradeRepository.deleteByPersonId(id);
+        friendshipRepository.deleteByPersonId(id);
+
+        // 3. Misiones
+        personMissionRepository.deleteByPersonId(id);
+
+        // 4. Cartas de barajas → barajas → colección de cartas
+        deckCardRepository.deleteByDeckPersonId(id);
+        deckRepository.deleteByPersonId(id);
+        personCardRepository.deleteByPersonId(id);
+
+        // 5. Finalmente la persona
         personRepository.deleteById(id);
         return true;
     }

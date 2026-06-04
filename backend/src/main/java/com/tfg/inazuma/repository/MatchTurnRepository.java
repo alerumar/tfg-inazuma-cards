@@ -5,6 +5,7 @@ import com.tfg.inazuma.model.MatchRound;
 import com.tfg.inazuma.model.MatchTurn;
 import com.tfg.inazuma.model.TurnResult;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -30,4 +31,9 @@ public interface MatchTurnRepository extends JpaRepository<MatchTurn, Long> {
     /** Turnos pendientes cuyo createdAt supere el timeout — para el scheduler. */
     @Query("SELECT t FROM MatchTurn t WHERE t.round.match.status = 'IN_PROGRESS' AND t.result = 'PENDING'")
     List<MatchTurn> findAllPendingInProgressTurns();
+
+    /** Borra todos los turnos de partidas en las que participa el jugador — para borrar cuenta. */
+    @Modifying
+    @Query("DELETE FROM MatchTurn t WHERE t.round.match.player1.id = :personId OR t.round.match.player2.id = :personId")
+    void deleteByMatchPlayer(@Param("personId") Long personId);
 }

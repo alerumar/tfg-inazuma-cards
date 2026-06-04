@@ -4,6 +4,7 @@ import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.Person;
 import com.tfg.inazuma.model.PersonCard;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,4 +23,9 @@ public interface PersonCardRepository extends JpaRepository<PersonCard, Long> {
     Integer sumQuantityByPerson(@Param("person") Person person);
 
     boolean existsByPersonAndCard(Person person, Card card);
+
+    /** Borra todas las cartas del usuario — para borrar cuenta. */
+    @Modifying
+    @Query("DELETE FROM PersonCard pc WHERE pc.person.id = :personId")
+    void deleteByPersonId(@Param("personId") Long personId);
 }

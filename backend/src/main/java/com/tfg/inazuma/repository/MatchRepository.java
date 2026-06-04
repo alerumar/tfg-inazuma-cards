@@ -43,4 +43,14 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     @Modifying
     @Query("UPDATE Match m SET m.deck2 = null WHERE m.deck2.id = :deckId")
     void clearDeck2References(@Param("deckId") Long deckId);
+
+    /** Pone winner a null donde el ganador era el jugador que se va a borrar. */
+    @Modifying
+    @Query("UPDATE Match m SET m.winner = null WHERE m.winner.id = :personId")
+    void nullifyWinner(@Param("personId") Long personId);
+
+    /** Borra todas las partidas en las que participa el jugador — para borrar cuenta. */
+    @Modifying
+    @Query("DELETE FROM Match m WHERE m.player1.id = :personId OR m.player2.id = :personId")
+    void deleteByPlayer(@Param("personId") Long personId);
 }
