@@ -9,7 +9,6 @@ import com.tfg.inazuma.model.FriendshipStatus;
 import com.tfg.inazuma.model.Person;
 import com.tfg.inazuma.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +36,6 @@ public class PersonService {
     private final MatchRepository         matchRepository;
     private final MissionService          missionService;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final Random random = new Random();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
@@ -63,7 +61,7 @@ public class PersonService {
         person.setSurname(req.surname());
         person.setNickname(req.nickname());
         person.setEmail(req.email());
-        person.setPasswordHash(passwordEncoder.encode(req.password()));
+        person.setPassword(req.password());
         // El usuario empieza con los 3 sobres gratuitos ya disponibles.
         // lastPackDate queda null; el timer arrancará cuando abra el primer sobre.
         person.setAccumulatedPacks(3);
@@ -85,7 +83,7 @@ public class PersonService {
 
     public Optional<Person> login(LoginRequest req) {
         return personRepository.findByNickname(req.nickname())
-                .filter(p -> passwordEncoder.matches(req.password(), p.getPasswordHash()))
+                .filter(p -> p.getPassword().equals(req.password()))
                 .map(p -> {
                     p.setLastSeen(java.time.LocalDateTime.now());
                     return personRepository.save(p);
@@ -132,11 +130,11 @@ public class PersonService {
     public void changePassword(Long id, ChangePasswordRequest req) {
         Person person = personRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        if (!passwordEncoder.matches(req.currentPassword(), person.getPasswordHash()))
+        if (!person.getPassword().equals(req.currentPassword()))
             throw new IllegalArgumentException("La contraseña actual no es correcta");
         if (req.newPassword().length() < 6)
             throw new IllegalArgumentException("La nueva contraseña debe tener al menos 6 caracteres");
-        person.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        person.setPassword(req.newPassword());
         personRepository.save(person);
     }
 

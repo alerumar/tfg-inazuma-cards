@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -33,8 +32,7 @@ public class PersonSeeder implements CommandLineRunner {
     private final MissionRepository       missionRepository;
     private final PersonMissionRepository personMissionRepository;
 
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    private final Random                random  = new Random();
+    private final Random random = new Random();
 
     @Override
     public void run(String... args) {
@@ -154,7 +152,7 @@ public class PersonSeeder implements CommandLineRunner {
         p.setSurname(surname);
         p.setNickname(nickname);
         p.setEmail(email);
-        p.setPasswordHash(encoder.encode(rawPassword));
+        p.setPassword(rawPassword);
         p.setProfilePhoto(DEFAULT_PHOTO);
         p.setLevel(level);
         p.setExperience(experience);

@@ -39,7 +39,7 @@ public class Person {
 
     @NotBlank
     @Column(nullable = false)
-    private String passwordHash;
+    private String password;
 
     private String profilePhoto;
 
