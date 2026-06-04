@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   apiChangePassword,
   apiDeletePerson,
+  apiGetPerson,
   apiUpdatePerson,
   apiUploadPhoto,
 } from '../services/authService';
@@ -30,6 +31,15 @@ import {
 export default function ProfileScreen() {
   const router                        = useRouter();
   const { user, updateUser, logout }  = useAuth();
+
+  // Refresca los datos del usuario (friendCount, cardCount…) cada vez que se abre el perfil.
+  useFocusEffect(useCallback(() => {
+    if (user?.id) {
+      apiGetPerson(user.id).then(updateUser).catch(() => {});
+    }
+  // user.id y updateUser son estables — no necesitan recrear el efecto
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []));
 
   const { dialogCfg, showAlert, showConfirm } = useDialog();
   const [uploading,    setUploading]    = useState(false);

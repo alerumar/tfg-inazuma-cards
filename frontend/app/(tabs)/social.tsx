@@ -29,6 +29,7 @@ import {
   apiSearchPersons,
   apiSendFriendRequest,
 } from '../../services/friendshipService';
+import { apiGetPerson } from '../../services/authService';
 import { FriendshipData, PersonSearchResult, RelationshipStatus } from '../../types/friendship';
 import { PersonResponse } from '../../types/auth';
 
@@ -78,6 +79,7 @@ export default function SocialScreen() {
 // ── Pestaña: Amigos (RF-14, RF-15) ───────────────────────────────────────────
 function FriendsTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert, showConfirm } = useDialog();
+  const { updateUser } = useAuth();
   const [friends,    setFriends]    = useState<FriendshipData[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -106,6 +108,8 @@ function FriendsTab({ user }: { user: PersonResponse }) {
         try {
           await apiRemoveFriend(user.id, f.id);
           setFriends(prev => prev.filter(fr => fr.id !== f.id));
+          // Refrescar user en contexto para que friendCount del perfil se actualice
+          apiGetPerson(user.id).then(updateUser).catch(() => {});
         } catch (e) {
           showAlert('Error', e instanceof Error ? e.message : 'Error al eliminar amigo');
         } finally {
@@ -210,7 +214,7 @@ function RequestsTab({ user, hasPendingRequests }: {
 // ── Sub-pestaña: Solicitudes recibidas (RF-16, RF-17) ────────────────────────
 function ReceivedTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert } = useDialog();
-  const { dismissFriendRequests } = useAuth();
+  const { dismissFriendRequests, updateUser } = useAuth();
   const [requests,   setRequests]   = useState<FriendshipData[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -239,6 +243,8 @@ function ReceivedTab({ user }: { user: PersonResponse }) {
     try {
       await apiAcceptFriendRequest(user.id, f.id);
       setRequests(prev => prev.filter(r => r.id !== f.id));
+      // Refrescar user en contexto para que friendCount del perfil se actualice
+      apiGetPerson(user.id).then(updateUser).catch(() => {});
     } catch (e) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al aceptar solicitud');
     } finally {
