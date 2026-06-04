@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { BASE_URL } from '../constants/api';
 import { Colors } from '../constants/colors';
-import { CardData } from '../types/collection';
 
 export const CARD_ASPECT = 1.5;
 
@@ -21,8 +20,22 @@ const ATQ_COLOR = '#E53935';
 const CTL_COLOR = '#1565C0';
 const DEF_COLOR = '#2E7D32';
 
+/**
+ * Subconjunto mínimo de campos que CardCell necesita.
+ * Compatible con CardData (colección) y CardStateDto (partida).
+ */
+export interface CardLike {
+  name: string;
+  imageUrl: string | null;
+  type: 'NORMAL' | 'LEGEND';
+  rating: number;
+  attack: number;
+  control: number;
+  defense: number;
+}
+
 interface CardCellProps {
-  card: CardData;
+  card: CardLike;
   owned?: boolean;
   cardNumber?: number;
   quantity?: number;

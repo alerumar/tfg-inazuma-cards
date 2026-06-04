@@ -1287,7 +1287,7 @@ export default function GameScreen() {
               <View style={styles.noDeckWrap}>
                 <Ionicons name="albums-outline" size={40} color={Colors.textLight} />
                 <Text style={styles.noDeckText}>
-                  No tienes barajas con 5 cartas.{'\n'}Créa una desde el botón de arriba.
+                  No tienes barajas.{'\n'}Créa una desde el botón de arriba.
                 </Text>
               </View>
             ) : (
