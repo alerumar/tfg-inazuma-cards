@@ -17,11 +17,12 @@ public class DeckService {
     private static final int MAX_CARDS     = 5;
     private static final int MAX_LEGENDS   = 2;
 
-    private final DeckRepository     deckRepository;
-    private final DeckCardRepository deckCardRepository;
-    private final PersonRepository   personRepository;
-    private final CardRepository     cardRepository;
+    private final DeckRepository      deckRepository;
+    private final DeckCardRepository  deckCardRepository;
+    private final PersonRepository    personRepository;
+    private final CardRepository      cardRepository;
     private final PersonCardRepository personCardRepository;
+    private final MatchRepository     matchRepository;
 
     public List<Deck> getDecks(Long personId) {
         return deckRepository.findByPerson(findPersonOrThrow(personId));
@@ -146,6 +147,9 @@ public class DeckService {
     public void deleteDeck(Long personId, Long deckId) {
         Deck deck = findDeckOrThrow(deckId);
         validateOwner(deck, personId);
+        // Quitar referencias en partidas históricas antes de borrar (evita FK constraint)
+        matchRepository.clearDeck1References(deckId);
+        matchRepository.clearDeck2References(deckId);
         deckCardRepository.deleteByDeck(deck);
         deckRepository.delete(deck);
     }

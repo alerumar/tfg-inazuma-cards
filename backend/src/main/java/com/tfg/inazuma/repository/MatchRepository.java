@@ -4,6 +4,7 @@ import com.tfg.inazuma.model.Match;
 import com.tfg.inazuma.model.MatchStatus;
 import com.tfg.inazuma.model.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -32,4 +33,14 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     /** Todas las partidas en un estado concreto — usado por el scheduler. */
     List<Match> findAllByStatus(MatchStatus status);
+
+    /** Pone a null deck1 en todas las partidas que lo referencien — necesario antes de borrar un Deck. */
+    @Modifying
+    @Query("UPDATE Match m SET m.deck1 = null WHERE m.deck1.id = :deckId")
+    void clearDeck1References(@Param("deckId") Long deckId);
+
+    /** Pone a null deck2 en todas las partidas que lo referencien — necesario antes de borrar un Deck. */
+    @Modifying
+    @Query("UPDATE Match m SET m.deck2 = null WHERE m.deck2.id = :deckId")
+    void clearDeck2References(@Param("deckId") Long deckId);
 }
