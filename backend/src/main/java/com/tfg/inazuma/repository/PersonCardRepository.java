@@ -22,6 +22,9 @@ public interface PersonCardRepository extends JpaRepository<PersonCard, Long> {
     @Query("SELECT SUM(pc.quantity) FROM PersonCard pc WHERE pc.person = :person")
     Integer sumQuantityByPerson(@Param("person") Person person);
 
+    /** Número de cartas distintas que posee el usuario (independientemente de las copias). */
+    long countByPerson(Person person);
+
     boolean existsByPersonAndCard(Person person, Card card);
 
     /** Borra todas las cartas del usuario — para borrar cuenta. */

@@ -105,10 +105,10 @@ public class FriendshipService {
                     boolean friendInMatch = !matchRepository.findActiveForPerson(friend).isEmpty();
                     PersonResponse requesterDto = f.getRequester().getId().equals(personId)
                             ? PersonResponse.from(f.getRequester())           // yo (sin partida activa del amigo)
-                            : PersonResponse.from(f.getRequester(), 0, 0, friendInMatch);
+                            : PersonResponse.from(f.getRequester(), 0, 0, 0, friendInMatch);
                     PersonResponse receiverDto  = f.getReceiver().getId().equals(personId)
                             ? PersonResponse.from(f.getReceiver())
-                            : PersonResponse.from(f.getReceiver(), 0, 0, friendInMatch);
+                            : PersonResponse.from(f.getReceiver(), 0, 0, 0, friendInMatch);
                     return new FriendshipResponse(f.getId(), requesterDto, receiverDto, f.getStatus());
                 })
                 .toList();

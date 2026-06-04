@@ -14,6 +14,7 @@ export interface PersonResponse {
   lastPackDate: string | null;
   lastDailyReward: string | null;
   cardCount: number;
+  totalCardCount: number;
   friendCount: number;
   online: boolean;
   /** true si el jugador tiene una partida activa (PENDING_INVITE / WAITING_READY / IN_PROGRESS). */

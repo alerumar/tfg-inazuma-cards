@@ -35,16 +35,18 @@ public class PersonService {
     private final MatchRoundRepository    matchRoundRepository;
     private final MatchRepository         matchRepository;
     private final MissionService          missionService;
+    private final CardRepository          cardRepository;
 
     private final Random random = new Random();
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    /** Construye un PersonResponse calculando cardCount y friendCount */
+    /** Construye un PersonResponse calculando cardCount, totalCardCount y friendCount */
     public PersonResponse toResponse(Person p) {
-        int cardCount   = Optional.ofNullable(personCardRepository.sumQuantityByPerson(p)).orElse(0);
-        int friendCount = (int) friendshipRepository.countByPersonAndStatus(p, FriendshipStatus.ACCEPTED);
-        return PersonResponse.from(p, cardCount, friendCount);
+        int  cardCount      = (int) personCardRepository.countByPerson(p);
+        int  totalCardCount = (int) cardRepository.count();
+        int  friendCount    = (int) friendshipRepository.countByPersonAndStatus(p, FriendshipStatus.ACCEPTED);
+        return PersonResponse.from(p, cardCount, totalCardCount, friendCount);
     }
 
     // ── CRUD ───────────────────────────────────────────────────────────────────

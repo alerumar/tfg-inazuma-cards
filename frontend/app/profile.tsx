@@ -150,7 +150,7 @@ export default function ProfileScreen() {
           <StatBox icon="hourglass-outline" label="Sobres"   value={user.packPoints.toString()} />
         </View>
         <View style={styles.statsGrid}>
-          <StatBox icon="albums-outline"  label="Cartas"  value={user.cardCount.toString()} />
+          <StatBox icon="albums-outline"  label="Cartas"  value={`${user.cardCount}/${user.totalCardCount}`} />
           <StatBox icon="people-outline"  label="Amigos"  value={user.friendCount.toString()} />
         </View>
 
