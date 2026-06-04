@@ -1700,8 +1700,10 @@ export default function GameScreen() {
           </View>
         )}
 
-        {/* Golpe de gracia — último enfrentamiento (estático) */}
-        {isFinished && lastTurn && (() => {
+        {/* Golpe de gracia — último enfrentamiento (estático).
+            Se omite si la partida acabó por abandono (voluntario o desconexión):
+            en ese caso no fue la última jugada sino la actitud del rival lo que decidió. */}
+        {isFinished && lastTurn && !state.wonByAbandon && (() => {
           const myCardName = isP1 ? lastTurn.player1CardName  : lastTurn.player2CardName;
           const myAttr     = isP1 ? lastTurn.player1Attribute : lastTurn.player2Attribute;
           const myVal      = isP1 ? lastTurn.player1Value      : lastTurn.player2Value;
