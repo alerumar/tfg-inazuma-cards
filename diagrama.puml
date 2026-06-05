@@ -1,0 +1,226 @@
+@startuml
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classBorderColor #333333
+skinparam classBackgroundColor #FAFAFA
+skinparam arrowColor #555555
+hide empty methods
+
+enum CardType {
+    NORMAL
+    LEGEND
+}
+
+enum CardPackage {
+    INAZUMA_ELEVEN
+    INAZUMA_ELEVEN_GO
+}
+
+enum CardPosition {
+    POR
+    DF
+    MC
+    DC
+}
+
+enum CardAttribute {
+    ATTACK
+    CONTROL
+    DEFENSE
+}
+
+enum MissionType {
+    WIN_MATCHES
+    PLAY_MATCHES
+    COLLECT_CARDS
+    COLLECT_LEGENDS
+    OPEN_PACKS
+    ADD_FRIENDS
+    COMPLETE_TRADES
+    REACH_LEVEL
+}
+
+enum FriendshipStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+}
+
+enum TradeStatus {
+    PENDING_RESPONSE
+    PENDING_CONFIRMATION
+    COMPLETED
+    REJECTED_BY_RECEIVER
+    REJECTED_BY_INITIATOR
+}
+
+enum MatchStatus {
+    PENDING_INVITE
+    WAITING_READY
+    IN_PROGRESS
+    FINISHED
+    CANCELLED
+    REJECTED
+}
+
+enum TurnResult {
+    PENDING
+    PLAYER1_WINS
+    PLAYER2_WINS
+    TIE
+}
+
+class Person {
+    +Long id
+    +String playerId
+    +String name
+    +String surname
+    +String nickname
+    +String email
+    +String password
+    +String profilePhoto
+    +int level
+    +int experience
+    +int totalExperience
+    +int packPoints
+    +int accumulatedPacks
+    +LocalDateTime lastPackDate
+    +LocalDate lastDailyReward
+    +LocalDateTime lastSeen
+}
+
+class Card {
+    +Long id
+    +String name
+    +String nickname
+    +String team
+    +String collection
+    +CardPackage cardPackage
+    +CardType type
+    +CardPosition position
+    +int attack
+    +int control
+    +int defense
+    +int rating
+    +String imageUrl
+}
+
+class PersonCard {
+    +Long id
+    +int quantity
+}
+
+class Deck {
+    +Long id
+    +String name
+}
+
+class DeckCard {
+    +Long id
+}
+
+class Mission {
+    +Long id
+    +String name
+    +String description
+    +MissionType type
+    +int goal
+    +int rewardExperience
+    +int rewardPoints
+}
+
+class PersonMission {
+    +Long id
+    +int progress
+    +boolean claimed
+}
+
+class Friendship {
+    +Long id
+    +FriendshipStatus status
+}
+
+class Trade {
+    +Long id
+    +TradeStatus status
+    +LocalDateTime date
+}
+
+class Match {
+    +Long id
+    +MatchStatus status
+    +boolean player1Ready
+    +boolean player2Ready
+    +int roundsWonPlayer1
+    +int roundsWonPlayer2
+    +int consecutiveLegendPlayer1
+    +int consecutiveLegendPlayer2
+    +boolean wonByAbandon
+    +boolean player1WantsRematch
+    +boolean player2WantsRematch
+    +Long rematchMatchId
+    +LocalDateTime lastActivityPlayer1
+    +LocalDateTime lastActivityPlayer2
+    +LocalDateTime createdAt
+}
+
+class MatchRound {
+    +Long id
+    +int roundNumber
+    +int turnsWonPlayer1
+    +int turnsWonPlayer2
+    +boolean completed
+}
+
+class MatchTurn {
+    +Long id
+    +int turnNumber
+    +CardAttribute player1Attribute
+    +CardAttribute player2Attribute
+    +LocalDateTime player1SubmittedAt
+    +LocalDateTime player2SubmittedAt
+    +TurnResult result
+    +LocalDateTime createdAt
+}
+
+class Notification {
+    +Long id
+    +String type
+    +String message
+    +boolean read
+    +LocalDateTime createdAt
+}
+
+Person "1" --> "0..*" PersonCard
+Person "1" --> "0..*" Deck
+Person "1" --> "0..*" PersonMission
+Person "1" --> "0..*" Friendship
+Person "1" --> "0..*" Trade
+Person "1" --> "0..*" Match
+Person "1" --> "0..*" Notification
+
+Card "1" --> "0..*" PersonCard
+Card "1" --> "0..*" DeckCard
+Card "1" --> "0..*" Trade
+Card "1" --> "0..*" MatchTurn
+
+Deck "1" --> "0..*" DeckCard
+Deck "1" --> "0..*" Match
+
+Mission "1" --> "0..*" PersonMission
+
+Match "1" --> "1..*" MatchRound
+MatchRound "1" --> "1..*" MatchTurn
+
+Card ..> CardType
+Card ..> CardPackage
+Card ..> CardPosition
+MatchTurn ..> CardAttribute
+MatchTurn ..> TurnResult
+Friendship ..> FriendshipStatus
+Trade ..> TradeStatus
+Match ..> MatchStatus
+Mission ..> MissionType
+
+@enduml
