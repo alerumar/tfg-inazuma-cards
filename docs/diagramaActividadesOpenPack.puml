@@ -1,0 +1,50 @@
+@startuml
+
+start
+
+:El jugador pulsa "Abrir sobre";
+:El sistema calcula los sobres\nacumulados según el tiempo transcurrido;
+
+if (¿Tiene sobres acumulados?) then (Sí)
+  :Se descuenta un sobre acumulado;
+  if (¿Estaba al máximo de sobres?) then (Sí)
+    :Se inicia el contador\npara el siguiente sobre;
+  else (No)
+  endif
+
+else (No)
+  :El sistema calcula el coste\nen puntos según el tiempo restante;
+
+  if (¿Tiene puntos suficientes?) then (Sí)
+  else (No)
+    :Error: no puede abrir el sobre;
+    stop
+  endif
+
+  :Se descuentan los puntos\ny se adelanta el contador;
+
+endif
+
+:Se seleccionan aleatoriamente\n5 cartas del tipo de sobre elegido;
+:Se determina aleatoriamente\nel número de cartas legendarias;
+
+while (¿Quedan cartas por añadir?) is (Sí)
+  if (¿El jugador ya tiene esa carta?) then (Sí)
+    :Se añade como carta repetida;
+  else (No)
+    :Se añade como carta nueva;
+  endif
+endwhile (No)
+
+:Se concede experiencia al jugador;
+
+if (¿Sube de nivel?) then (Sí)
+  :Se otorgan puntos adicionales\ncomo recompensa por subir de nivel;
+else (No)
+endif
+
+:Se actualiza el progreso\nde las misiones correspondientes \ny de la colección de cartas;
+
+stop
+
+@enduml

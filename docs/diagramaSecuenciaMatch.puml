@@ -1,0 +1,93 @@
+@startuml
+
+actor "Jugador A" as JA
+actor "Jugador B" as JB
+participant "Vista" as V
+participant "Controlador" as C
+participant "Modelo" as M
+database "BBDD" as DB
+
+== Creación de la partida ==
+JA -> V: Invitar a amigo
+V -> C: POST /api/matches/invite\n{initiatorId, receiverId}
+C -> M: invitePlayer(initiatorId, receiverId)
+M -> DB: INSERT Match (PENDING_INVITE)
+DB --> M: Match guardado
+M --> C: MatchResponse
+C --> V: 200 OK + matchId
+V --> JA: Esperando respuesta del rival...
+
+== Aceptación de la invitación ==
+JB -> V: Acepta invitación
+V -> C: PATCH /api/matches/{id}/respond-invite\n{receiverId, accept: true}
+C -> M: respondInvite(matchId, receiverId, true)
+M -> DB: UPDATE Match (WAITING_READY)
+DB --> M: OK
+M --> C: MatchResponse
+C --> V: 200 OK
+V --> JA: Pantalla selección de mazo
+V --> JB: Pantalla selección de mazo
+
+== Selección de mazo ==
+JA -> V: Selecciona mazo + Listo
+V -> C: PATCH /api/matches/{id}/ready\n{playerId, deckId}
+C -> M: setReady(matchId, playerId, deckId)
+M -> DB: UPDATE deck1 + player1Ready = true
+
+JB -> V: Selecciona mazo + Listo
+V -> C: PATCH /api/matches/{id}/ready\n{playerId, deckId}
+C -> M: setReady(matchId, playerId, deckId)
+M -> DB: UPDATE deck2 + player2Ready = true
+M -> DB: UPDATE Match (IN_PROGRESS)
+M -> DB: INSERT MatchRound + MatchTurn
+DB --> M: OK
+M --> C: MatchStateResponse
+C --> V: 200 OK + estado inicial
+V --> JA: Pantalla de partida
+V --> JB: Pantalla de partida
+
+== Turno de juego ==
+JA -> V: Selecciona carta y atributo
+V -> C: POST /api/matches/{id}/move\n{playerId, cardId, attribute}
+C -> M: submitMove(matchId, playerId, cardId, attribute)
+M -> DB: UPDATE MatchTurn (jugada Jugador A)
+
+JB -> V: Selecciona carta y atributo
+V -> C: POST /api/matches/{id}/move\n{playerId, cardId, attribute}
+C -> M: submitMove(matchId, playerId, cardId, attribute)
+M -> DB: UPDATE MatchTurn (jugada Jugador B)
+M -> M: resolveTurn(match, round, turn)
+M -> DB: UPDATE MatchRound (puntuación ronda)
+DB --> M: MatchStateResponse actualizado
+M --> C: MatchStateResponse
+C --> V: 200 OK + nuevo estado
+V --> JA: Resultado del turno
+V --> JB: Resultado del turno
+
+== Fin de partida ==
+M -> M: finishMatch(match, winner)
+M -> DB: UPDATE Match (FINISHED) + SET winner
+M -> DB: UPDATE Person\n(XP + packPoints según resultado)
+DB --> M: OK
+M --> C: MatchStateResponse (FINISHED)
+C --> V: 200 OK + resultado final
+V --> JA: Victoria / Derrota + recompensas
+V --> JB: Victoria / Derrota + recompensas
+
+== Revancha (opcional) ==
+JA -> V: Vota revancha
+V -> C: PATCH /api/matches/{id}/rematch-vote\n{playerId, wants: true}
+C -> M: voteRematch(matchId, playerId, true)
+M -> DB: UPDATE player1WantsRematch = true
+
+JB -> V: Vota revancha
+V -> C: PATCH /api/matches/{id}/rematch-vote\n{playerId, wants: true}
+C -> M: voteRematch(matchId, playerId, true)
+M -> DB: INSERT Match nueva (WAITING_READY)\nSET rematchMatchId
+DB --> M: OK
+M --> C: MatchStateResponse + rematchMatchId
+C --> V: 200 OK + nueva partida
+V --> JA: Lobby nueva partida
+V --> JB: Lobby nueva partida
+
+@enduml

@@ -1,0 +1,63 @@
+@startuml
+
+start
+
+:Jugador A invita a un amigo;
+
+if (¿Jugador B acepta?) then (Sí)
+else (No)
+  :Partida cancelada;
+  stop
+endif
+
+:Ambos jugadores seleccionan mazo;
+:Ambos pulsan "Listo";
+:Partida comienza;
+
+repeat
+
+  :Nuevo turno — Timer: 45 segundos;
+
+  fork
+    if (¿Jugador A selecciona en tiempo?) then (Sí)
+      :Jugador A elige carta y atributo;
+    else (Timeout)
+      :Sistema auto-selecciona por Jugador A;
+    endif
+  fork again
+    if (¿Jugador B selecciona en tiempo?) then (Sí)
+      :Jugador B elige carta y atributo;
+    else (Timeout)
+      :Sistema auto-selecciona por Jugador B;
+    endif
+  end fork
+
+  if (¿Algún jugador lleva más de 60s sin conexión?) then (Sí)
+    :Derrota por abandono;
+    stop
+  endif
+
+  :Sistema resuelve el turno\n(compara atributos seleccionados);
+  :Se muestra resultado del turno\ny quién se lleva el punto;
+
+  if (¿Alguien alcanza 2 puntos en la ronda?) then (Sí)
+    :Jugador gana la ronda\nSe actualiza el marcador;
+  else (No)
+  endif
+
+repeat while (¿Alguien ha ganado 2 rondas?) is (No)
+-> Sí;
+
+:Partida finalizada;
+:Mostrar resultado final\n(Victoria / Derrota);
+:Conceder recompensas\n(XP + puntos abre-sobre);
+
+if (¿Ambos jugadores votan revancha?) then (Sí)
+  :Iniciar nueva partida;
+else (No)
+  :Volver al menú principal;
+endif
+
+stop
+
+@enduml
