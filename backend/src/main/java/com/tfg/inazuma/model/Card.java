@@ -59,12 +59,6 @@ public class Card {
         this.rating = computeRating(position, attack, control, defense);
     }
 
-    /**
-     * POR:  D^1.08 × 0.70 + C × 0.30
-     * DF:  D^1.05 × 0.60 + C × 0.30 + A × 0.10
-     * MC:  C^1.05 × 0.45 + A × 0.275 + D × 0.275
-     * DC:  A^1.05 × 0.65 + C × 0.25  + D × 0.10
-     */
     public static int computeRating(CardPosition position, int attack, int control, int defense) {
         double r = (position == null) ? (attack + control + defense) / 3.0 : switch (position) {
             case POR -> Math.pow(defense  / 100.0, 1.08) * 100 * 0.70 + control * 0.30;

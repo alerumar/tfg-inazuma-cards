@@ -11,11 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Tareas programadas de la partida:
- *   RNF-03 — auto-jugada si un jugador no responde en 45 s
- *   RNF-04 — forfeit si un jugador está desconectado más de 60 s
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,10 +23,6 @@ public class MatchScheduler {
     private final MatchRepository     matchRepo;
     private final MatchTurnRepository turnRepo;
 
-    /**
-     * RNF-03 — Cada 5 s revisa los turnos pendientes.
-     * Si algún jugador lleva más de 45 s sin jugar, el backend elige por él.
-     */
     @Scheduled(fixedDelay = 5_000)
     public void checkTurnTimeouts() {
         try {
@@ -44,10 +35,6 @@ public class MatchScheduler {
         }
     }
 
-    /**
-     * RNF-04 — Cada 10 s revisa si algún jugador en partida activa lleva
-     * más de 60 s sin enviar heartbeat.
-     */
     @Scheduled(fixedDelay = 10_000)
     public void checkDisconnects() {
         try {

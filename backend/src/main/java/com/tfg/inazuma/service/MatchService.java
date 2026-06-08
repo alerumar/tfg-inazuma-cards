@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MatchService {
 
-    // ── Recompensas ───────────────────────────────────────────────────────────
     private static final int XP_WIN   = 200;
     private static final int XP_DRAW  = 100;
     private static final int XP_LOSS  = 50;
@@ -32,12 +31,10 @@ public class MatchService {
     private static final int XP_PER_LEVEL    = 200;
     private static final int XP_INCREMENT    = 100;
 
-    // ── Constantes del juego ──────────────────────────────────────────────────
     private static final int  ROUNDS_TO_WIN       = 3;
     private static final int  TURN_WINS_PER_ROUND = 2;
     private static final long TURN_TIMEOUT_SECONDS = 45;
-
-    // ── Dependencias ─────────────────────────────────────────────────────────
+    
     private final MatchRepository     matchRepo;
     private final MatchRoundRepository roundRepo;
     private final MatchTurnRepository  turnRepo;

@@ -45,20 +45,17 @@ public class DataSeeder implements CommandLineRunner {
     private static final String CARDS_FILE   = "cards.json";
 
     private final CardRepository cardRepository;
-    private final CardService    cardService;
     private final ObjectMapper   objectMapper = new ObjectMapper();
 
     private HttpClient httpClient;
     private final Map<String, String> wikitextCache = new HashMap<>();
 
-    // ─── DTOs ─────────────────────────────────────────────────────────────────
-
     static class PlayerConfig {
-        public String page;             // nombre en la wiki española (lo pone el usuario)
+        public String page;             
         public String team;
-        public String nameOverride;     // si se especifica, se usa como nombre de la carta
-        public String nickname;         // apodo de la carta
-        public String positionOverride; // fuerza una posición concreta (ej: "GK" para portero)
+        public String nameOverride;     
+        public String nickname;         
+        public String positionOverride;
     }
 
     static class CardData {
@@ -77,8 +74,6 @@ public class DataSeeder implements CommandLineRunner {
         public int    rating;
         public String imageUrl;
     }
-
-    // ─── Configuración por juego ───────────────────────────────────────────────
 
     private enum GameConfig {
         IE1("IE1", "Inazuma Eleven 1",    "Estadísticas (Jugador / Original)", CardPackage.INAZUMA_ELEVEN,    false),
@@ -100,8 +95,6 @@ public class DataSeeder implements CommandLineRunner {
             this.isGO          = isGO;
         }
     }
-
-    // ─── Entrada principal ─────────────────────────────────────────────────────
 
     @Override
     public void run(String... args) {
@@ -204,8 +197,6 @@ public class DataSeeder implements CommandLineRunner {
         cards.sort(Comparator.comparingInt(c -> order.getOrDefault(c.collection, 99)));
     }
 
-    // ─── Ficheros ──────────────────────────────────────────────────────────────
-
     private Map<String, List<PlayerConfig>> loadPlayersConfig() throws Exception {
         Path path = Path.of(PLAYERS_FILE);
         if (!Files.exists(path)) {
@@ -232,8 +223,6 @@ public class DataSeeder implements CommandLineRunner {
         objectMapper.writerWithDefaultPrettyPrinter()
                 .writeValue(Path.of(CARDS_FILE).toFile(), cards);
     }
-
-    // ─── Sincronización con la BD ──────────────────────────────────────────────
 
     private void syncDatabase(List<CardData> cardDataList) {
         if (cardRepository.count() > 0) {
@@ -270,8 +259,6 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    // ─── Scraping ──────────────────────────────────────────────────────────────
-
     private CardData scrapeCard(PlayerConfig pc, GameConfig game) throws Exception {
         String wikitext = getWikitext(pc.page);
         if (wikitext == null || wikitext.isBlank()) {
@@ -306,8 +293,6 @@ public class DataSeeder implements CommandLineRunner {
         return card;
     }
 
-    // ─── Extracción de campos ──────────────────────────────────────────────────
-
     private static CardPosition parsePosition(String pos) {
         if (pos == null || pos.isBlank()) return null;
         try { return CardPosition.valueOf(pos); } catch (IllegalArgumentException e) { return null; }
@@ -332,14 +317,9 @@ public class DataSeeder implements CommandLineRunner {
         };
     }
 
-    // ─── Stats ─────────────────────────────────────────────────────────────────
-
     private record PlayerStats(int attack, int control, int defense) {}
 
     private PlayerStats extractStats(String wikitext, String templateName, boolean isGO) {
-        // Robust match: optional "Plantilla:" prefix, optional soft-hyphen U+00AD inside
-        // "Estadísticas", flexible whitespace around "/", case-insensitive.
-        // í = í (U+00ED), ­ = soft hyphen (U+00AD).
         String gameType = isGO ? "GO" : "Original";
         Pattern tplPat = Pattern.compile(
                 "\\{\\{(?:Plantilla:)?[Ee]stad[­]?ísticas\\s*"
@@ -347,8 +327,6 @@ public class DataSeeder implements CommandLineRunner {
         Matcher tplMatcher = tplPat.matcher(wikitext);
         if (!tplMatcher.find()) return null;
         int start = tplMatcher.start();
-
-        // Encuentra el cierre de la plantilla respetando plantillas anidadas
         int depth = 0, end = wikitext.length();
         for (int i = start; i < wikitext.length() - 1; i++) {
             if (wikitext.charAt(i) == '{' && wikitext.charAt(i + 1) == '{') { depth++; i++; }
@@ -380,8 +358,6 @@ public class DataSeeder implements CommandLineRunner {
         Matcher m = p.matcher(text);
         return m.find() ? Integer.parseInt(m.group(1)) : -1;
     }
-
-    // ─── Imágenes ──────────────────────────────────────────────────────────────
 
     private String extractImageFilename(String wikitext) {
         int idx = wikitext.indexOf("|Imagen");
@@ -443,8 +419,6 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    // ─── HTTP con caché ────────────────────────────────────────────────────────
-
     private String getWikitext(String pageName) throws Exception {
         if (wikitextCache.containsKey(pageName)) {
             return wikitextCache.get(pageName);
@@ -473,8 +447,6 @@ public class DataSeeder implements CommandLineRunner {
                 .build();
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
     }
-
-    // ─── Utilidades ────────────────────────────────────────────────────────────
 
     private int normalize(int value, double divisor) {
         return clamp((int) Math.round(value / divisor));
