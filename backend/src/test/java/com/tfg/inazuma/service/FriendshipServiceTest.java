@@ -160,35 +160,36 @@ class FriendshipServiceTest {
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  RF-19 — Cancelar solicitud enviada / eliminar amigo
+    //  RF-19 — Cancelar solicitud de amistad enviada (aún sin respuesta)
     // ═══════════════════════════════════════════════════════════
 
     @Test
-    @DisplayName("RF-19 | Caso positivo: jugador elimina a un amigo → amistad borrada")
-    void removeFriend_casoPositivo_eliminaAmigo() {
+    @DisplayName("RF-19 | Caso positivo: solicitante cancela su solicitud pendiente → solicitud eliminada")
+    void cancelSentRequest_casoPositivo_cancelaSolicitudPendiente() {
         Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
         Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
-        Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.ACCEPTED);
+        // La solicitud está en estado PENDING: el receptor aún no ha respondido
+        Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
 
-        friendshipService.removeFriend(1L, 10L);
+        friendshipService.removeFriend(1L, 10L); // jugador 1 (quien envió) cancela
 
         verify(friendshipRepository).delete(friendship);
     }
 
     @Test
-    @DisplayName("RF-19 | Caso negativo: jugador no pertenece a la amistad → IllegalArgumentException")
-    void removeFriend_casoNegativo_noPertenece() {
+    @DisplayName("RF-19 | Caso negativo: jugador ajeno intenta cancelar la solicitud → IllegalArgumentException")
+    void cancelSentRequest_casoNegativo_noEsElSolicitante() {
         Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
         Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
-        Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.ACCEPTED);
+        Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> friendshipService.removeFriend(99L, 10L)
+                () -> friendshipService.removeFriend(99L, 10L) // tercero con ID 99
         );
 
         assertTrue(ex.getMessage().contains("No perteneces a esta amistad"));
