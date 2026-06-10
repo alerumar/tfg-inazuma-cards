@@ -35,6 +35,6 @@ export async function apiOpenPackWithPoints(
 export async function apiClaimDailyReward(personId: number): Promise<number> {
   const res = await fetch(`${base(personId)}/daily`, { method: 'POST', headers: H });
   if (!res.ok) throw new Error(await res.text());
-  const data = await res.json(); // { pointsGranted: number }
+  const data = await res.json();
   return data.pointsGranted;
 }

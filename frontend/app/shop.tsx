@@ -66,7 +66,7 @@ export default function ShopScreen() {
 
   useFocusEffect(useCallback(() => {
     targetRef.current = nextNineAM();
-    setTick(t => t + 1); // re-render para mostrar tiempo actualizado
+    setTick(t => t + 1); 
     fetchStatus();
   }, [fetchStatus]));
 
@@ -113,7 +113,7 @@ export default function ShopScreen() {
       setPendingUser(null);
     }
     await fetchStatus();
-    refreshBadges(); // actualiza el badge de la pestaña de inicio al instante
+    refreshBadges(); 
   };
 
   const dailyAvailable             = status?.dailyRewardAvailable ?? false;

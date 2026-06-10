@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2,
   },
   groupLabelClaimable: {
-    color: '#2E7D32',  // verde — resalta que hay algo que recoger
+    color: '#2E7D32', 
   },
 
   card: {

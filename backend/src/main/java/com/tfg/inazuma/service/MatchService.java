@@ -252,7 +252,7 @@ public class MatchService {
             throw new IllegalArgumentException("No eres participante de esta partida");
 
         Person winner = isP1 ? match.getPlayer2() : match.getPlayer1();
-        match.setWonByAbandon(true);   // abandono voluntario
+        match.setWonByAbandon(true);   
         finishMatch(match, winner);
         return buildState(match);
     }
@@ -456,7 +456,7 @@ private void applyTiebreaker(Match match, MatchRound lastRound) {
                 boolean hasAlt = deckCards.stream()
                         .filter(c2 -> c2.getType() != CardType.LEGEND)
                         .anyMatch(c2 -> getUsedAttributesForCard(match, isP1, c2).size() < 3);
-                if (hasAlt) continue;   // hay alternativa → respetar el bloqueo
+                if (hasAlt) continue;  
             }
 
             Collections.shuffle(available);

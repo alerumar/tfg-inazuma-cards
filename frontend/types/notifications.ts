@@ -13,5 +13,5 @@ export interface NotificationData {
   read: boolean;
   actorNickname: string | null;
   actorProfilePhoto: string | null;
-  createdAt: string; // ISO LocalDateTime from Java
+  createdAt: string;
 }

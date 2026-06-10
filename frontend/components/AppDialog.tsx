@@ -9,7 +9,7 @@ export interface DialogConfig {
   title:        string;
   message?:     string;
   confirmLabel: string;
-  cancelLabel?: string;   // undefined → sólo un botón (info / error)
+  cancelLabel?: string; 
   destructive:  boolean;
   onConfirm:    () => void;
   onCancel?:    () => void;

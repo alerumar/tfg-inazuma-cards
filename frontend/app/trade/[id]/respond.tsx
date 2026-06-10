@@ -47,7 +47,7 @@ export default function RespondTradeScreen() {
 
   const [trade,         setTrade]         = useState<TradeData | null>(null);
   const [cards,         setCards]         = useState<{ card: CardData; quantity: number }[]>([]);
-  const [alreadyOwned,  setAlreadyOwned]  = useState(false); // ¿el receptor ya tiene la carta ofrecida?
+  const [alreadyOwned,  setAlreadyOwned]  = useState(false);
   const [pickedCard,    setPickedCard]    = useState<CardData | null>(null);
   const [loading,       setLoading]       = useState(true);
   const [sending,       setSending]       = useState(false);

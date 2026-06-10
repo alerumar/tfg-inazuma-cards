@@ -19,7 +19,7 @@ public class PersonSeeder implements CommandLineRunner {
     private static final String DEFAULT_PHOTO = "/images/default_profile.png";
 
 private static final int TOTAL_CARDS    = 150;
-    private static final int DUPLICATE_EXTRA = 40;   // 40 cartas tendrán cantidad 2
+    private static final int DUPLICATE_EXTRA = 40;
 
     private final PersonRepository        personRepository;
     private final CardRepository          cardRepository;
@@ -84,7 +84,7 @@ private static final int TOTAL_CARDS    = 150;
 private int saveRandomCards(Person person, List<Card> allCards) {
         List<PersonCard> cards = buildRandomCards(person, allCards);
         personCardRepository.saveAll(cards);
-        return cards.size(); // cada entrada es una carta única
+        return cards.size();
     }
 
     private List<PersonCard> buildRandomCards(Person person, List<Card> allCards) {

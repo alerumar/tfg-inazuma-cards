@@ -31,7 +31,7 @@ public record MatchStateResponse(
 
         TurnStateDto lastCompletedTurn,
 
-        Long    winnerId,   // null = empate o no terminada
+        Long    winnerId,
         boolean draw,
 
 boolean wonByAbandon,

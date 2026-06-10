@@ -96,7 +96,7 @@ public List<FriendshipResponse> getFriends(Long personId) {
                             : f.getRequester();
                     boolean friendInMatch = !matchRepository.findActiveForPerson(friend).isEmpty();
                     PersonResponse requesterDto = f.getRequester().getId().equals(personId)
-                            ? PersonResponse.from(f.getRequester())           // yo (sin partida activa del amigo)
+                            ? PersonResponse.from(f.getRequester())           
                             : PersonResponse.from(f.getRequester(), 0, 0, 0, friendInMatch);
                     PersonResponse receiverDto  = f.getReceiver().getId().equals(personId)
                             ? PersonResponse.from(f.getReceiver())

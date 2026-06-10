@@ -85,7 +85,7 @@ export default function TradesScreen() {
       setActive(a);
       setHistory(h.filter(t => !isActive(t.status)));
       setOwnedCardIds(new Set(col.filter(e => e.owned).map(e => e.card.id)));
-      refreshBadges(); // actualiza el punto rojo al instante tras cada carga
+      refreshBadges(); 
     } catch (e) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al cargar intercambios');
     } finally {

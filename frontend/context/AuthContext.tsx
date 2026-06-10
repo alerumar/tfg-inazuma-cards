@@ -99,7 +99,7 @@ const dismissFriendRequests = useCallback(() => setFriendRequestsDismissed(true)
   useEffect(() => {
     const tick = () => { if (userRef.current) apiHeartbeat(userRef.current.id); };
 
-    tick(); // Ping inmediato al montar
+    tick();
     const interval = setInterval(tick, 30_000);
 
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
@@ -208,7 +208,7 @@ const releaseLevelUp = useCallback(() => {
 
   const clearLevelUp = () => {
     setLevelUpInfo(null);
-    pendingLevelUpRef.current = null; // limpiar también cualquier pendiente
+    pendingLevelUpRef.current = null;
   };
 
   return (

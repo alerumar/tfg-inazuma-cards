@@ -11,15 +11,15 @@ import { Colors } from '../constants/colors';
 
 export interface RewardItem {
   icon:   React.ComponentProps<typeof Ionicons>['name'];
-  label:  string;   // descripción corta, e.g. "puntos abre-sobre"
-  value:  string;   // valor principal, e.g. "+6"
-  color?: string;   // color del icono/valor (default Colors.primary)
+  label:  string;
+  value:  string;
+  color?: string;
 }
 
 interface Props {
   visible:   boolean;
   rewards:   RewardItem[];
-  subtitle?: string;   // p.ej. "Recompensa diaria reclamada"
+  subtitle?: string;
   onClose:   () => void;
 }
 

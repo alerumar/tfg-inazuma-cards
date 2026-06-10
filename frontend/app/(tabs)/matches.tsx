@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(232, 114, 122, 0.18)', // tinte coral muy suave — mantiene la paleta sin tapar la imagen
+    backgroundColor: 'rgba(232, 114, 122, 0.18)',
   },
 
   root: {
@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Colors.primary,         // coral sólido — igual que todos los botones CTA
+    backgroundColor: Colors.primary,         
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: Colors.border,
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255,255,255,0.22)', // blanco suave sobre el coral
+    backgroundColor: 'rgba(255,255,255,0.22)', 
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,

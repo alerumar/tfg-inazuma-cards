@@ -51,13 +51,13 @@ import { DeckData } from '../../types/decks';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W  = Math.floor((SCREEN_W - 24 - 4 * 8) / 5);
-const CARD_H  = Math.round(CARD_W * 1.5);   // para las cajas boca-abajo del rival
+const CARD_H  = Math.round(CARD_W * 1.5);
 const DISC_W  = Math.floor(CARD_W * 0.68);
 const DISC_GAP = 6;
 
 const LOBBY_SLOT_GAP = 6;
 const LOBBY_SLOT_W   = Math.floor((SCREEN_W - 48 - 28 - LOBBY_SLOT_GAP * 4) / 5);
-const LOBBY_SLOT_H   = Math.round(LOBBY_SLOT_W * 1.5); // CARD_ASPECT
+const LOBBY_SLOT_H   = Math.round(LOBBY_SLOT_W * 1.5); 
 
 function imgUri(path: string | null) {
   if (!path) return null;
@@ -354,11 +354,11 @@ function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: stri
   const SIZE   = 64;
   const HALF   = SIZE / 2;
   const STROKE = 7;
-  const INNER  = SIZE - STROKE * 2; // diámetro del agujero del donut
+  const INNER  = SIZE - STROKE * 2;
 
   const filledDeg   = pct * 360;
-  const rightRotate = Math.min(filledDeg, 180) - 180; // -180°=vacío → 0°=mitad derecha llena
-  const leftRotate  = Math.max(filledDeg - 180, 0) - 180; // -180°=vacío → 0°=mitad izq. llena
+  const rightRotate = Math.min(filledDeg, 180) - 180;
+  const leftRotate  = Math.max(filledDeg - 180, 0) - 180;
 
   return (
     <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
@@ -665,7 +665,7 @@ export default function GameScreen() {
     if (state.status === 'FINISHED' && prev?.status === 'IN_PROGRESS') {
       didFinishInSessionRef.current = true;
       pendingFinishedAnimRef.current = true;
-      matchFinishedAtRef.current = Date.now();   // inicia ventana de revancha
+      matchFinishedAtRef.current = Date.now(); 
       if (user) {
         apiGetPerson(user.id).then(persistUser).catch(() => {});
       }
@@ -706,7 +706,7 @@ export default function GameScreen() {
     if (state?.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
     if (finishedAnimShownRef.current) return;
-    if (revealTurn !== null) return; // el reveal lo encadenará desde su onDismiss
+    if (revealTurn !== null) return; 
     const timer = setTimeout(() => {
       if (!finishedAnimShownRef.current && pendingFinishedAnimRef.current) {
         finishedAnimShownRef.current  = true;
@@ -791,7 +791,7 @@ useEffect(() => {
   useEffect(() => {
     if (!state || state.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
-    if (state.rematchMatchId != null) return; // ya se creó la revancha → navegar
+    if (state.rematchMatchId != null) return;
 
     const interval = setInterval(fetchState, 2000);
     return () => clearInterval(interval);
@@ -876,7 +876,7 @@ const handleRespondInvite = async (accept: boolean) => {
     setSubmitting(true);
     try {
       const s = await apiSubmitMove(matchId, user.id, pickedCard.cardId, attr);
-      applyMatchState(s);   // usa applyMatchState para disparar reveal si el turno ya resolvió
+      applyMatchState(s); 
       setPickedCard(null);
     } catch (e: any) {
       setError(e.message);
@@ -891,7 +891,7 @@ const handleRespondInvite = async (accept: boolean) => {
     setForfeiting(true);
     try {
       const s = await apiForfeit(matchId, user.id);
-      applyMatchState(s);   // forfeit no genera reveal, pero el safety net lo maneja
+      applyMatchState(s);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -907,7 +907,7 @@ const handleRematchVote = async (wants: boolean) => {
       const s = await apiVoteRematch(matchId, user.id, wants);
       applyMatchState(s);
     } catch (e: any) {
-      if (!wants) setRematchDeclined(false); // revertir si la petición falló
+      if (!wants) setRematchDeclined(false);
       setError(e?.message || 'No se pudo procesar el voto');
     } finally {
       setVotingRematch(false);
@@ -968,7 +968,7 @@ return (
           myRole={myRole}
           onDismiss={() => {
             setRevealTurn(null);
-            drainAnimQueue();   // encadena round-start o finished-anim si están encolados
+            drainAnimQueue();
           }}
         />
       )}
@@ -989,7 +989,7 @@ return (
           round={showRoundStart}
           onDone={() => {
             setShowRoundStart(null);
-            drainAnimQueue();   // encadena finished-anim si está encolado
+            drainAnimQueue();
           }}
         />
       )}
@@ -2409,7 +2409,7 @@ finishContent: {
   },
   gcImg: {
     width: '100%',
-    aspectRatio: 1 / 1.5,   // igual que CARD_ASPECT en CardCell
+    aspectRatio: 1 / 1.5,
     borderRadius: 8,
   },
   gcCardName: {

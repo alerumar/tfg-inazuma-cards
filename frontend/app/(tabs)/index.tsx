@@ -71,7 +71,7 @@ const fetchStatus = useCallback(() => {
     timerRef.current = setInterval(() => {
       setLocalMinutes(prev => {
         if (prev === null || prev <= 1) {
-          fetchStatus(); // actualiza estado cuando llega a 0
+          fetchStatus(); 
           return 0;
         }
         return prev - 1;
@@ -117,7 +117,7 @@ const doOpenPack = async (type: PackType) => {
 
   const handleFinish = async () => {
     setModalVisible(false);
-    setCards([]);   // limpia estado para evitar re-render con índice obsoleto
+    setCards([]);  
     fetchStatus();
     if (user) {
       try {

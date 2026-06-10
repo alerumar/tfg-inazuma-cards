@@ -119,7 +119,7 @@ function MenuItem({
   );
 }
 
-const DOT_COLOR = '#EF4444'; // rojo
+const DOT_COLOR = '#EF4444';
 
 const styles = StyleSheet.create({
   header: {

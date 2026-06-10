@@ -67,7 +67,7 @@ export default function NotificationsScreen() {
     ])
       .then(([data]) => {
         setNotifications(data.filter(n => !EXCLUDED.includes(n.type)));
-        setUnreadNotifications(0); // actualizar badge inmediatamente
+        setUnreadNotifications(0); 
       })
       .catch(console.warn)
       .finally(() => setLoading(false));

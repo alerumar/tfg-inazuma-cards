@@ -23,8 +23,8 @@ public record PersonResponse(
         int cardCount,
         int totalCardCount,
         int friendCount,
-        boolean online,         // true si lastSeen en los últimos 2 minutos
-        boolean inActiveMatch   // true si el jugador tiene una partida activa en curso
+        boolean online,         
+        boolean inActiveMatch  
 ) {
     
     public static PersonResponse from(Person p, int cardCount, int totalCardCount, int friendCount, boolean inActiveMatch) {

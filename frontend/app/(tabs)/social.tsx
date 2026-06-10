@@ -390,7 +390,7 @@ function SearchTab({ user }: { user: PersonResponse }) {
   const [query,   setQuery]   = useState('');
   const [results, setResults] = useState<PersonSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState<string | null>(null); // playerId en proceso
+  const [sending, setSending] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const doSearch = useCallback(async (q: string) => {

@@ -42,7 +42,7 @@ public class Card {
     private CardPosition position;
 
     @Column(nullable = false)
-    private int rating;          // auto-calculado antes de cada INSERT/UPDATE
+    private int rating;         
 
     @Min(0) @Max(99)
     private int attack;

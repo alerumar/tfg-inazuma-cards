@@ -43,14 +43,14 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
       scaleAnim.setValue(1);
       opacityAnim.setValue(1);
     }
-  }, [visible]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   if (!visible || cards.length === 0 || !packType) return null;
 
   const current = cards[currentIdx];
   if (!current) return null;
   const isLast     = currentIdx === cards.length - 1;
-  const remaining  = cards.length - currentIdx - 1; // cartas detrás de la actual
+  const remaining  = cards.length - currentIdx - 1;
 
   const handleNextCard = () => {
     if (isLast) return;
