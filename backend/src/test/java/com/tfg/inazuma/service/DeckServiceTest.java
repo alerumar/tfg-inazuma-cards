@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -54,11 +54,7 @@ class DeckServiceTest {
         return d;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-36 — Crear baraja
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-36 | Caso positivo: nombre válido y no supera límite → baraja creada")
     void createDeck_casoPositivo_nombreValido() {
         Person person = crearPersona(1L);
@@ -108,11 +104,7 @@ class DeckServiceTest {
         assertTrue(ex.getMessage().contains("Límite de 10 barajas alcanzado"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-37 — Añadir carta a la baraja
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-37 | Caso positivo: carta válida, en colección y no duplicada → añadida")
     void addCard_casoPositivo_cartaValida() {
         Person person = crearPersona(1L);
@@ -225,11 +217,7 @@ class DeckServiceTest {
         assertTrue(ex.getMessage().contains("La baraja ya tiene 2 cartas Legend"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-38 — Eliminar baraja
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-38 | Caso positivo: dueño elimina su baraja → baraja borrada")
     void deleteDeck_casoPositivo_propietarioEliminaBaraja() {
         Person person = crearPersona(1L);
@@ -259,11 +247,7 @@ class DeckServiceTest {
         assertTrue(ex.getMessage().contains("Esta baraja no te pertenece"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-35 — Ver barajas
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-35 | Caso positivo: jugador con barajas → listado devuelto correctamente")
     void getDecks_casoPositivo_listadoDevuelto() {
         Person person = crearPersona(1L);

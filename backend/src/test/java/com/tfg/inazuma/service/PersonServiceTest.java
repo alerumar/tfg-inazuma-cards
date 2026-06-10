@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.ChangePasswordRequest;
 import com.tfg.inazuma.dto.LoginRequest;
@@ -18,7 +18,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
 
 @ExtendWith(MockitoExtension.class)
 class PersonServiceTest {
@@ -40,11 +39,7 @@ class PersonServiceTest {
     @InjectMocks
     PersonService personService;
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-01 — Crear cuenta
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-01 | Caso positivo: datos válidos → persona registrada con 3 sobres iniciales")
     void register_casoPositivo_datosValidos() {
         RegisterRequest req = new RegisterRequest(
@@ -102,11 +97,7 @@ class PersonServiceTest {
         assertTrue(ex.getMessage().contains("Nickname ya en uso"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-02 — Iniciar sesión
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-02 | Caso positivo: credenciales correctas → persona devuelta")
     void login_casoPositivo_credencialesCorrectas() {
         LoginRequest req = new LoginRequest("pedro99", "password123");
@@ -153,11 +144,7 @@ class PersonServiceTest {
         assertTrue(result.isEmpty());
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-32 — Cambiar contraseña
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-32 | Caso positivo: contraseña actual correcta y nueva válida → contraseña actualizada")
     void changePassword_casoPositivo_datosValidos() {
         Person person = new Person();
@@ -210,11 +197,7 @@ class PersonServiceTest {
         assertTrue(ex.getMessage().contains("La nueva contraseña debe tener al menos 8 caracteres"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-31 — Editar perfil
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-31 | Caso positivo: nickname válido y disponible → perfil actualizado")
     void update_casoPositivo_nicknameCambiado() {
         Person person = new Person();
@@ -292,11 +275,7 @@ class PersonServiceTest {
         assertTrue(ex.getMessage().contains("Email ya en uso"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-34 — Eliminar cuenta
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-34 | Caso positivo: cuenta existente → cuenta eliminada, devuelve true")
     void delete_casoPositivo_cuentaEliminada() {
         when(personRepository.existsById(1L)).thenReturn(true);

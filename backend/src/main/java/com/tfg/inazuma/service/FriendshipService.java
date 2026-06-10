@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.FriendshipResponse;
 import com.tfg.inazuma.dto.PersonSearchResult;
@@ -48,11 +48,9 @@ public class FriendshipService {
         friendship.setStatus(FriendshipStatus.ACCEPTED);
         Friendship saved = friendshipRepository.save(friendship);
 
-        // Progreso de misión ADD_FRIENDS para ambas partes
         missionService.recordEvent(friendship.getRequester(), MissionType.ADD_FRIENDS);
         missionService.recordEvent(friendship.getReceiver(),  MissionType.ADD_FRIENDS);
 
-        // RF-62: notificar al remitente que su solicitud fue aceptada
         String acceptorNick = friendship.getReceiver().getNickname();
         notificationService.create(
                 friendship.getRequester(),
@@ -69,7 +67,6 @@ public class FriendshipService {
         Friendship friendship = findFriendshipOrThrow(friendshipId);
         validateReceiver(friendship, receiverId);
 
-        // RF-61: notificar al remitente que su solicitud fue rechazada
         String rejectorNick = friendship.getReceiver().getNickname();
         notificationService.create(
                 friendship.getRequester(),
@@ -89,12 +86,7 @@ public class FriendshipService {
         friendshipRepository.delete(friendship);
     }
 
-    /**
-     * Devuelve los amigos aceptados con el flag {@code inActiveMatch} a true
-     * cuando el amigo tiene una partida activa (PENDING_INVITE / WAITING_READY / IN_PROGRESS).
-     * Esto permite al cliente mostrar "En partida" sin tener que hacer una segunda llamada.
-     */
-    public List<FriendshipResponse> getFriends(Long personId) {
+public List<FriendshipResponse> getFriends(Long personId) {
         Person person = findPersonOrThrow(personId);
         return friendshipRepository.findByPersonAndStatus(person, FriendshipStatus.ACCEPTED)
                 .stream()
@@ -130,8 +122,7 @@ public class FriendshipService {
         return friendshipRepository.findBetween(person, other);
     }
 
-    /** RF-20: busca usuarios por nickname (contiene) o playerId exacto. */
-    public List<PersonSearchResult> searchPersons(Long requesterId, String q) {
+public List<PersonSearchResult> searchPersons(Long requesterId, String q) {
         Person requester = findPersonOrThrow(requesterId);
         return personRepository.searchByNicknameOrPlayerId(q).stream()
                 .filter(p -> !p.getId().equals(requesterId))

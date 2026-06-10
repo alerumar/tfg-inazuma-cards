@@ -1,4 +1,4 @@
-import { BASE_URL } from '../constants/api';
+﻿import { BASE_URL } from '../constants/api';
 import { DeckCardEntry, DeckData } from '../types/decks';
 
 export async function apiGetDecks(personId: number): Promise<DeckData[]> {
@@ -63,10 +63,6 @@ export async function apiAddCardToDeck(
   return res.json();
 }
 
-/**
- * Intercambia la carta deckCardId por newCardId en una sola llamada atómica.
- * Si la nueva carta viola alguna regla, la baraja queda intacta.
- */
 export async function apiSwapCardInDeck(
   personId: number,
   deckId: number,

@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,7 +22,6 @@ public interface PersonRepository extends JpaRepository<Person, Long> {
 
     boolean existsByPlayerId(String playerId);
 
-    /** Busca por nickname O por playerId (ambos con LIKE, ignoran mayúsculas). */
-    @Query("SELECT p FROM Person p WHERE LOWER(p.nickname) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(p.playerId) LIKE LOWER(CONCAT('%', :q, '%'))")
+@Query("SELECT p FROM Person p WHERE LOWER(p.nickname) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(p.playerId) LIKE LOWER(CONCAT('%', :q, '%'))")
     List<Person> searchByNicknameOrPlayerId(@Param("q") String q);
 }

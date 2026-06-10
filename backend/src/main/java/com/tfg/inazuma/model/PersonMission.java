@@ -1,4 +1,4 @@
-package com.tfg.inazuma.model;
+﻿package com.tfg.inazuma.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -28,7 +28,6 @@ public class PersonMission {
     @Column(nullable = false)
     private int progress = 0;
 
-    /** true cuando el jugador ha reclamado las recompensas manualmente */
-    @Column(nullable = false)
+@Column(nullable = false)
     private boolean claimed = false;
 }

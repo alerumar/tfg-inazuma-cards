@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.CardStateDto;
 import com.tfg.inazuma.dto.MatchResponse;
@@ -43,12 +43,7 @@ public class MatchService {
     private final DeckCardRepository  deckCardRepo;
     private final MissionService      missionService;
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  FLUJO DE INVITACIÓN
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /** RF-31 — Envía una invitación de partida. */
-    @Transactional
+@Transactional
     public MatchResponse invitePlayer(Long initiatorId, Long receiverId) {
         Person initiator = findPerson(initiatorId);
         Person receiver  = findPerson(receiverId);
@@ -56,7 +51,6 @@ public class MatchService {
         if (initiatorId.equals(receiverId))
             throw new IllegalArgumentException("No puedes invitarte a ti mismo");
 
-        // Verificar que ninguno esté en una partida activa
         if (!matchRepo.findActiveForPerson(initiator).isEmpty())
             throw new IllegalStateException("Ya tienes una partida activa");
         if (!matchRepo.findActiveForPerson(receiver).isEmpty())
@@ -73,8 +67,7 @@ public class MatchService {
         return MatchResponse.from(match);
     }
 
-    /** RF-32 — El receptor acepta o rechaza la invitación. */
-    @Transactional
+@Transactional
     public MatchResponse respondInvite(Long matchId, Long receiverId, boolean accept) {
         Match match = findMatch(matchId);
 
@@ -94,8 +87,7 @@ public class MatchService {
         return MatchResponse.from(matchRepo.save(match));
     }
 
-    /** Cancela la invitación o abandona el lobby (cualquiera de los dos). */
-    @Transactional
+@Transactional
     public MatchResponse cancelMatch(Long matchId, Long playerId) {
         Match match = findMatch(matchId);
 
@@ -111,12 +103,7 @@ public class MatchService {
         return MatchResponse.from(matchRepo.save(match));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  LOBBY
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /** RF-33 — El jugador elige su baraja y se marca como listo en el lobby. */
-    @Transactional
+@Transactional
     public MatchStateResponse setReady(Long matchId, Long playerId, Long deckId) {
         Match match = findMatch(matchId);
 
@@ -139,7 +126,6 @@ public class MatchService {
         if (isPlayer1) { match.setDeck1(deck); match.setPlayer1Ready(true); }
         else           { match.setDeck2(deck); match.setPlayer2Ready(true); }
 
-        // Si los dos están listos → arrancar la partida
         if (match.isPlayer1Ready() && match.isPlayer2Ready()) {
             match.setStatus(MatchStatus.IN_PROGRESS);
             match.setLastActivityPlayer1(LocalDateTime.now());
@@ -153,8 +139,7 @@ public class MatchService {
         return buildState(match);
     }
 
-    /** Permite a un jugador cambiar de baraja mientras el rival aún no está listo. */
-    @Transactional
+@Transactional
     public MatchStateResponse unsetReady(Long matchId, Long playerId) {
         Match match = findMatch(matchId);
 
@@ -172,12 +157,7 @@ public class MatchService {
         return buildState(matchRepo.save(match));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  PARTIDA EN CURSO
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /** RF-34 — Un jugador envía su movimiento (carta + atributo). */
-    @Transactional
+@Transactional
     public MatchStateResponse submitMove(Long matchId, Long playerId,
                                          Long cardId, CardAttribute attribute) {
         Match match = findMatch(matchId);
@@ -190,28 +170,22 @@ public class MatchService {
         if (!isP1 && !isP2)
             throw new IllegalArgumentException("No eres participante de esta partida");
 
-        // Turno actual
         MatchRound round = currentRound(match);
         MatchTurn turn = turnRepo.findFirstByRoundAndResult(round, TurnResult.PENDING)
                 .orElseThrow(() -> new IllegalStateException("No hay turno pendiente"));
 
-        // ¿Ya has jugado este turno?
         if (isP1 && turn.getPlayer1SubmittedAt() != null)
             throw new IllegalStateException("Ya has enviado tu jugada para este turno");
         if (isP2 && turn.getPlayer2SubmittedAt() != null)
             throw new IllegalStateException("Ya has enviado tu jugada para este turno");
 
-        // ¿La carta está en tu baraja?
         Deck myDeck = isP1 ? match.getDeck1() : match.getDeck2();
         Card card = findCardInDeck(myDeck, cardId);
 
-        // ¿El atributo de esta carta ya fue usado en la partida?
         Set<CardAttribute> usedForCard = getUsedAttributesForCard(match, isP1, card);
         if (usedForCard.contains(attribute))
             throw new IllegalArgumentException("Ya usaste ese atributo de esa carta");
 
-        // Regla Legend: bloqueada solo si el jugador tiene cartas no-Legend disponibles.
-        // Si todas las cartas restantes son Legend, el bloqueo se levanta para no dejar sin opciones.
         int consecutiveLegend = isP1
                 ? match.getConsecutiveLegendPlayer1()
                 : match.getConsecutiveLegendPlayer2();
@@ -224,7 +198,6 @@ public class MatchService {
                         "No puedes usar una carta Legend tres turnos consecutivos");
         }
 
-        // Registrar la jugada
         if (isP1) {
             turn.setPlayer1Card(card);
             turn.setPlayer1Attribute(attribute);
@@ -235,19 +208,14 @@ public class MatchService {
             turn.setPlayer2SubmittedAt(LocalDateTime.now());
         }
 
-        // Actualizar heartbeat
         updateActivity(match, isP1);
 
-        // Si los dos han jugado → resolver el turno.
-        // Si solo uno ha jugado pero el tiempo del rival ya expiró, auto-jugar por él
-        // de forma inmediata (sin esperar al scheduler) para que el turno cierre al instante.
         boolean bothSubmitted = turn.getPlayer1SubmittedAt() != null
                 && turn.getPlayer2SubmittedAt() != null;
 
         if (!bothSubmitted) {
             LocalDateTime deadline = turn.getCreatedAt().plusSeconds(TURN_TIMEOUT_SECONDS);
             if (LocalDateTime.now().isAfter(deadline)) {
-                // El rival se ha quedado sin tiempo; auto-jugar por él
                 autoMoveForPlayer(match, turn, !isP1);
                 bothSubmitted = true;
             }
@@ -264,8 +232,7 @@ public class MatchService {
         return buildState(match);
     }
 
-    /** RNF-04 — Heartbeat para evitar falsos timeouts por desconexión. */
-    @Transactional
+@Transactional
     public void heartbeat(Long matchId, Long playerId) {
         Match match = findMatch(matchId);
         if (match.getStatus() != MatchStatus.IN_PROGRESS) return;
@@ -274,8 +241,7 @@ public class MatchService {
         matchRepo.save(match);
     }
 
-    /** El jugador abandona voluntariamente la partida. */
-    @Transactional
+@Transactional
     public MatchStateResponse forfeit(Long matchId, Long playerId) {
         Match match = findMatch(matchId);
         if (match.getStatus() != MatchStatus.IN_PROGRESS)
@@ -291,20 +257,7 @@ public class MatchService {
         return buildState(match);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  REVANCHA INMEDIATA (estilo Brawl Stars)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * RF-50 — Un jugador vota si quiere (wants=true) o no (wants=false) revancha.
-     * <ul>
-     *   <li>Si ambos votan SÍ: se crea una nueva partida en WAITING_READY y se
-     *       almacena su ID en {@code rematchMatchId}.</li>
-     *   <li>Si alguno vota NO: se resetean ambos votos (el otro jugador lo verá
-     *       en el siguiente poll y podrá volver al menú).</li>
-     * </ul>
-     */
-    @Transactional
+@Transactional
     public MatchStateResponse voteRematch(Long matchId, Long playerId, boolean wants) {
         Match match = findMatch(matchId);
 
@@ -319,14 +272,12 @@ public class MatchService {
         if (isP1) match.setPlayer1WantsRematch(wants);
         else      match.setPlayer2WantsRematch(wants);
 
-        // Cualquier NO cancela la ronda de votos completa
         if (!wants) {
             match.setPlayer1WantsRematch(false);
             match.setPlayer2WantsRematch(false);
             match.setRematchMatchId(null);
         }
 
-        // Ambos sí y todavía no hay partida de revancha → crear
         if (match.isPlayer1WantsRematch() && match.isPlayer2WantsRematch()
                 && match.getRematchMatchId() == null) {
             Match rematch = new Match();
@@ -344,11 +295,7 @@ public class MatchService {
         return buildState(match);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  CONSULTAS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    public MatchStateResponse getState(Long matchId) {
+public MatchStateResponse getState(Long matchId) {
         return buildState(findMatch(matchId));
     }
 
@@ -370,12 +317,7 @@ public class MatchService {
                 .stream().map(MatchResponse::from).toList();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  LÓGICA INTERNA DE TURNO
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /** Resuelve un turno donde ambos jugadores ya han enviado su jugada. */
-    @Transactional
+@Transactional
     public void resolveTurn(Match match, MatchRound round, MatchTurn turn) {
         int v1 = attrValue(turn.getPlayer1Card(), turn.getPlayer1Attribute());
         int v2 = attrValue(turn.getPlayer2Card(), turn.getPlayer2Attribute());
@@ -388,17 +330,14 @@ public class MatchService {
         turn.setResult(result);
         turnRepo.save(turn);
 
-        // Snapshot de turnos de esta ronda en el Match — sirve para el DTO ligero del historial
         match.setTurnsWonPlayer1LastRound(round.getTurnsWonPlayer1());
         match.setTurnsWonPlayer2LastRound(round.getTurnsWonPlayer2());
 
-        // Actualizar racha Legend
         boolean p1UsedLegend = turn.getPlayer1Card().getType() == CardType.LEGEND;
         boolean p2UsedLegend = turn.getPlayer2Card().getType() == CardType.LEGEND;
         match.setConsecutiveLegendPlayer1(p1UsedLegend ? match.getConsecutiveLegendPlayer1() + 1 : 0);
         match.setConsecutiveLegendPlayer2(p2UsedLegend ? match.getConsecutiveLegendPlayer2() + 1 : 0);
 
-        // ¿Ha ganado algún jugador la ronda?
         if (round.getTurnsWonPlayer1() >= TURN_WINS_PER_ROUND) {
             round.setCompleted(true);
             roundRepo.save(round);
@@ -411,7 +350,6 @@ public class MatchService {
             tryFinishOrContinue(match);
         } else {
             roundRepo.save(round);
-            // Comprobar si quedan movimientos disponibles
             if (!anyMovesAvailable(match)) {
                 applyTiebreaker(match, round);
             } else {
@@ -420,8 +358,7 @@ public class MatchService {
         }
     }
 
-    /** Comprueba si hay ganador de partida; si no, crea la siguiente ronda. */
-    private void tryFinishOrContinue(Match match) {
+private void tryFinishOrContinue(Match match) {
         if (match.getRoundsWonPlayer1() >= ROUNDS_TO_WIN) {
             finishMatch(match, match.getPlayer1());
         } else if (match.getRoundsWonPlayer2() >= ROUNDS_TO_WIN) {
@@ -434,26 +371,22 @@ public class MatchService {
         }
     }
 
-    /** Aplica el desempate cuando se acaban las cartas. */
-    private void applyTiebreaker(Match match, MatchRound lastRound) {
+private void applyTiebreaker(Match match, MatchRound lastRound) {
         int r1 = match.getRoundsWonPlayer1();
         int r2 = match.getRoundsWonPlayer2();
 
         if (r1 > r2) { finishMatch(match, match.getPlayer1()); return; }
         if (r2 > r1) { finishMatch(match, match.getPlayer2()); return; }
 
-        // Iguales en rondas → comparar turnos en la ronda actual
         int t1 = lastRound.getTurnsWonPlayer1();
         int t2 = lastRound.getTurnsWonPlayer2();
         if (t1 > t2) { finishMatch(match, match.getPlayer1()); return; }
         if (t2 > t1) { finishMatch(match, match.getPlayer2()); return; }
 
-        // EMPATE verdadero
         finishMatch(match, null);
     }
 
-    /** Cierra la partida, asigna ganador y reparte recompensas. */
-    @Transactional
+@Transactional
     public void finishMatch(Match match, Person winner) {
         match.setWinner(winner);
         match.setStatus(MatchStatus.FINISHED);
@@ -463,7 +396,6 @@ public class MatchService {
         Person p2 = match.getPlayer2();
 
         if (winner == null) {
-            // Empate
             grantRewards(p1, XP_DRAW, PTS_DRAW);
             grantRewards(p2, XP_DRAW, PTS_DRAW);
         } else {
@@ -476,17 +408,8 @@ public class MatchService {
         missionService.recordEvent(p2, MissionType.PLAY_MATCHES);
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  AUTO-MOVE (llamado por el scheduler RNF-03)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Si un jugador no ha enviado su jugada en 45 s, el backend elige
-     * aleatoriamente por él.
-     */
-    @Transactional
+@Transactional
     public void autoMoveIfTimeout(MatchTurn turn, long timeoutSeconds) {
-        // Re-leer desde BD para tener estado fresco
         MatchTurn fresh = turnRepo.findById(turn.getId()).orElse(null);
         if (fresh == null || fresh.getResult() != TurnResult.PENDING) return;
 
@@ -502,7 +425,6 @@ public class MatchService {
         if (p1NeedsAuto) autoMoveForPlayer(match, fresh, true);
         if (p2NeedsAuto) autoMoveForPlayer(match, fresh, false);
 
-        // Si ahora ambos han jugado, resolver
         fresh = turnRepo.findById(fresh.getId()).orElse(fresh);
         if (fresh.getPlayer1SubmittedAt() != null && fresh.getPlayer2SubmittedAt() != null
                 && fresh.getResult() == TurnResult.PENDING) {
@@ -527,7 +449,6 @@ public class MatchService {
                     .collect(Collectors.toList());
             if (available.isEmpty()) continue;
 
-            // Respetar la regla Legend (solo si hay cartas no-Legend disponibles como alternativa)
             int consecutive = isP1
                     ? match.getConsecutiveLegendPlayer1()
                     : match.getConsecutiveLegendPlayer2();
@@ -536,7 +457,6 @@ public class MatchService {
                         .filter(c2 -> c2.getType() != CardType.LEGEND)
                         .anyMatch(c2 -> getUsedAttributesForCard(match, isP1, c2).size() < 3);
                 if (hasAlt) continue;   // hay alternativa → respetar el bloqueo
-                // sin alternativa → permitir la Legend aunque esté "bloqueada"
             }
 
             Collections.shuffle(available);
@@ -554,16 +474,11 @@ public class MatchService {
             turnRepo.save(turn);
             return;
         }
-        // Sin movimientos disponibles — no debería ocurrir si se comprueba anyMovesAvailable()
         log.warn("autoMove: no hay movimientos disponibles para el jugador {} en partida {}",
                 isP1 ? "1" : "2", match.getId());
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  FORFEIT POR DESCONEXIÓN (llamado por el scheduler RNF-04)
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Transactional
+@Transactional
     public void checkDisconnectForMatch(Match match, long disconnectSeconds) {
         Match fresh = matchRepo.findById(match.getId()).orElse(null);
         if (fresh == null || fresh.getStatus() != MatchStatus.IN_PROGRESS) return;
@@ -575,7 +490,6 @@ public class MatchService {
                 && fresh.getLastActivityPlayer2().isBefore(cutoff);
 
         if (p1Disconnected && p2Disconnected) {
-            // Ambos desconectados — empate por abandono
             fresh.setWonByAbandon(true);
             finishMatch(fresh, null);
         } else if (p1Disconnected) {
@@ -587,12 +501,7 @@ public class MatchService {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  CONSTRUCCIÓN DEL MatchStateResponse
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    public MatchStateResponse buildState(Match match) {
-        // Re-leer estado fresco
+public MatchStateResponse buildState(Match match) {
         match = matchRepo.findById(match.getId()).orElse(match);
 
         MatchRound currentRound = null;
@@ -605,7 +514,6 @@ public class MatchService {
             turnsP1   = currentRound.getTurnsWonPlayer1();
             turnsP2   = currentRound.getTurnsWonPlayer2();
         } else {
-            // Puede haber terminado — coger la última ronda para el historial
             List<MatchRound> rounds = roundRepo.findByMatchOrderByRoundNumberAsc(match);
             if (!rounds.isEmpty()) {
                 currentRound = rounds.get(rounds.size() - 1);
@@ -615,11 +523,9 @@ public class MatchService {
             }
         }
 
-        // Cartas de cada jugador con su estado
         List<CardStateDto> p1Cards = buildCardStates(match, true);
         List<CardStateDto> p2Cards = buildCardStates(match, false);
 
-        // Turno pendiente y último completado
         TurnStateDto pendingTurn = null;
         TurnStateDto lastCompleted = null;
 
@@ -634,7 +540,6 @@ public class MatchService {
                 }
                 if (pendingTurn != null && lastCompleted != null) break;
             }
-            // Si no hay completado en la ronda actual, buscar en la anterior
             if (lastCompleted == null) {
                 List<MatchRound> allRounds = roundRepo.findByMatchOrderByRoundNumberAsc(match);
                 for (int r = allRounds.size() - 1; r >= 0 && lastCompleted == null; r--) {
@@ -648,12 +553,10 @@ public class MatchService {
             }
         }
 
-        // Recompensas (RF-48) — calculadas a partir del resultado, sin tocar la BD
         int rwXpP1 = 0, rwPtsP1 = 0, rwXpP2 = 0, rwPtsP2 = 0;
         if (match.getStatus() == MatchStatus.FINISHED) {
             Person winner = match.getWinner();
             if (winner == null) {
-                // Empate
                 rwXpP1 = XP_DRAW;  rwPtsP1 = PTS_DRAW;
                 rwXpP2 = XP_DRAW;  rwPtsP2 = PTS_DRAW;
             } else {
@@ -703,7 +606,6 @@ public class MatchService {
         Deck deck = isP1 ? match.getDeck1() : match.getDeck2();
         if (deck == null) return List.of();
 
-        // Cuántos turnos consecutivos lleva este jugador usando una carta Legend
         int consecutiveLegend = isP1
                 ? match.getConsecutiveLegendPlayer1()
                 : match.getConsecutiveLegendPlayer2();
@@ -711,8 +613,6 @@ public class MatchService {
         List<MatchTurn> completed = turnRepo.findAllCompletedByMatch(match);
         List<DeckCard> deckCards  = deckCardRepo.findByDeck(deck);
 
-        // El bloqueo de Legend solo se aplica si el jugador tiene cartas no-Legend disponibles.
-        // Si todas las cartas restantes son Legend (normales agotadas), el bloqueo se levanta.
         boolean hasNonLegendAvailable = consecutiveLegend >= 2 && deckCards.stream()
                 .filter(dc -> dc.getCard().getType() != CardType.LEGEND)
                 .anyMatch(dc -> getUsedAttributesForCard(match, isP1, dc.getCard()).size() < 3);
@@ -728,7 +628,6 @@ public class MatchService {
                             .map(t -> isP1 ? t.getPlayer1Attribute() : t.getPlayer2Attribute())
                             .filter(Objects::nonNull)
                             .collect(Collectors.toSet());
-                    // Bloqueada solo si consecutiveLegend >= 2 Y hay alternativas no-Legend
                     boolean legendBlocked = card.getType() == CardType.LEGEND
                             && consecutiveLegend >= 2
                             && hasNonLegendAvailable;
@@ -736,11 +635,7 @@ public class MatchService {
                 }).toList();
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  HELPERS INTERNOS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    private void createNextRoundAndTurn(Match match, int roundNumber) {
+private void createNextRoundAndTurn(Match match, int roundNumber) {
         MatchRound round = new MatchRound();
         round.setMatch(match);
         round.setRoundNumber(roundNumber);

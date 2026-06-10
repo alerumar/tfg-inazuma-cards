@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Person;
 import com.tfg.inazuma.model.Trade;
@@ -18,12 +18,10 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     List<Trade> findByInitiatorOrReceiverOrderByDateDesc(Person initiator, Person receiver);
 
-    /** Todos los intercambios activos globalmente (para calcular qué personas están ocupadas). */
-    @Query("SELECT t FROM Trade t WHERE t.status IN (:statuses)")
+@Query("SELECT t FROM Trade t WHERE t.status IN (:statuses)")
     List<Trade> findAllActive(@Param("statuses") List<TradeStatus> statuses);
 
-    /** Borra todos los intercambios donde el usuario es iniciador o receptor — para borrar cuenta. */
-    @Modifying
+@Modifying
     @Query("DELETE FROM Trade t WHERE t.initiator.id = :personId OR t.receiver.id = :personId")
     void deleteByPersonId(@Param("personId") Long personId);
 }

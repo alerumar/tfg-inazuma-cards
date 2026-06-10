@@ -1,9 +1,4 @@
-/**
- * Pantalla hub de partidas.
- *  - Invitar a un amigo a jugar
- *  - Ver partidas activas (pendiente respuesta / lobby / en curso)
- *  - Ver historial de partidas
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -30,8 +25,6 @@ import {
 import { FriendshipData } from '../types/friendship';
 import { MatchResponse, MatchStatus } from '../types/match';
 import { AppDialog } from '../components/AppDialog';
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function avatarUri(photo: string | null) {
   return photo ? `${BASE_URL}${photo}` : null;
@@ -71,8 +64,6 @@ function matchResultColor(m: MatchResponse, myId: number): string {
   return STATUS_COLOR[m.status];
 }
 
-// ── Sub-componentes ──────────────────────────────────────────────────────────
-
 function FriendRow({
   item,
   onInvite,
@@ -88,10 +79,6 @@ function FriendRow({
   const friend = item.requester.id === myId ? item.receiver : item.requester;
   const uri    = avatarUri(friend.profilePhoto);
 
-  // El botón de invitar se bloquea en tres situaciones distintas:
-  //   1. El amigo está desconectado
-  //   2. El propio usuario ya tiene una partida activa
-  //   3. El amigo ya está en una partida activa
   const friendInMatch = friend.inActiveMatch;
   const canInvite     = friend.online && !userInGame && !friendInMatch && inviting === null;
 
@@ -110,7 +97,7 @@ function FriendRow({
           <View style={[styles.dot, { backgroundColor: friend.online ? '#22C55E' : '#CCC' }]} />
           <Text style={styles.onlineText}>{friend.online ? 'Conectado' : 'Desconectado'}</Text>
         </View>
-        {/* Aviso inline cuando el amigo está en partida — igual que en intercambios */}
+        
         {friendInMatch && (
           <View style={styles.inMatchChip}>
             <Ionicons name="game-controller" size={11} color="#F59E0B" />
@@ -136,7 +123,6 @@ function FriendRow({
           )}
         </Pressable>
       ) : (
-        // Estado no invitable: solo mostrar un botón gris deshabilitado
         <View style={[styles.inviteBtn, styles.inviteBtnDisabled]}>
           <Text style={styles.inviteBtnText}>
             {!friend.online ? 'Offline' : userInGame ? 'En partida' : '–'}
@@ -167,7 +153,7 @@ function MatchCard({
       style={({ pressed }) => [styles.matchCard, pressed && styles.matchCardPressed]}
       onPress={onPress}
     >
-      {/* Avatar rival */}
+      
       {uri ? (
         <Image source={{ uri }} style={styles.matchAvatar} />
       ) : (
@@ -176,8 +162,7 @@ function MatchCard({
         </View>
       )}
 
-      {/* Info */}
-      <View style={styles.matchInfo}>
+<View style={styles.matchInfo}>
         <Text style={styles.matchNick} numberOfLines={1}>{opponent.nickname}</Text>
         <View style={[styles.statusPill, { backgroundColor: color + '22' }]}>
           <View style={[styles.statusDot, { backgroundColor: color }]} />
@@ -185,14 +170,12 @@ function MatchCard({
         </View>
       </View>
 
-      {/* Marcador si hay rondas */}
-      {match.status !== 'PENDING_INVITE' && (() => {
+{match.status !== 'PENDING_INVITE' && (() => {
         const isFinished = match.status === 'FINISHED';
         const amP1       = match.player1.id === myId;
         const myRounds   = amP1 ? match.roundsWonPlayer1 : match.roundsWonPlayer2;
         const oppRounds  = amP1 ? match.roundsWonPlayer2 : match.roundsWonPlayer1;
 
-        // Color del marcador: ganador en color de resultado, perdedor en gris
         const myWon  = isFinished && match.winnerId === myId;
         const oppWon = isFinished && match.winnerId !== null && match.winnerId !== myId;
         const isDraw = isFinished && match.winnerId === null;
@@ -200,28 +183,26 @@ function MatchCard({
         const myScoreColor  = myWon  ? resCol          : oppWon ? Colors.textLight : isDraw ? resCol : Colors.primary;
         const oppScoreColor = oppWon ? '#EF4444'        : myWon  ? Colors.textLight : isDraw ? resCol : Colors.textMid;
 
-        // Sub-marcador de turnos (solo cuando ningún jugador llegó a 3 rondas)
         const showTurns = isFinished && Math.max(match.roundsWonPlayer1, match.roundsWonPlayer2) < 3;
         const myTurns   = amP1 ? match.turnsWonPlayer1LastRound : match.turnsWonPlayer2LastRound;
         const oppTurns  = amP1 ? match.turnsWonPlayer2LastRound : match.turnsWonPlayer1LastRound;
 
-        // Recompensas (calculadas en cliente)
         const myXp  = isFinished ? (myWon ? 200 : isDraw ? 100 : 50) : 0;
         const myPts = isFinished ? (myWon ? 6   : isDraw ? 4   : 2)  : 0;
 
         return (
           <View style={styles.scoreWrap}>
-            {/* Marcador de rondas */}
+            
             <View style={styles.scoreRoundsRow}>
               <Text style={[styles.scoreRound, { color: myScoreColor }]}>{myRounds}</Text>
               <Text style={styles.scoreSep}>–</Text>
               <Text style={[styles.scoreRound, { color: oppScoreColor }]}>{oppRounds}</Text>
             </View>
-            {/* Sub-marcador de turnos */}
+            
             {showTurns && (
               <Text style={styles.scoreTurnsSub}>{myTurns}–{oppTurns} turnos</Text>
             )}
-            {/* Recompensas */}
+            
             {isFinished && (
               <Text style={styles.scoreRewards}>+{myXp} XP · +{myPts} pts</Text>
             )}
@@ -236,8 +217,6 @@ function MatchCard({
   );
 }
 
-// ── Pantalla principal ───────────────────────────────────────────────────────
-
 export default function GameScreen() {
   const { user, refreshBadges } = useAuth();
   const router  = useRouter();
@@ -249,7 +228,6 @@ export default function GameScreen() {
   const [refreshing,    setRefreshing]    = useState(false);
   const [inviting,      setInviting]      = useState<number | null>(null);
 
-  // Confirm / error dialogs
   const [confirmFriend, setConfirmFriend] = useState<FriendshipData | null>(null);
   const [inviteError,   setInviteError]   = useState<string | null>(null);
 
@@ -265,7 +243,7 @@ export default function GameScreen() {
       setFriends(f);
       setActiveMatches(a);
       setHistory(h.filter(m => m.status === 'FINISHED').slice(0, 20));
-    } catch { /* silent */ } finally {
+    } catch {  } finally {
       if (isRefresh) setRefreshing(false); else setLoading(false);
     }
   }, [user]);
@@ -300,7 +278,7 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      {/* Header */}
+      
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Colors.textDark} />
@@ -321,7 +299,7 @@ export default function GameScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Partidas activas */}
+        
         {activeMatches.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Partidas activas</Text>
@@ -336,8 +314,7 @@ export default function GameScreen() {
           </View>
         )}
 
-        {/* Invitar a un amigo */}
-        <View style={styles.section}>
+<View style={styles.section}>
           <Text style={styles.sectionTitle}>Invitar a jugar</Text>
           {loading ? (
             <ActivityIndicator color={Colors.primary} style={{ marginTop: 20 }} />
@@ -359,8 +336,7 @@ export default function GameScreen() {
           )}
         </View>
 
-        {/* Historial */}
-        {history.length > 0 && (
+{history.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Historial</Text>
             {history.map(m => (
@@ -375,8 +351,7 @@ export default function GameScreen() {
         )}
       </ScrollView>
 
-      {/* Error dialog (invite failed) */}
-      {inviteError && (
+{inviteError && (
         <AppDialog
           visible
           title="No se pudo invitar"
@@ -388,8 +363,7 @@ export default function GameScreen() {
         />
       )}
 
-      {/* Confirm invite dialog */}
-      {confirmFriend && (() => {
+{confirmFriend && (() => {
         const friend = confirmFriend.requester.id === user.id
           ? confirmFriend.receiver
           : confirmFriend.requester;
@@ -409,8 +383,6 @@ export default function GameScreen() {
     </SafeAreaView>
   );
 }
-
-// ── Estilos ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
@@ -451,7 +423,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 
-  // Friend row
   friendRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -505,7 +476,6 @@ const styles = StyleSheet.create({
   inviteBtnPressed:  { opacity: 0.75 },
   inviteBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
 
-  // Match card
   matchCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -546,7 +516,6 @@ const styles = StyleSheet.create({
   scoreTurnsSub: { fontSize: 11, fontWeight: '700', color: Colors.textMid, textAlign: 'right' },
   scoreRewards:  { fontSize: 11, fontWeight: '600', color: Colors.textLight, textAlign: 'right' },
 
-  // Empty state
   empty: {
     alignItems: 'center',
     paddingVertical: 28,

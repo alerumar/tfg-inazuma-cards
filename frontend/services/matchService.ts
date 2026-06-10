@@ -1,12 +1,9 @@
-import { BASE_URL } from '../constants/api';
+﻿import { BASE_URL } from '../constants/api';
 import { CardAttribute, MatchResponse, MatchStateResponse } from '../types/match';
 
 const base = `${BASE_URL}/api/matches`;
 const H = { 'Content-Type': 'application/json' };
 
-// ── Invitación ──────────────────────────────────────────────────────────────
-
-/** RF-31 — El iniciador invita a un amigo a jugar. */
 export async function apiInvitePlayer(
   initiatorId: number,
   receiverId: number,
@@ -19,7 +16,6 @@ export async function apiInvitePlayer(
   return res.json();
 }
 
-/** RF-32 — Aceptar o rechazar invitación. */
 export async function apiRespondInvite(
   matchId: number,
   receiverId: number,
@@ -33,7 +29,6 @@ export async function apiRespondInvite(
   return res.json();
 }
 
-/** Cancelar invitación enviada o salir del lobby. */
 export async function apiCancelMatch(
   matchId: number,
   playerId: number,
@@ -46,9 +41,6 @@ export async function apiCancelMatch(
   return res.json();
 }
 
-// ── Lobby ───────────────────────────────────────────────────────────────────
-
-/** RF-33 — Elegir baraja y marcar listo. */
 export async function apiSetReady(
   matchId: number,
   playerId: number,
@@ -62,7 +54,6 @@ export async function apiSetReady(
   return res.json();
 }
 
-/** Desmarcar listo para poder cambiar de baraja (antes de que el rival también lo esté). */
 export async function apiUnsetReady(
   matchId: number,
   playerId: number,
@@ -75,16 +66,12 @@ export async function apiUnsetReady(
   return res.json();
 }
 
-// ── Partida en curso ─────────────────────────────────────────────────────────
-
-/** Polling — estado completo de la partida. */
 export async function apiGetMatchState(matchId: number): Promise<MatchStateResponse> {
   const res = await fetch(`${base}/${matchId}/state`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-/** RF-34 — Enviar jugada (carta + atributo). */
 export async function apiSubmitMove(
   matchId: number,
   playerId: number,
@@ -99,7 +86,6 @@ export async function apiSubmitMove(
   return res.json();
 }
 
-/** RNF-04 — Heartbeat de partida para mantener la sesión activa. */
 export async function apiMatchHeartbeat(
   matchId: number,
   playerId: number,
@@ -110,11 +96,9 @@ export async function apiMatchHeartbeat(
       body: JSON.stringify({ playerId }),
     });
   } catch {
-    // Silencioso — un fallo de red no debe romper el juego
   }
 }
 
-/** RF-50 — Votar revancha inmediata (wants=true aceptar / false cancelar). */
 export async function apiVoteRematch(
   matchId: number,
   playerId: number,
@@ -128,7 +112,6 @@ export async function apiVoteRematch(
   return res.json();
 }
 
-/** Abandonar voluntariamente la partida. */
 export async function apiForfeit(
   matchId: number,
   playerId: number,
@@ -141,23 +124,18 @@ export async function apiForfeit(
   return res.json();
 }
 
-// ── Consultas ────────────────────────────────────────────────────────────────
-
-/** Partidas activas de un jugador (PENDING_INVITE | WAITING_READY | IN_PROGRESS). */
 export async function apiGetActiveMatches(personId: number): Promise<MatchResponse[]> {
   const res = await fetch(`${base}/persons/${personId}/active`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-/** Invitaciones pendientes donde el jugador es receptor. */
 export async function apiGetPendingInvites(personId: number): Promise<MatchResponse[]> {
   const res = await fetch(`${base}/persons/${personId}/pending-invites`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
-/** Historial de partidas terminadas. */
 export async function apiGetMatchHistory(personId: number): Promise<MatchResponse[]> {
   const res = await fetch(`${base}/persons/${personId}/history`);
   if (!res.ok) throw new Error(await res.text());

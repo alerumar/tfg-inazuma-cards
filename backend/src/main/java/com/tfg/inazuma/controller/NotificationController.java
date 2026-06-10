@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.NotificationResponse;
 import com.tfg.inazuma.service.NotificationService;
@@ -16,20 +16,17 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    /** GET /api/persons/{personId}/notifications — lista todas las notificaciones */
-    @GetMapping
+@GetMapping
     public ResponseEntity<List<NotificationResponse>> getAll(@PathVariable Long personId) {
         return ResponseEntity.ok(notificationService.getForUser(personId));
     }
 
-    /** GET /api/persons/{personId}/notifications/unread-count — número de no leídas */
-    @GetMapping("/unread-count")
+@GetMapping("/unread-count")
     public ResponseEntity<Map<String, Long>> getUnreadCount(@PathVariable Long personId) {
         return ResponseEntity.ok(Map.of("count", notificationService.countUnread(personId)));
     }
 
-    /** PATCH /api/persons/{personId}/notifications/read-all — marca todas como leídas */
-    @PatchMapping("/read-all")
+@PatchMapping("/read-all")
     public ResponseEntity<Void> markAllRead(@PathVariable Long personId) {
         notificationService.markAllRead(personId);
         return ResponseEntity.noContent().build();

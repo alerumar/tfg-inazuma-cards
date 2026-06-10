@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.NotificationResponse;
 import com.tfg.inazuma.model.Notification;
@@ -18,12 +18,10 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final PersonRepository       personRepository;
 
-    /** Tipos de notificación que se gestionan de forma dinámica y no deben aparecer en la lista. */
-    private static final List<String> EXCLUDED_TYPES =
+private static final List<String> EXCLUDED_TYPES =
             List.of("GAME_INVITE", "GAME_INVITE_ACCEPTED", "GAME_INVITE_REJECTED");
 
-    /** Crea y persiste una notificación. */
-    public Notification create(Person recipient, Person actor, String type, String message) {
+public Notification create(Person recipient, Person actor, String type, String message) {
         Notification n = new Notification();
         n.setRecipient(recipient);
         n.setActor(actor);
@@ -34,8 +32,7 @@ public class NotificationService {
         return notificationRepository.save(n);
     }
 
-    /** Devuelve todas las notificaciones del usuario (más reciente primero), excluyendo las de partida. */
-    public List<NotificationResponse> getForUser(Long personId) {
+public List<NotificationResponse> getForUser(Long personId) {
         Person person = findOrThrow(personId);
         return notificationRepository.findByRecipientOrderByCreatedAtDesc(person)
                 .stream()
@@ -44,8 +41,7 @@ public class NotificationService {
                 .toList();
     }
 
-    /** Cuenta las notificaciones no leídas del usuario, excluyendo las de partida. */
-    public long countUnread(Long personId) {
+public long countUnread(Long personId) {
         Person person = findOrThrow(personId);
         return notificationRepository.findByRecipientOrderByCreatedAtDesc(person)
                 .stream()
@@ -53,8 +49,7 @@ public class NotificationService {
                 .count();
     }
 
-    /** Marca todas las notificaciones del usuario como leídas. */
-    public void markAllRead(Long personId) {
+public void markAllRead(Long personId) {
         Person person = findOrThrow(personId);
         List<Notification> unread = notificationRepository.findByRecipientAndReadFalse(person);
         unread.forEach(n -> n.setRead(true));

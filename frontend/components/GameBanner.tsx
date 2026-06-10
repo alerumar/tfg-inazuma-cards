@@ -1,14 +1,4 @@
-/**
- * GameBanner — banner flotante global para invitaciones a partida.
- *
- * Aparece en la parte inferior de la pantalla cuando el usuario tiene
- * una invitación pendiente. Permite aceptar/rechazar directamente o
- * navegar a la pantalla de la partida.
- *
- * Solo se muestra si el usuario NO está ya en una pantalla game/[id].
- * Si la invitación desaparece sin que el usuario haya respondido
- * (el invitador la canceló), muestra brevemente "Reto cancelado".
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -38,12 +28,10 @@ export default function GameBanner() {
   const [loading,   setLoading]   = useState(false);
   const slideAnim                 = useRef(new Animated.Value(120)).current;
 
-  // Refs para evitar condiciones de carrera en los efectos
   const inviteRef    = useRef<MatchResponse | null>(null);
   const respondedRef = useRef(false);
   const cancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // No mostrar si ya estamos en la pantalla de partida
   const isOnGameScreen = path.startsWith('/game/');
 
   const hide = useCallback(() => {
@@ -69,7 +57,6 @@ export default function GameBanner() {
     }).start();
   }, [slideAnim]);
 
-  // Reacciona al contador de invitaciones pendientes
   useEffect(() => {
     if (!user || isOnGameScreen) {
       hide();
@@ -77,10 +64,8 @@ export default function GameBanner() {
     }
 
     if (pendingGameInvites === 0) {
-      // Si el banner está activo y el usuario NO respondió → el invitador canceló
       if (inviteRef.current !== null && !respondedRef.current) {
         setCancelled(true);
-        // Deslizar hacia arriba tras 2 s
         cancelTimerRef.current = setTimeout(() => hide(), 2000);
       } else {
         hide();
@@ -88,11 +73,9 @@ export default function GameBanner() {
       return;
     }
 
-    // Hay invitaciones → mostrar la primera
     apiGetPendingInvites(user.id)
       .then(list => { if (list.length > 0) show(list[0]); else hide(); })
       .catch(() => hide());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingGameInvites, isOnGameScreen]);
 
   const handleAccept = async () => {
@@ -118,7 +101,7 @@ export default function GameBanner() {
     setLoading(true);
     try {
       await apiRespondInvite(invite.id, user.id, false);
-    } catch { /* silent */ } finally {
+    } catch {  } finally {
       refreshBadges();
       hide();
       setLoading(false);
@@ -146,7 +129,7 @@ export default function GameBanner() {
       pointerEvents="box-none"
     >
       <Pressable style={[styles.card, cancelled && styles.cardCancelled]} onPress={handleTap}>
-        {/* Avatar */}
+        
         <View style={styles.avatarWrap}>
           {avatarUri ? (
             <Image source={{ uri: avatarUri }} style={[styles.avatar, cancelled && styles.avatarCancelled]} />
@@ -162,8 +145,7 @@ export default function GameBanner() {
           )}
         </View>
 
-        {/* Texto */}
-        <View style={styles.textWrap}>
+<View style={styles.textWrap}>
           {cancelled ? (
             <>
               <Text style={styles.cancelledTitle}>Reto cancelado</Text>
@@ -183,8 +165,7 @@ export default function GameBanner() {
           )}
         </View>
 
-        {/* Botones — solo si no está cancelado */}
-        {!cancelled && (
+{!cancelled && (
           <View style={styles.btnRow}>
             <Pressable
               style={[styles.btn, styles.btnReject]}

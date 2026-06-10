@@ -1,4 +1,4 @@
-import { BASE_URL } from '../constants/api';
+﻿import { BASE_URL } from '../constants/api';
 import { CollectionEntry } from '../types/collection';
 
 export async function apiGetFullCollection(personId: number): Promise<CollectionEntry[]> {

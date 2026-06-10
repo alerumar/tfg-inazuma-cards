@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -21,9 +21,7 @@ public class MissionService {
     private final PersonMissionRepository personMissionRepository;
     private final PersonRepository        personRepository;
 
-    // ─── Admin: CRUD de misiones ──────────────────────────────────────────────
-
-    public List<Mission> findAll() { return missionRepository.findAll(); }
+public List<Mission> findAll() { return missionRepository.findAll(); }
 
     public Optional<Mission> findById(Long id) { return missionRepository.findById(id); }
 
@@ -35,10 +33,7 @@ public class MissionService {
         return true;
     }
 
-    // ─── Asignación ───────────────────────────────────────────────────────────
-
-    /** Asigna todas las misiones existentes a un usuario recién registrado. */
-    @Transactional
+@Transactional
     public void assignAllToNewPerson(Person person) {
         List<Mission> all = missionRepository.findAll();
         for (Mission mission : all) {
@@ -67,9 +62,7 @@ public class MissionService {
         return personMissionRepository.findByPerson(findPersonOrThrow(personId));
     }
 
-    // ─── Progreso (solo incrementa; la recompensa se reclama manualmente) ─────
-
-    @Transactional
+@Transactional
     public void recordEvent(Person person, MissionType type) {
         personMissionRepository.incrementProgress(person, type);
     }
@@ -79,9 +72,7 @@ public class MissionService {
         recordEvent(findPersonOrThrow(personId), type);
     }
 
-    // ─── Reclamación manual ───────────────────────────────────────────────────
-
-    @Transactional
+@Transactional
     public PersonMission claim(Long personId, Long personMissionId) {
         PersonMission pm = personMissionRepository.findById(personMissionId)
                 .orElseThrow(() -> new IllegalArgumentException("Entrada de misión no encontrada"));
@@ -99,9 +90,7 @@ public class MissionService {
         return personMissionRepository.save(pm);
     }
 
-    // ─── Recompensas ─────────────────────────────────────────────────────────
-
-    private void grantRewards(Person person, int xp, int points) {
+private void grantRewards(Person person, int xp, int points) {
         person.setPackPoints(person.getPackPoints() + points);
         person.setTotalExperience(person.getTotalExperience() + xp);
 

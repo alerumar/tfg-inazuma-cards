@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.CreateDeckRequest;
 import com.tfg.inazuma.dto.DeckCardResponse;
@@ -78,8 +78,7 @@ public class DeckController {
         }
     }
 
-    /** Intercambia una carta del slot por otra en una sola transacción atómica. */
-    @PatchMapping("/{deckId}/cards/{deckCardId}/swap")
+@PatchMapping("/{deckId}/cards/{deckCardId}/swap")
     public ResponseEntity<?> swapCard(@PathVariable Long personId,
                                       @PathVariable Long deckId,
                                       @PathVariable Long deckCardId,

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   ImageBackground,
@@ -24,22 +24,19 @@ export default function MatchesScreen() {
       style={styles.bg}
       resizeMode="cover"
     >
-      {/* Capa semitransparente para legibilidad sin tapar la imagen */}
+      
       <View style={styles.overlay} />
 
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
 
-        {/* Título arriba */}
-        <View style={styles.titleBlock}>
+<View style={styles.titleBlock}>
           <Text style={styles.title}>Arena</Text>
           <Text style={styles.subtitle}>Juega contra tus amigos o intercambia cartas</Text>
         </View>
 
-        {/* Botones abajo */}
-        <View style={styles.buttonRow}>
+<View style={styles.buttonRow}>
 
-          {/* Intercambios */}
-          <Pressable
+<Pressable
             style={({ pressed }) => [styles.modeBtn, pressed && styles.modeBtnPressed]}
             onPress={() => router.push('/trades' as any)}
           >
@@ -51,8 +48,7 @@ export default function MatchesScreen() {
             {pendingTrades > 0 && <View style={styles.tradesDot} />}
           </Pressable>
 
-          {/* Partidas */}
-          <Pressable
+<Pressable
             style={({ pressed }) => [styles.modeBtn, pressed && styles.modeBtnPressed]}
             onPress={() => router.push('/game' as any)}
           >
@@ -82,7 +78,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  // ── Título ──────────────────────────────────────────────────────────────────
   titleBlock: {
     alignItems: 'center',
     paddingTop: 32,
@@ -109,7 +104,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 5,
   },
 
-  // ── Botones ──────────────────────────────────────────────────────────────────
   buttonRow: {
     flexDirection: 'row',
     gap: 14,

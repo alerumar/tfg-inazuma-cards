@@ -1,4 +1,4 @@
-import { CardData } from './collection';
+﻿import { CardData } from './collection';
 
 export type PackType = 'INAZUMA_ELEVEN' | 'INAZUMA_ELEVEN_GO';
 

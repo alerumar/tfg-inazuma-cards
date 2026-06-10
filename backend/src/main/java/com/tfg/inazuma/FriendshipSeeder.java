@@ -1,4 +1,4 @@
-package com.tfg.inazuma;
+﻿package com.tfg.inazuma;
 
 import com.tfg.inazuma.model.Friendship;
 import com.tfg.inazuma.model.FriendshipStatus;
@@ -15,11 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-/**
- * Crea amistades ACCEPTED entre admin, user1 y user2 al arrancar,
- * solo si aún no existen. Se ejecuta siempre (también cuando los
- * usuarios ya estaban creados), por lo que es seguro de re-ejecutar.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -57,8 +52,7 @@ public class FriendshipSeeder implements CommandLineRunner {
         }
     }
 
-    /** Crea una amistad ACCEPTED entre a y b si no existe ninguna relación entre ellos. */
-    private int ensureFriendship(Person a, Person b) {
+private int ensureFriendship(Person a, Person b) {
         if (friendshipRepository.findBetween(a, b).isPresent()) return 0;
 
         Friendship f = new Friendship();
@@ -67,7 +61,6 @@ public class FriendshipSeeder implements CommandLineRunner {
         f.setStatus(FriendshipStatus.ACCEPTED);
         friendshipRepository.save(f);
 
-        // Progreso de misión ADD_FRIENDS para ambas partes
         missionService.recordEvent(a, MissionType.ADD_FRIENDS);
         missionService.recordEvent(b, MissionType.ADD_FRIENDS);
         return 1;

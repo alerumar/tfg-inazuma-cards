@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.MatchResponse;
 import com.tfg.inazuma.dto.MatchStateResponse;
@@ -123,11 +123,7 @@ class MatchServiceTest {
                 .thenReturn(Optional.empty());
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-45 — Invitar a un amigo a una partida
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-45 | Caso positivo: ambos jugadores libres → invitación PENDING_INVITE creada")
     void invitePlayer_casoPositivo_invitacionCreada() {
         Person p1 = crearPersona(1L, "pedro");
@@ -188,11 +184,7 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("ya tiene una partida activa"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-46 — Aceptar / Rechazar invitación
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-46 | Caso positivo: receptor acepta → partida pasa a WAITING_READY")
     void respondInvite_casoPositivo_aceptar() {
         Person p1 = crearPersona(1L, "pedro");
@@ -241,11 +233,7 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("No eres el receptor de esta invitación"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-47 / RF-49 — Elegir baraja y marcar listo
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-47 | Caso positivo: jugador 1 elige baraja válida → marcado como listo")
     void setReady_casoPositivo_unJugadorListo() {
         Person p1 = crearPersona(1L, "pedro");
@@ -350,7 +338,6 @@ class MatchServiceTest {
         Deck deck1 = crearBaraja(100L, p1);
         Deck deck2 = crearBaraja(200L, p2);
 
-        // Jugador 1 ya está listo
         match.setDeck1(deck1);
         match.setPlayer1Ready(true);
 
@@ -367,11 +354,7 @@ class MatchServiceTest {
         assertNotEquals(MatchStatus.IN_PROGRESS, match.getStatus());
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-50 — Deshacer listo (cambiar baraja antes de empezar)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-50 | Caso positivo: jugador deshace listo → ready=false y baraja limpiada")
     void unsetReady_casoPositivo_deshacerListo() {
         Person p1 = crearPersona(1L, "pedro");
@@ -409,11 +392,7 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("La partida no está en fase de lobby"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-51 — Salir del lobby antes de que empiece la partida
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-51 | Caso positivo: jugador cancela en el lobby → partida CANCELLED")
     void cancelMatch_casoPositivo_cancelarLobby() {
         Person p1 = crearPersona(1L, "pedro");
@@ -446,11 +425,7 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("Solo se puede cancelar antes de empezar la partida"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-59 — Seleccionar carta y atributo en el turno
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-59 | Caso positivo: carta en baraja y atributo no usado → jugada registrada")
     void submitMove_casoPositivo_jugadaRegistrada() {
         Person p1 = crearPersona(1L, "pedro");
@@ -571,11 +546,7 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("No puedes usar una carta Legend tres turnos consecutivos"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-62 — Abandonar la partida voluntariamente
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-62 | Caso positivo: jugador 1 abandona → jugador 2 gana, partida FINISHED")
     void forfeit_casoPositivo_jugadorAbandonaYRivalGana() {
         Person p1 = crearPersona(1L, "pedro");
@@ -613,11 +584,7 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("La partida no está en curso"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-66 / RF-67 — Votar revancha
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-66 | Caso positivo: ambos jugadores quieren revancha → nueva partida WAITING_READY creada")
     void voteRematch_casoPositivo_ambosQuierenRevancha() {
         Person p1 = crearPersona(1L, "pedro");

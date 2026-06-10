@@ -1,7 +1,4 @@
-/**
- * RewardModal — modal genérico de "¡Enhorabuena!" que muestra las recompensas
- * obtenidas y, al cerrarse, permite disparar el modal de subida de nivel.
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import {
   Modal,
@@ -34,25 +31,20 @@ export function RewardModal({ visible, rewards, subtitle, onClose }: Props) {
       <View style={styles.overlay}>
         <View style={styles.card}>
 
-          {/* Estrellas decorativas */}
-          <View style={styles.starsRow}>
+<View style={styles.starsRow}>
             <Ionicons name="star" size={18} color="#F59E0B" />
             <Ionicons name="star" size={28} color="#F59E0B" />
             <Ionicons name="star" size={18} color="#F59E0B" />
           </View>
 
-          {/* Título */}
-          <Text style={styles.title}>¡Enhorabuena!</Text>
+<Text style={styles.title}>¡Enhorabuena!</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
 
-          {/* Separador */}
-          <View style={styles.divider} />
+<View style={styles.divider} />
 
-          {/* Etiqueta "Has recibido" */}
-          <Text style={styles.receivedLabel}>Has recibido</Text>
+<Text style={styles.receivedLabel}>Has recibido</Text>
 
-          {/* Lista de recompensas */}
-          <View style={styles.rewardsList}>
+<View style={styles.rewardsList}>
             {rewards.map((r, i) => {
               const color = r.color ?? Colors.primary;
               return (
@@ -67,8 +59,7 @@ export function RewardModal({ visible, rewards, subtitle, onClose }: Props) {
             })}
           </View>
 
-          {/* Botón cerrar */}
-          <Pressable
+<Pressable
             style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
             onPress={onClose}
           >
@@ -81,7 +72,6 @@ export function RewardModal({ visible, rewards, subtitle, onClose }: Props) {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,

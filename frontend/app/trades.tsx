@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -36,7 +36,6 @@ const avatarUri = (p: PersonResponse) =>
     ? { uri: `${BASE_URL}${p.profilePhoto}` }
     : { uri: `${BASE_URL}/images/default_profile.png` };
 
-// ── Labels de estado ──────────────────────────────────────────────────────────
 function statusLabel(status: TradeStatus, iAmInitiator: boolean): string {
   switch (status) {
     case 'PENDING_RESPONSE':
@@ -62,7 +61,6 @@ function statusColor(status: TradeStatus): string {
 const isActive = (s: TradeStatus) =>
   s === 'PENDING_RESPONSE' || s === 'PENDING_CONFIRMATION';
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function TradesScreen() {
   const router                             = useRouter();
   const { user, refreshBadges }           = useAuth();
@@ -100,7 +98,6 @@ export default function TradesScreen() {
 
   if (!user) return null;
 
-  // ── Acción: receptor rechaza ──────────────────────────────────────────────
   const handleReject = (trade: TradeData) => {
     showConfirm(
       'Rechazar intercambio',
@@ -120,7 +117,6 @@ export default function TradesScreen() {
     );
   };
 
-  // ── Acción: iniciador retira propuesta (aún sin respuesta) ───────────────
   const handleWithdraw = (trade: TradeData) => {
     showConfirm(
       'Retirar propuesta',
@@ -138,7 +134,6 @@ export default function TradesScreen() {
     );
   };
 
-  // ── Acción: iniciador confirma ────────────────────────────────────────────
   const handleConfirm = (trade: TradeData, accept: boolean) => {
     if (!accept) {
       showConfirm(
@@ -177,7 +172,7 @@ export default function TradesScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Header */}
+      
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
@@ -204,8 +199,7 @@ export default function TradesScreen() {
           }
         >
 
-          {/* ── Activos ── */}
-          {active.length > 0 && (
+{active.length > 0 && (
             <>
               <Text style={styles.sectionLabel}>En curso</Text>
               {active.map(t => (
@@ -224,8 +218,7 @@ export default function TradesScreen() {
             </>
           )}
 
-          {/* ── Vacío activo ── */}
-          {active.length === 0 && (
+{active.length === 0 && (
             <View style={styles.emptyBox}>
               <Ionicons name="swap-horizontal-outline" size={52} color={Colors.primaryLight} />
               <Text style={styles.emptyTitle}>Sin intercambios activos</Text>
@@ -235,8 +228,7 @@ export default function TradesScreen() {
             </View>
           )}
 
-          {/* ── Historial ── */}
-          {history.length > 0 && (
+{history.length > 0 && (
             <>
               <Text style={[styles.sectionLabel, { marginTop: 8 }]}>Historial</Text>
               {history.map(t => (
@@ -255,8 +247,7 @@ export default function TradesScreen() {
         </ScrollView>
       )}
 
-      {/* FAB — solo si no tienes ya un intercambio activo como iniciador */}
-      {!hasActiveAsInitiator && (
+{!hasActiveAsInitiator && (
         <Pressable
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           onPress={() => router.push('/trade/new' as any)}
@@ -270,7 +261,6 @@ export default function TradesScreen() {
   );
 }
 
-// ── Tarjeta de intercambio ────────────────────────────────────────────────────
 function TradeCard({
   trade, userId, ownedCardIds, acting, onWithdraw, onReject, onConfirm, onRespond,
 }: {
@@ -293,23 +283,20 @@ function TradeCard({
 
   return (
     <View style={[styles.tradeCard, !active && styles.tradeCardDone]}>
-      {/* Badge de estado */}
+      
       <View style={[styles.statusBadge, { backgroundColor: color + '22', borderColor: color + '55' }]}>
         <Text style={[styles.statusText, { color }]}>{label}</Text>
       </View>
 
-      {/* Cuerpo: partner + cartas */}
-      <View style={styles.tradeBody}>
+<View style={styles.tradeBody}>
 
-        {/* Avatar del otro */}
-        <View style={styles.partnerWrap}>
+<View style={styles.partnerWrap}>
           <Image source={avatarUri(partner)} style={styles.partnerAvatar} />
           <Text style={styles.partnerNick} numberOfLines={1}>{partner.nickname}</Text>
         </View>
 
-        {/* Cartas */}
-        <View style={styles.cardsRow}>
-          {/* Mi carta */}
+<View style={styles.cardsRow}>
+          
           <View style={styles.cardSlot}>
             <Text style={styles.cardSlotLabel}>Tú ofreces</Text>
             {myCard ? (
@@ -323,8 +310,7 @@ function TradeCard({
 
           <Ionicons name="swap-horizontal" size={22} color={Colors.textLight} style={{ marginTop: 18 }} />
 
-          {/* Su carta */}
-          <View style={styles.cardSlot}>
+<View style={styles.cardSlot}>
             <Text style={styles.cardSlotLabel}>Recibes</Text>
             {theirCard ? (
               <View style={{ position: 'relative' }}>
@@ -345,12 +331,11 @@ function TradeCard({
         </View>
       </View>
 
-      {/* Acciones */}
-      {acting ? (
+{acting ? (
         <ActivityIndicator color={Colors.primary} style={{ marginTop: 4 }} />
       ) : (
         <>
-          {/* Iniciador con propuesta en espera → retirar */}
+          
           {iAmInitiator && trade.status === 'PENDING_RESPONSE' && (
             <View style={styles.actionRow}>
               <Pressable style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={onWithdraw}>
@@ -359,8 +344,7 @@ function TradeCard({
             </View>
           )}
 
-          {/* Receptor con propuesta pendiente → responder o rechazar */}
-          {!iAmInitiator && trade.status === 'PENDING_RESPONSE' && (
+{!iAmInitiator && trade.status === 'PENDING_RESPONSE' && (
             <View style={styles.actionRow}>
               <Pressable style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={onReject}>
                 <Text style={styles.actionBtnSecondaryText}>Rechazar</Text>
@@ -371,8 +355,7 @@ function TradeCard({
             </View>
           )}
 
-          {/* Iniciador con contra-oferta → confirmar o cancelar */}
-          {iAmInitiator && trade.status === 'PENDING_CONFIRMATION' && (
+{iAmInitiator && trade.status === 'PENDING_CONFIRMATION' && (
             <View style={styles.actionRow}>
               <Pressable style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={() => onConfirm?.(false)}>
                 <Text style={styles.actionBtnSecondaryText}>Cancelar</Text>
@@ -388,7 +371,6 @@ function TradeCard({
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -411,7 +393,6 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textDark },
   emptyDesc:  { fontSize: 13, color: Colors.textLight, textAlign: 'center', lineHeight: 19 },
 
-  // Tarjeta
   tradeCard: {
     backgroundColor: Colors.surface,
     borderRadius: 18, borderWidth: 1, borderColor: Colors.border,

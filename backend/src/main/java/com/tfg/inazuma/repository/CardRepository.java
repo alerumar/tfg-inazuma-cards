@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.CardType;

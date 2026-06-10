@@ -1,6 +1,4 @@
-/**
- * shop.tsx — Tienda
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -24,7 +22,6 @@ import { PersonResponse } from '../types/auth';
 
 const DAILY_POINTS = 6;
 
-/** Devuelve la marca de tiempo (ms) de la próxima 9:00 desde ahora. */
 function nextNineAM(): number {
   const now  = new Date();
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0, 0, 0);
@@ -32,7 +29,6 @@ function nextNineAM(): number {
   return next.getTime();
 }
 
-/** Devuelve { h, m } que faltan hasta `targetMs`. */
 function timeLeft(targetMs: number): { h: number; m: number } {
   const diffMs = Math.max(0, targetMs - Date.now());
   const totalM = Math.floor(diffMs / 60_000);
@@ -48,18 +44,14 @@ export default function ShopScreen() {
   const [loading,       setLoading]       = useState(true);
   const [claiming,      setClaiming]      = useState(false);
 
-  // Modal de recompensa — se muestra ANTES del modal de nivel
   const [rewardVisible, setRewardVisible] = useState(false);
   const [rewardItems,   setRewardItems]   = useState<RewardItem[]>([]);
   const [pendingUser,   setPendingUser]   = useState<PersonResponse | null>(null);
 
-  // Objetivo fijo: próxima 9:00 — se recalcula al enfocar la pantalla
   const targetRef = useRef<number>(nextNineAM());
-  // Tick para forzar re-render cada 60 s
   const [, setTick] = useState(0);
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── Carga de estado ──────────────────────────────────────────────────────────
   const fetchStatus = useCallback(async () => {
     if (!user) return;
     try {
@@ -73,18 +65,15 @@ export default function ShopScreen() {
   }, [user?.id]);
 
   useFocusEffect(useCallback(() => {
-    // Al enfocar, recalculamos la próxima 9:00 y cargamos estado
     targetRef.current = nextNineAM();
     setTick(t => t + 1); // re-render para mostrar tiempo actualizado
     fetchStatus();
   }, [fetchStatus]));
 
-  // Interval de 60 s: decrementa el contador un minuto
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
 
     timerRef.current = setInterval(() => {
-      // Si ya pasamos la 9:00, recalcular para el día siguiente
       if (Date.now() >= targetRef.current) {
         targetRef.current = nextNineAM();
         fetchStatus();
@@ -95,7 +84,6 @@ export default function ShopScreen() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [fetchStatus]);
 
-  // ── Reclamar ─────────────────────────────────────────────────────────────────
   const handleClaim = async () => {
     if (!user || !status?.dailyRewardAvailable || claiming) return;
     setClaiming(true);
@@ -103,7 +91,6 @@ export default function ShopScreen() {
       const pts     = await apiClaimDailyReward(user.id);
       const updated = await apiGetPerson(user.id);
 
-      // Guardamos el usuario actualizado para aplicarlo al cerrar el modal
       setPendingUser(updated);
       setRewardItems([{
         icon:  'hourglass-outline',
@@ -119,7 +106,6 @@ export default function ShopScreen() {
     }
   };
 
-  // Al cerrar el modal: actualiza usuario (puede disparar modal de nivel) y refresca estado
   const handleRewardClose = async () => {
     setRewardVisible(false);
     if (pendingUser) {
@@ -130,15 +116,13 @@ export default function ShopScreen() {
     refreshBadges(); // actualiza el badge de la pestaña de inicio al instante
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   const dailyAvailable             = status?.dailyRewardAvailable ?? false;
   const { h: countdownH, m: countdownM } = timeLeft(targetRef.current);
 
   return (
     <SafeAreaView style={styles.root}>
 
-      {/* Header */}
-      <View style={styles.header}>
+<View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
         </Pressable>
@@ -148,11 +132,9 @@ export default function ShopScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* ── Recompensa diaria ───────────────────────────────────── */}
-        <View style={[styles.rewardCard, dailyAvailable ? styles.rewardCardActive : styles.rewardCardDone]}>
+<View style={[styles.rewardCard, dailyAvailable ? styles.rewardCardActive : styles.rewardCardDone]}>
 
-          {/* Icono + título */}
-          <View style={styles.rewardHeader}>
+<View style={styles.rewardHeader}>
             <View style={[styles.rewardIconWrap, dailyAvailable ? styles.rewardIconWrapActive : styles.rewardIconWrapDone]}>
               <Ionicons
                 name={dailyAvailable ? 'gift' : 'gift-outline'}
@@ -175,7 +157,7 @@ export default function ShopScreen() {
           {loading ? (
             <ActivityIndicator color={Colors.primary} style={{ marginVertical: 8 }} />
           ) : dailyAvailable ? (
-            /* ── Disponible: muestra el premio y el botón ── */
+            
             <View style={styles.prizeRow}>
               <Ionicons name="hourglass-outline" size={18} color={Colors.primary} />
               <Text style={styles.prizeText}>
@@ -204,8 +186,7 @@ export default function ShopScreen() {
 
           <View style={styles.rewardDivider} />
 
-          {/* ── Cuenta atrás SIEMPRE visible ── */}
-          <View style={styles.countdownSection}>
+<View style={styles.countdownSection}>
             <Text style={styles.countdownLabel}>
               {dailyAvailable ? 'Próximo reset en' : 'Próxima recompensa en'}
             </Text>
@@ -242,8 +223,7 @@ export default function ShopScreen() {
 
       </ScrollView>
 
-      {/* Modal de recompensa — aparece antes del modal de nivel */}
-      <RewardModal
+<RewardModal
         visible={rewardVisible}
         rewards={rewardItems}
         subtitle="Recompensa diaria reclamada"
@@ -254,7 +234,6 @@ export default function ShopScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32, gap: 16 },
@@ -296,7 +275,6 @@ const styles = StyleSheet.create({
   claimBtnPressed: { opacity: 0.85 },
   claimBtnText:    { fontSize: 15, fontWeight: '800', color: '#fff' },
 
-  // Cuenta atrás
   countdownSection: { alignItems: 'center', gap: 10 },
   countdownLabel:   { fontSize: 12, color: Colors.textLight, fontWeight: '600' },
 

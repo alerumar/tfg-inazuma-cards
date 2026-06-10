@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.Person;
@@ -22,13 +22,11 @@ public interface PersonCardRepository extends JpaRepository<PersonCard, Long> {
     @Query("SELECT SUM(pc.quantity) FROM PersonCard pc WHERE pc.person = :person")
     Integer sumQuantityByPerson(@Param("person") Person person);
 
-    /** Número de cartas distintas que posee el usuario (independientemente de las copias). */
-    long countByPerson(Person person);
+long countByPerson(Person person);
 
     boolean existsByPersonAndCard(Person person, Card card);
 
-    /** Borra todas las cartas del usuario — para borrar cuenta. */
-    @Modifying
+@Modifying
     @Query("DELETE FROM PersonCard pc WHERE pc.person.id = :personId")
     void deleteByPersonId(@Param("personId") Long personId);
 }

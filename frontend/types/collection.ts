@@ -1,4 +1,4 @@
-export interface CardData {
+﻿export interface CardData {
   id: number;
   name: string;
   collection: string | null;

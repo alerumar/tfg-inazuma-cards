@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -27,21 +27,17 @@ const MAX_LEGENDS = 2;
 const POSITIONS = ['ALL', 'POR', 'DF', 'MC', 'DC'] as const;
 type PosFilter  = typeof POSITIONS[number];
 
-// ── Dimensiones ───────────────────────────────────────────────────────────────
 const SCREEN_W  = Dimensions.get('window').width;
 const H_PAD     = 16;
 
-// Picker: 4 columnas (misma proporción que la colección)
 const PICK_COLS = 4;
 const PICK_GAP  = 4;
 const PICK_W    = (SCREEN_W - H_PAD * 2 - PICK_GAP * (PICK_COLS - 1)) / PICK_COLS;
 
-// Slots: 5 en fila con aspecto de carta
 const SLOT_GAP  = 6;
 const SLOT_W    = (SCREEN_W - H_PAD * 2 - SLOT_GAP * (MAX_CARDS - 1)) / MAX_CARDS;
 const SLOT_H    = Math.round(SLOT_W * CARD_ASPECT);
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function NewDeckScreen() {
   const router   = useRouter();
   const { user } = useAuth();
@@ -70,7 +66,6 @@ export default function NewDeckScreen() {
   const canCreate   = isFull && deckName.trim().length > 0;
   const remaining   = MAX_CARDS - selected.length;
 
-  // Cuántas veces aparece cada carta en la selección actual
   const selectedCountMap = useMemo(() => {
     const map = new Map<number, number>();
     for (const card of selected) map.set(card.id, (map.get(card.id) ?? 0) + 1);
@@ -85,9 +80,7 @@ export default function NewDeckScreen() {
       .filter(e => !q || e.card.name.toLowerCase().includes(q));
   }, [collection, posFilter, searchQuery]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  const handleSelect = (card: CardData) => {
+const handleSelect = (card: CardData) => {
     if (isFull) {
       showAlert('Baraja llena', `Solo puedes seleccionar ${MAX_CARDS} cartas.`);
       return;
@@ -120,13 +113,10 @@ export default function NewDeckScreen() {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
-  return (
+return (
     <SafeAreaView style={styles.root}>
 
-      {/* ── Header fijo ── */}
-      <View style={styles.header}>
+<View style={styles.header}>
         <Pressable style={styles.cancelBtn} onPress={() => router.back()} disabled={creating}>
           <Text style={styles.cancelText}>Cancelar</Text>
         </Pressable>
@@ -142,8 +132,7 @@ export default function NewDeckScreen() {
         </Pressable>
       </View>
 
-      {/* ── Nombre (fijo) ── */}
-      <View style={styles.nameSection}>
+<View style={styles.nameSection}>
         <TextInput
           style={styles.nameInput}
           placeholder="Nombre de la baraja..."
@@ -154,8 +143,7 @@ export default function NewDeckScreen() {
         />
       </View>
 
-      {/* ── Slots fijos ── */}
-      <View style={styles.slotsSection}>
+<View style={styles.slotsSection}>
         <View style={styles.slotsSectionHeader}>
           <Text style={styles.slotsLabel}>Cartas seleccionadas</Text>
           <Text style={[styles.slotsCount, isFull && styles.slotsCountFull]}>
@@ -194,12 +182,10 @@ export default function NewDeckScreen() {
         )}
       </View>
 
-      {/* ── Filtros fijos ── */}
-      <View style={styles.filterSection}>
+<View style={styles.filterSection}>
         <Text style={styles.filterLabel}>Selecciona cartas de tu colección</Text>
 
-        {/* Barra de búsqueda */}
-        <View style={styles.searchBarWrap}>
+<View style={styles.searchBarWrap}>
           <Ionicons name="search" size={15} color={Colors.textLight} />
           <TextInput
             style={styles.searchInput}
@@ -232,8 +218,7 @@ export default function NewDeckScreen() {
         </View>
       </View>
 
-      {/* ── Grid de cartas ── */}
-      {loading ? (
+{loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -275,7 +260,6 @@ export default function NewDeckScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

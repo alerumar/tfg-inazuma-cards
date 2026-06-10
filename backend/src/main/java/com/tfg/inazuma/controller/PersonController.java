@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.*;
 import com.tfg.inazuma.service.PersonService;
@@ -86,8 +86,7 @@ public class PersonController {
         }
     }
 
-    /** RF-15: heartbeat — mantiene al usuario marcado como online mientras usa la app */
-    @PatchMapping("/{id}/heartbeat")
+@PatchMapping("/{id}/heartbeat")
     public ResponseEntity<Void> heartbeat(@PathVariable Long id) {
         personService.heartbeat(id);
         return ResponseEntity.noContent().build();

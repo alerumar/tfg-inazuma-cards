@@ -1,4 +1,4 @@
-export type NotificationType =
+﻿export type NotificationType =
   | 'FRIEND_REQUEST_ACCEPTED'
   | 'FRIEND_REQUEST_REJECTED'
   | 'TRADE_COMPLETED'

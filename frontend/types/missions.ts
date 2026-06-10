@@ -1,4 +1,4 @@
-export type MissionType =
+﻿export type MissionType =
   | 'WIN_MATCHES'
   | 'PLAY_MATCHES'
   | 'COLLECT_CARDS'

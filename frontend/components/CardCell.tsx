@@ -1,7 +1,4 @@
-/**
- * CardCell — celda de carta reutilizable.
- * Usada en: colección, selector de baraja, slots de baraja.
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -20,10 +17,6 @@ const ATQ_COLOR = '#E53935';
 const CTL_COLOR = '#1565C0';
 const DEF_COLOR = '#2E7D32';
 
-/**
- * Subconjunto mínimo de campos que CardCell necesita.
- * Compatible con CardData (colección) y CardStateDto (partida).
- */
 export interface CardLike {
   name: string;
   imageUrl: string | null;
@@ -39,14 +32,14 @@ interface CardCellProps {
   owned?: boolean;
   cardNumber?: number;
   quantity?: number;
-  /** Si true, muestra el badge de cantidad incluso cuando quantity === 1 */
+  
   alwaysShowQuantity?: boolean;
   width: number;
   onPress?: () => void;
   disabled?: boolean;
   removable?: boolean;
   loading?: boolean;
-  /** Si true, oculta el panel de nombre+stats y el badge de rating (para miniaturas) */
+  
   compact?: boolean;
 }
 
@@ -82,7 +75,7 @@ export function CardCell({
     >
       {hasImage ? (
         <>
-          {/* Imagen — ocupa casi toda la celda */}
+          
           <Image
             key={card.imageUrl}
             source={{ uri: `${BASE_URL}${card.imageUrl}` }}
@@ -90,15 +83,13 @@ export function CardCell({
             resizeMode="contain"
           />
 
-          {/* Rating badge (top-left) — oculto en modo compact */}
-          {!compact && (
+{!compact && (
             <View style={[styles.ratingBadge, isLegend && styles.ratingBadgeLegend]}>
               <Text style={styles.ratingText}>{card.rating}</Text>
             </View>
           )}
 
-          {/* Panel inferior: nombre + stats — oculto en modo compact */}
-          {!compact && (
+{!compact && (
             <View style={styles.bottomPanel}>
               <Text style={styles.nameText} numberOfLines={1}>{card.name}</Text>
               <View style={styles.statsRow}>
@@ -109,15 +100,13 @@ export function CardCell({
             </View>
           )}
 
-          {/* Cantidad (top-right) */}
-          {quantity != null && (alwaysShowQuantity ? quantity >= 1 : quantity > 1) && (
+{quantity != null && (alwaysShowQuantity ? quantity >= 1 : quantity > 1) && (
             <View style={styles.quantityBadge}>
               <Text style={styles.quantityText}>×{quantity}</Text>
             </View>
           )}
 
-          {/* Eliminar (slots de baraja) */}
-          {removable && (
+{removable && (
             <View style={styles.removeBadge}>
               <Ionicons name="close" size={9} color="#fff" />
             </View>
@@ -127,8 +116,7 @@ export function CardCell({
         <Text style={[styles.cardNumber, isLegend && styles.cardNumberLegend]}>{numStr}</Text>
       )}
 
-      {/* Spinner de carga */}
-      {loading && (
+{loading && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size={Math.max(14, width * 0.22)} color="#fff" />
         </View>
@@ -160,7 +148,6 @@ const styles = StyleSheet.create({
   cardNumber:       { fontSize: 12, fontWeight: '600', color: Colors.border, letterSpacing: 1 },
   cardNumberLegend: { color: '#C8860D' },
 
-  // Rating
   ratingBadge: {
     position: 'absolute', top: 3, left: 3, zIndex: 2,
     backgroundColor: Colors.primary, borderRadius: 4,
@@ -169,7 +156,6 @@ const styles = StyleSheet.create({
   ratingBadgeLegend: { backgroundColor: '#F9A825' },
   ratingText: { fontSize: 9, fontWeight: '800', color: '#fff' },
 
-  // ── Panel inferior (nombre + stats unificados) ──────────────────────────────
   bottomPanel: {
     position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2,
     backgroundColor: 'rgba(10, 10, 25, 0.68)',
@@ -192,7 +178,6 @@ const styles = StyleSheet.create({
   statChip:     { flex: 1, alignItems: 'center', borderRadius: 3, paddingVertical: 1.5 },
   statChipText: { fontSize: 8, fontWeight: '700', color: '#fff' },
 
-  // Cantidad
   quantityBadge: {
     position: 'absolute', top: 3, right: 3, zIndex: 3,
     backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 4,
@@ -200,14 +185,12 @@ const styles = StyleSheet.create({
   },
   quantityText: { fontSize: 9, fontWeight: '700', color: '#fff' },
 
-  // Eliminar
   removeBadge: {
     position: 'absolute', top: 3, right: 3, zIndex: 3,
     backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10,
     width: 16, height: 16, alignItems: 'center', justifyContent: 'center',
   },
 
-  // Loading
   loadingOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10,
     backgroundColor: 'rgba(0,0,0,0.4)',

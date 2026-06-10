@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { AppHeader } from '../../components/AppHeader';
@@ -23,7 +23,6 @@ import { useAuth } from '../../context/AuthContext';
 import { apiGetFullCollection } from '../../services/collectionService';
 import { CardData, CollectionEntry } from '../../types/collection';
 
-// ── Dimensiones ───────────────────────────────────────────────────────────────
 const NUM_COLS = 4;
 const H_PAD    = 12;
 const GAP      = 4;
@@ -31,13 +30,11 @@ const SCREEN_W = Dimensions.get('window').width;
 const CELL_W   = (SCREEN_W - H_PAD * 2 - GAP * (NUM_COLS - 1)) / NUM_COLS;
 const CELL_H   = Math.round(CELL_W * 1.5);
 
-// ── Traducciones ──────────────────────────────────────────────────────────────
 const RARITY: Record<string, string>   = { NORMAL: 'Común', LEGEND: 'Leyenda' };
 const POSITION: Record<string, string> = {
   POR: 'Portero', DF: 'Defensa', MC: 'Centrocampista', DC: 'Delantero',
 };
 
-// ── Pantalla principal ────────────────────────────────────────────────────────
 export default function CollectionScreen() {
   const router        = useRouter();
   const { user }      = useAuth();
@@ -48,14 +45,12 @@ export default function CollectionScreen() {
   const [selected,    setSelected]    = useState<{ entry: CollectionEntry; number: number } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Mapa cardId → número global en la colección completa
   const numberMap = useMemo(() => {
     const map = new Map<number, number>();
     entries.forEach((e, i) => map.set(e.card.id, i + 1));
     return map;
   }, [entries]);
 
-  // Resultados de búsqueda sobre TODAS las cartas (incluidas no poseídas)
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return null;
@@ -86,8 +81,7 @@ export default function CollectionScreen() {
     <SafeAreaView style={styles.root}>
       <AppHeader />
 
-      {/* Barra de búsqueda */}
-      {!loading && !error && (
+{!loading && !error && (
         <View style={styles.searchBarWrap}>
           <Ionicons name="search" size={16} color={Colors.textLight} style={styles.searchIcon} />
           <TextInput
@@ -107,8 +101,7 @@ export default function CollectionScreen() {
         </View>
       )}
 
-      {/* Contenido */}
-      {loading ? (
+{loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -118,7 +111,7 @@ export default function CollectionScreen() {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : searchResults !== null ? (
-        /* ── Resultados de búsqueda ── */
+        
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadCollection(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
         >
@@ -147,7 +140,7 @@ export default function CollectionScreen() {
           </View>
         </ScrollView>
       ) : (
-        /* ── Vista normal por secciones ── */
+        
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadCollection(true)} colors={[Colors.primary]} tintColor={Colors.primary} />}
         >
@@ -175,8 +168,7 @@ export default function CollectionScreen() {
         </ScrollView>
       )}
 
-      {/* Modal de detalle */}
-      {selected && (
+{selected && (
         <CardDetailModal
           entry={selected.entry}
           number={selected.number}
@@ -187,7 +179,6 @@ export default function CollectionScreen() {
   );
 }
 
-// ── Section header ─────────────────────────────────────────────────────────────
 function SectionHeader({ title, owned, total }: { title: string; owned: number; total: number }) {
   return (
     <View style={styles.sectionHeader}>
@@ -201,7 +192,6 @@ function SectionHeader({ title, owned, total }: { title: string; owned: number; 
   );
 }
 
-// ── Grid ───────────────────────────────────────────────────────────────────────
 function CardGrid({
   entries, startIndex, onPress,
 }: {
@@ -231,9 +221,6 @@ function CardGrid({
   );
 }
 
-// CardCell viene de components/CardCell.tsx (compartido)
-
-// ── Modal detalle ──────────────────────────────────────────────────────────────
 function CardDetailModal({
   entry, number, onClose,
 }: {
@@ -258,7 +245,7 @@ function CardDetailModal({
           contentContainerStyle={styles.detailScroll}
           showsVerticalScrollIndicator={false}
         >
-          {/* Imagen con badge de rating */}
+          
           <View style={[styles.detailImgWrap, { width: IMG_W, height: IMG_H }]}>
             {hasImage ? (
               <>
@@ -278,8 +265,7 @@ function CardDetailModal({
             )}
           </View>
 
-          {/* Stats grandes */}
-          {owned && (
+{owned && (
             <View style={styles.detailStatsRow}>
               <StatChipLg label="ATQ" value={card.attack}  bg={ATQ_COLOR} />
               <StatChipLg label="CTL" value={card.control} bg={CTL_COLOR} />
@@ -287,16 +273,14 @@ function CardDetailModal({
             </View>
           )}
 
-          {/* Badge cantidad */}
-          <View style={styles.quantityPill}>
+<View style={styles.quantityPill}>
             <Text style={styles.quantityPillText}>
               Cantidad de esta carta obtenida:{' '}
               <Text style={{ fontWeight: '800' }}>{quantity}</Text>
             </Text>
           </View>
 
-          {/* Tarjeta de detalles */}
-          <View style={styles.detailCard}>
+<View style={styles.detailCard}>
             <Text style={styles.detailCardTitle}>Detalles</Text>
             <DetailRow label="Nombre"     value={card.name} />
             <DetailRow label="Equipo"     value={card.team ?? '—'} />
@@ -309,8 +293,7 @@ function CardDetailModal({
             <DetailRow label="Defensa"    value={String(card.defense)} />
           </View>
 
-          {/* Botón volver */}
-          <Pressable style={styles.backBtn} onPress={onClose}>
+<Pressable style={styles.backBtn} onPress={onClose}>
             <Text style={styles.backBtnText}>Volver</Text>
           </Pressable>
 
@@ -339,16 +322,13 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Colores stats ──────────────────────────────────────────────────────────────
 const ATQ_COLOR = '#E53935';
 const CTL_COLOR = '#1565C0';
 const DEF_COLOR = '#2E7D32';
 
-// ── Estilos ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
 
-  // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 10,
@@ -363,7 +343,6 @@ const styles = StyleSheet.create({
   },
   pointsText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
 
-  // Búsqueda
   searchBarWrap: {
     flexDirection: 'row', alignItems: 'center',
     marginHorizontal: H_PAD, marginTop: 10, marginBottom: 4,
@@ -379,12 +358,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase', letterSpacing: 0.6,
   },
 
-  // Layout
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
   errorText: { fontSize: 14, color: Colors.textLight, textAlign: 'center' },
   scroll:    { paddingTop: 8 },
 
-  // Section header
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: H_PAD, marginTop: 16, marginBottom: 10, gap: 8,
@@ -394,17 +371,12 @@ const styles = StyleSheet.create({
   sectionTitle:     { fontSize: 13, fontWeight: '800', color: Colors.textDark, letterSpacing: 0.5 },
   sectionCount:     { fontSize: 11, color: Colors.textLight },
 
-  // Grid
   grid:       { flexDirection: 'row', flexWrap: 'wrap', gap: GAP, paddingHorizontal: H_PAD },
   cellFiller: { width: CELL_W, height: CELL_H },
 
-  // Celda — estilos movidos a components/CardCell.tsx
-
-  // ── Modal de detalle ───────────────────────────────────────────────────────
-  detailRoot:   { flex: 1, backgroundColor: Colors.background },
+detailRoot:   { flex: 1, backgroundColor: Colors.background },
   detailScroll: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, gap: 16 },
 
-  // Imagen en detalle
   detailImgWrap: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   detailNoImg: {
     flex: 1, width: '100%', backgroundColor: Colors.primaryLight,
@@ -412,13 +384,11 @@ const styles = StyleSheet.create({
   },
   detailNoImgNum: { fontSize: 28, fontWeight: '700', color: Colors.border },
 
-  // Rating badge grande
   ratingBadge:       { position: 'absolute', zIndex: 2, backgroundColor: Colors.primary },
   ratingBadgeLegend: { backgroundColor: '#F9A825' },
   ratingBadgeLg: { top: 4, left: 4, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
   ratingTextLg:  { fontSize: 13, fontWeight: '900', color: '#fff' },
 
-  // Stats grandes
   detailStatsRow: { flexDirection: 'row', gap: 10 },
   statChipLg: {
     flex: 1, alignItems: 'center', borderRadius: 8,
@@ -427,7 +397,6 @@ const styles = StyleSheet.create({
   statChipLgLabel: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
   statChipLgValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
 
-  // Pill de cantidad
   quantityPill: {
     borderWidth: 1, borderColor: Colors.border, borderRadius: 20,
     paddingHorizontal: 16, paddingVertical: 6,
@@ -435,7 +404,6 @@ const styles = StyleSheet.create({
   },
   quantityPillText: { fontSize: 13, color: Colors.textMid },
 
-  // Tarjeta detalles
   detailCard: {
     width: '100%', backgroundColor: Colors.surface,
     borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
@@ -449,7 +417,6 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 14, fontWeight: '700', color: Colors.textDark },
   detailValue: { fontSize: 14, color: Colors.textMid, flex: 1 },
 
-  // Botón volver
   backBtn: {
     borderWidth: 1.5, borderColor: Colors.border, borderRadius: 24,
     paddingHorizontal: 40, paddingVertical: 12,

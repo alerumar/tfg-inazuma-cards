@@ -1,4 +1,4 @@
-package com.tfg.inazuma.model;
+﻿package com.tfg.inazuma.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -62,6 +62,5 @@ public class Person {
 
     private LocalDate lastDailyReward;
 
-    /** Última vez que el usuario hizo login — usado para calcular estado online */
-    private LocalDateTime lastSeen;
+private LocalDateTime lastSeen;
 }

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -20,7 +20,6 @@ import {
 } from '../services/notificationService';
 import { NotificationData, NotificationType } from '../types/notifications';
 
-// ── Icono y color por tipo ────────────────────────────────────────────────────
 const TYPE_ICON: Record<NotificationType, React.ComponentProps<typeof Ionicons>['name']> = {
   FRIEND_REQUEST_ACCEPTED: 'person-add',
   FRIEND_REQUEST_REJECTED: 'person-remove-outline',
@@ -39,7 +38,6 @@ const TYPE_COLOR: Record<NotificationType, string> = {
   TRADE_WITHDRAWN:         '#F59E0B',
 };
 
-// ── Tiempo relativo ───────────────────────────────────────────────────────────
 function timeAgo(dateStr: string): string {
   const date    = new Date(dateStr);
   const diffMs  = Date.now() - date.getTime();
@@ -53,7 +51,6 @@ function timeAgo(dateStr: string): string {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function NotificationsScreen() {
   const router                                = useRouter();
   const { user, setUnreadNotifications }      = useAuth();
@@ -63,7 +60,6 @@ export default function NotificationsScreen() {
   useFocusEffect(useCallback(() => {
     if (!user) return;
     setLoading(true);
-    // Cargar notificaciones y marcar todas como leídas en paralelo
     const EXCLUDED = ['GAME_INVITE', 'GAME_INVITE_ACCEPTED', 'GAME_INVITE_REJECTED'];
     Promise.all([
       apiGetNotifications(user.id),
@@ -79,7 +75,7 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Header */}
+      
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
@@ -114,7 +110,6 @@ export default function NotificationsScreen() {
   );
 }
 
-// ── Tarjeta de notificación ───────────────────────────────────────────────────
 function NotificationCard({ notification: n }: { notification: NotificationData }) {
   const icon  = TYPE_ICON[n.type]  ?? 'notifications-outline';
   const color = TYPE_COLOR[n.type] ?? Colors.primary;
@@ -125,20 +120,18 @@ function NotificationCard({ notification: n }: { notification: NotificationData 
 
   return (
     <View style={[styles.card, !n.read && styles.cardUnread]}>
-      {/* Barra lateral de no leída */}
+      
       {!n.read && <View style={styles.unreadBar} />}
 
-      {/* Avatar del actor */}
-      <View style={styles.avatarWrap}>
+<View style={styles.avatarWrap}>
         <Image source={avatarUri} style={styles.avatar} />
-        {/* Icono de tipo sobre el avatar */}
+        
         <View style={[styles.typeBadge, { backgroundColor: color }]}>
           <Ionicons name={icon} size={10} color="#fff" />
         </View>
       </View>
 
-      {/* Texto */}
-      <View style={styles.textBlock}>
+<View style={styles.textBlock}>
         <Text style={[styles.message, !n.read && styles.messageUnread]}>
           {n.message}
         </Text>
@@ -148,7 +141,6 @@ function NotificationCard({ notification: n }: { notification: NotificationData 
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:  { flex: 1, backgroundColor: Colors.background },
   header: {
@@ -181,7 +173,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
 
-  // Barra izquierda de "no leída"
   unreadBar: {
     position: 'absolute',
     left: 0, top: 0, bottom: 0,
@@ -191,7 +182,6 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 16,
   },
 
-  // Avatar + badge de tipo
   avatarWrap: { position: 'relative' },
   avatar: {
     width: 46, height: 46, borderRadius: 23,
@@ -205,7 +195,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: '#fff',
   },
 
-  // Texto
   textBlock:    { flex: 1, gap: 4 },
   message:      { fontSize: 14, color: Colors.textMid, lineHeight: 19 },
   messageUnread:{ color: Colors.textDark, fontWeight: '600' },

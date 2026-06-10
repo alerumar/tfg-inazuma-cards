@@ -1,4 +1,4 @@
-package com.tfg.inazuma.model;
+﻿package com.tfg.inazuma.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -27,7 +27,6 @@ public class MatchRound {
     @Column(nullable = false)
     private int turnsWonPlayer2 = 0;
 
-    /** true cuando la ronda ya tiene un ganador o se han agotado todas las cartas. */
-    @Column(nullable = false)
+@Column(nullable = false)
     private boolean completed = false;
 }

@@ -1,4 +1,4 @@
-export interface PersonResponse {
+﻿export interface PersonResponse {
   id: number;
   playerId: string;
   name: string;
@@ -17,7 +17,7 @@ export interface PersonResponse {
   totalCardCount: number;
   friendCount: number;
   online: boolean;
-  /** true si el jugador tiene una partida activa (PENDING_INVITE / WAITING_READY / IN_PROGRESS). */
+  
   inActiveMatch: boolean;
 }
 

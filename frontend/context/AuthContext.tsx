@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { apiHeartbeat, apiLogin, apiRegister } from '../services/authService';
@@ -24,48 +24,34 @@ interface AuthContextValue {
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updated: PersonResponse) => Promise<void>;
-  /**
-   * Igual que updateUser pero NO muestra el modal de subida de nivel de inmediato.
-   * El modal queda en espera hasta que se llame a releaseLevelUp().
-   * Úsalo en pantallas donde no quieres interrumpir la experiencia (p.ej. pantalla de partida).
-   */
+  
   persistUser: (updated: PersonResponse) => Promise<void>;
-  /** Muestra el modal de subida de nivel si quedó pendiente tras un persistUser. */
+  
   releaseLevelUp: () => void;
   levelUpInfo: LevelUpInfo | null;
   clearLevelUp: () => void;
-  /**
-   * Número real de solicitudes de amistad recibidas pendientes.
-   * Actualizado por el polling y por useFocusEffect de SocialScreen.
-   */
+  
   pendingFriendRequests: number;
   setPendingFriendRequests: (n: number) => void;
-  /**
-   * true cuando hay solicitudes Y el usuario no las ha "visto" desde la última
-   * que llegó. Se usa para mostrar el badge en el nav y en las pestañas.
-   */
+  
   showFriendRequestBadge: boolean;
-  /** Llamar cuando el usuario ha visto la pestaña de recibidas (limpia el badge). */
+  
   dismissFriendRequests: () => void;
-  /** Número de notificaciones no leídas. */
+  
   unreadNotifications: number;
-  /** Llamar desde la pantalla de notificaciones tras marcar todas como leídas. */
+  
   setUnreadNotifications: (n: number) => void;
-  /** Número de misiones completadas pero sin reclamar. */
+  
   claimableMissions: number;
-  /** Llamar desde missions.tsx tras reclamar para actualizar el badge al instante. */
+  
   setClaimableMissions: (n: number) => void;
-  /** Intercambios activos donde el usuario tiene que actuar (recibir o confirmar). */
+  
   pendingTrades: number;
-  /** Invitaciones a partida pendientes donde el usuario es el receptor. */
+  
   pendingGameInvites: number;
-  /** true cuando el usuario aún no ha reclamado el regalo diario. */
+  
   dailyRewardAvailable: boolean;
-  /**
-   * Lanza un poll inmediato de todos los badges (solicitudes, notificaciones,
-   * misiones e intercambios). Llámalo tras cualquier acción que cambie estos
-   * contadores para que el punto rojo se actualice al instante sin esperar los 20 s.
-   */
+  
   refreshBadges: () => void;
 }
 
@@ -76,27 +62,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading]         = useState(true);
   const [levelUpInfo, setLevelUpInfo] = useState<LevelUpInfo | null>(null);
   const userRef                       = useRef<PersonResponse | null>(null);
-  /** Subida de nivel guardada pero no mostrada todavía (usada por persistUser). */
+  
   const pendingLevelUpRef             = useRef<LevelUpInfo | null>(null);
 
-  // ── Badge de solicitudes de amistad ─────────────────────────────────────────
   const [pendingFriendRequests, setPendingFriendRequests_] = useState(0);
   const [friendRequestsDismissed, setFriendRequestsDismissed] = useState(false);
-  /** Ref para detectar si el conteo ha SUBIDO (= nueva solicitud). */
+  
   const pendingCountRef = useRef(0);
 
-  // ── Notificaciones, misiones e intercambios (badges globales) ───────────────
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [claimableMissions,   setClaimableMissions]   = useState(0);
   const [pendingTrades,         setPendingTrades]         = useState(0);
   const [pendingGameInvites,    setPendingGameInvites]    = useState(0);
   const [dailyRewardAvailable,  setDailyRewardAvailable] = useState(false);
 
-  /**
-   * Actualiza el conteo de solicitudes pendientes.
-   * Si el número sube, resetea el dismiss para que el badge vuelva a aparecer.
-   */
-  const setPendingFriendRequests = useCallback((n: number) => {
+const setPendingFriendRequests = useCallback((n: number) => {
     if (n > pendingCountRef.current) {
       setFriendRequestsDismissed(false);
     }
@@ -104,22 +84,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPendingFriendRequests_(n);
   }, []);
 
-  /** El usuario ha visto las solicitudes → ocultar el badge hasta la próxima nueva. */
-  const dismissFriendRequests = useCallback(() => setFriendRequestsDismissed(true), []);
+const dismissFriendRequests = useCallback(() => setFriendRequestsDismissed(true), []);
 
   const showFriendRequestBadge = pendingFriendRequests > 0 && !friendRequestsDismissed;
 
-  // Sincronizar ref para acceder al user actual desde callbacks sin re-crear intervalos
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // Restaurar sesión al arrancar la app
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then(raw => { if (raw) setUser(JSON.parse(raw)); })
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Heartbeat: avisa al servidor cada 30 s para mantener el estado online ──
   useEffect(() => {
     const tick = () => { if (userRef.current) apiHeartbeat(userRef.current.id); };
 
@@ -136,7 +112,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // ── Polling cada 20 s: solicitudes + notificaciones + misiones + intercambios ─
   const poll = useCallback(async () => {
     if (!userRef.current) return;
     try {
@@ -157,19 +132,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ).length);
       setDailyRewardAvailable(packStatus.dailyRewardAvailable);
     } catch {
-      // Silent fail — no bloquear la app si el servidor no responde
     }
   }, [setPendingFriendRequests]);
 
-  // ── Poll rápido cada 3 s: solo invitaciones de partida ────────────────────────
-  // Las invitaciones deben llegar al receptor en < 3 s; el resto de badges
-  // no necesita esa frecuencia y se mantiene en el ciclo de 20 s.
   const pollGameInvites = useCallback(async () => {
     if (!userRef.current) return;
     try {
       const invites = await apiGetPendingInvites(userRef.current.id);
       setPendingGameInvites(invites.length);
-    } catch { /* silent */ }
+    } catch {  }
   }, []);
 
   const refreshBadges = useCallback(() => { poll(); pollGameInvites(); }, [poll, pollGameInvites]);
@@ -186,7 +157,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [pollGameInvites]);
 
-  // ── Auth ─────────────────────────────────────────────────────────────────────
   const persist = async (p: PersonResponse) => {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(p));
     setUser(p);
@@ -205,7 +175,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await AsyncStorage.removeItem(STORAGE_KEY);
     setUser(null);
-    // Resetear todos los badges al cerrar sesión
     pendingCountRef.current = 0;
     setPendingFriendRequests_(0);
     setFriendRequestsDismissed(false);
@@ -223,20 +192,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await persist(updated);
   };
 
-  /**
-   * Persiste los datos del usuario sin mostrar el modal de subida de nivel.
-   * Si hay subida de nivel, la guarda en pendingLevelUpRef para mostrarla
-   * cuando se llame a releaseLevelUp().
-   */
-  const persistUser = async (updated: PersonResponse) => {
+const persistUser = async (updated: PersonResponse) => {
     if (user && updated.level > user.level) {
       pendingLevelUpRef.current = { previousLevel: user.level, newLevel: updated.level };
     }
     await persist(updated);
   };
 
-  /** Muestra el modal de subida de nivel si quedó en espera tras un persistUser(). */
-  const releaseLevelUp = useCallback(() => {
+const releaseLevelUp = useCallback(() => {
     if (pendingLevelUpRef.current) {
       setLevelUpInfo(pendingLevelUpRef.current);
       pendingLevelUpRef.current = null;

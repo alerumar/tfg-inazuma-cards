@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -64,7 +64,6 @@ public class TradeService {
         if (receiverCardId == null) {
             trade.setStatus(TradeStatus.REJECTED_BY_RECEIVER);
             tradeRepository.save(trade);
-            // RF-63: notificar al iniciador que su propuesta fue rechazada
             notificationService.create(
                 trade.getInitiator(), trade.getReceiver(),
                 "TRADE_REJECTED",
@@ -88,8 +87,7 @@ public class TradeService {
         return tradeRepository.save(trade);
     }
 
-    /** El iniciador retira su propuesta mientras el receptor aún no ha respondido. */
-    @Transactional
+@Transactional
     public Trade initiatorCancel(Long tradeId, Long initiatorId) {
         Trade trade = findTradeOrThrow(tradeId);
         validateInitiator(trade, initiatorId);
@@ -97,7 +95,6 @@ public class TradeService {
             throw new IllegalArgumentException("Solo puedes retirar la propuesta antes de que el receptor responda");
         trade.setStatus(TradeStatus.REJECTED_BY_INITIATOR);
         tradeRepository.save(trade);
-        // RF-63: notificar al receptor que la propuesta fue retirada
         notificationService.create(
             trade.getReceiver(), trade.getInitiator(),
             "TRADE_WITHDRAWN",
@@ -106,8 +103,7 @@ public class TradeService {
         return trade;
     }
 
-    /** IDs de todas las personas actualmente en un intercambio activo. */
-    public List<Long> getActiveParticipantIds() {
+public List<Long> getActiveParticipantIds() {
         List<Trade> active = tradeRepository.findAllActive(ACTIVE_STATUSES);
         return active.stream()
                 .flatMap(t -> java.util.stream.Stream.of(t.getInitiator().getId(), t.getReceiver().getId()))
@@ -125,7 +121,6 @@ public class TradeService {
         if (!accept) {
             trade.setStatus(TradeStatus.REJECTED_BY_INITIATOR);
             tradeRepository.save(trade);
-            // RF-63: notificar al receptor que el iniciador canceló tras recibir su oferta
             notificationService.create(
                 trade.getReceiver(), trade.getInitiator(),
                 "TRADE_CANCELLED",
@@ -138,7 +133,6 @@ public class TradeService {
         trade.setStatus(TradeStatus.COMPLETED);
         tradeRepository.save(trade);
 
-        // RF-63: notificar a ambos del intercambio completado
         notificationService.create(
             trade.getInitiator(), trade.getReceiver(),
             "TRADE_COMPLETED",

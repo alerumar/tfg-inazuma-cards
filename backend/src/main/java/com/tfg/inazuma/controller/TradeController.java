@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.TradeResponse;
 import com.tfg.inazuma.service.TradeService;

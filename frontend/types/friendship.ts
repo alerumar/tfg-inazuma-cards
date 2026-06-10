@@ -1,4 +1,4 @@
-import { PersonResponse } from './auth';
+﻿import { PersonResponse } from './auth';
 
 export type FriendshipStatus     = 'PENDING' | 'ACCEPTED';
 export type RelationshipStatus   = 'PENDING_SENT' | 'PENDING_RECEIVED' | 'ACCEPTED' | null;

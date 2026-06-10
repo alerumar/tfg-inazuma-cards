@@ -1,4 +1,4 @@
-import { BASE_URL } from '../constants/api';
+﻿import { BASE_URL } from '../constants/api';
 import { PackOpenResult, PackStatus, PackType } from '../types/packs';
 
 const base = (id: number) => `${BASE_URL}/api/persons/${id}/packs`;

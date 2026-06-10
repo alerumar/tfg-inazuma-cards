@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -36,11 +36,9 @@ function RootStack() {
         <Stack.Screen name="game/[id]"        options={{ headerShown: false }} />
       </Stack>
 
-      {/* Banner global de invitaciones a partida */}
-      <GameBanner />
+<GameBanner />
 
-      {/* Modal de subida de nivel — aparece sobre cualquier pantalla */}
-      <Modal
+<Modal
         visible={levelUpInfo !== null}
         transparent
         animationType="fade"
@@ -48,36 +46,31 @@ function RootStack() {
       >
         <View style={s.overlay}>
           <View style={s.card}>
-            {/* Estrellas decorativas */}
+            
             <View style={s.starsRow}>
               <Ionicons name="star" size={20} color="#F59E0B" />
               <Ionicons name="star" size={28} color="#F59E0B" />
               <Ionicons name="star" size={20} color="#F59E0B" />
             </View>
 
-            {/* Icono trofeo */}
-            <View style={s.trophyWrap}>
+<View style={s.trophyWrap}>
               <Ionicons name="trophy" size={52} color="#F59E0B" />
             </View>
 
-            {/* Título */}
-            <Text style={s.title}>¡Enhorabuena!</Text>
+<Text style={s.title}>¡Enhorabuena!</Text>
             <Text style={s.subtitle}>Has subido de nivel</Text>
 
-            {/* Nivel nuevo */}
-            <View style={s.levelBadge}>
+<View style={s.levelBadge}>
               <Text style={s.levelLabel}>NIVEL</Text>
               <Text style={s.levelNumber}>{levelUpInfo?.newLevel}</Text>
             </View>
 
-            {/* Descripción */}
-            <Text style={s.description}>
+<Text style={s.description}>
               Has pasado del nivel {levelUpInfo?.previousLevel} al nivel{' '}
               {levelUpInfo?.newLevel}. ¡Sigue así!
             </Text>
 
-            {/* Botón cerrar */}
-            <Pressable style={s.btn} onPress={clearLevelUp}>
+<Pressable style={s.btn} onPress={clearLevelUp}>
               <Text style={s.btnText}>¡Genial!</Text>
             </Pressable>
           </View>
@@ -87,7 +80,6 @@ function RootStack() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const GOLD = '#F59E0B';
 
 const s = StyleSheet.create({

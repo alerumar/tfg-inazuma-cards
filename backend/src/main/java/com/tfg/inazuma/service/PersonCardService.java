@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.CardResponse;
 import com.tfg.inazuma.dto.CollectionEntryResponse;
@@ -24,8 +24,7 @@ public class PersonCardService {
     private final PersonRepository personRepository;
     private final CardRepository cardRepository;
 
-    /** Devuelve TODAS las cartas del juego, marcando cuáles posee el usuario */
-    public List<CollectionEntryResponse> getFullCollection(Long personId) {
+public List<CollectionEntryResponse> getFullCollection(Long personId) {
         Person person = findPersonOrThrow(personId);
         List<Card> allCards = cardRepository.findAllByOrderByIdAsc();
 

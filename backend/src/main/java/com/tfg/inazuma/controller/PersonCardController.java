@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.CollectionEntryResponse;
 import com.tfg.inazuma.dto.PersonCardResponse;
@@ -17,8 +17,7 @@ public class PersonCardController {
 
     private final PersonCardService personCardService;
 
-    /** Todas las cartas del juego + si el usuario las posee */
-    @GetMapping("/full")
+@GetMapping("/full")
     public List<CollectionEntryResponse> getFullCollection(@PathVariable Long personId) {
         return personCardService.getFullCollection(personId);
     }

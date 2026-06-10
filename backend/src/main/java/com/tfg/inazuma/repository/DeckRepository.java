@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Deck;
 import com.tfg.inazuma.model.Person;
@@ -15,8 +15,7 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
 
     int countByPerson(Person person);
 
-    /** Borra todas las barajas del usuario — para borrar cuenta. */
-    @Modifying
+@Modifying
     @Query("DELETE FROM Deck d WHERE d.person.id = :personId")
     void deleteByPersonId(@Param("personId") Long personId);
 }

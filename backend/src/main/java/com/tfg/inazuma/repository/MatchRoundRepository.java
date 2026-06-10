@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Match;
 import com.tfg.inazuma.model.MatchRound;
@@ -18,8 +18,7 @@ public interface MatchRoundRepository extends JpaRepository<MatchRound, Long> {
 
     int countByMatch(Match match);
 
-    /** Borra todas las rondas de partidas en las que participa el jugador — para borrar cuenta. */
-    @Modifying
+@Modifying
     @Query("DELETE FROM MatchRound r WHERE r.match.player1.id = :personId OR r.match.player2.id = :personId")
     void deleteByMatchPlayer(@Param("personId") Long personId);
 }

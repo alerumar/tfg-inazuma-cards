@@ -1,22 +1,8 @@
-/**
- * AppDialog — modal de diálogo cross-platform.
- * Funciona igual en iOS, Android y Web (no usa Alert.alert).
- *
- * Uso:
- *   const { dialogCfg, showAlert, showConfirm } = useDialog();
- *
- *   showAlert('Error', 'Algo ha fallado');
- *   showConfirm('Eliminar', '¿Seguro?', () => doDelete(), { destructive: true });
- *
- *   // En el JSX del componente:
- *   <AppDialog {...dialogCfg} />
- */
+﻿
 
 import { useCallback, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../constants/colors';
-
-// ── Tipos ─────────────────────────────────────────────────────────────────────
 
 export interface DialogConfig {
   visible:      boolean;
@@ -34,13 +20,10 @@ const HIDDEN: DialogConfig = {
   destructive: false, onConfirm: () => {},
 };
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
 export function useDialog() {
   const [cfg, setCfg] = useState<DialogConfig>(HIDDEN);
 
-  /** Diálogo informativo con un solo botón "Aceptar" */
-  const showAlert = useCallback((title: string, message?: string) => {
+const showAlert = useCallback((title: string, message?: string) => {
     setCfg({
       visible: true, title, message,
       confirmLabel: 'Aceptar', destructive: false,
@@ -48,8 +31,7 @@ export function useDialog() {
     });
   }, []);
 
-  /** Diálogo de confirmación con botones Cancelar + Confirmar */
-  const showConfirm = useCallback((
+const showConfirm = useCallback((
     title:     string,
     message:   string,
     onConfirm: () => void,
@@ -73,8 +55,6 @@ export function useDialog() {
 
   return { dialogCfg: cfg, showAlert, showConfirm };
 }
-
-// ── Componente ────────────────────────────────────────────────────────────────
 
 export function AppDialog({
   visible, title, message,
@@ -113,8 +93,6 @@ export function AppDialog({
     </Modal>
   );
 }
-
-// ── Estilos ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
   overlay: {

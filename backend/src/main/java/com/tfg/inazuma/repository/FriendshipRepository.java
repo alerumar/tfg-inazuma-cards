@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Friendship;
 import com.tfg.inazuma.model.FriendshipStatus;
@@ -28,8 +28,7 @@ public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     @Query("SELECT COUNT(f) FROM Friendship f WHERE (f.requester = :person OR f.receiver = :person) AND f.status = :status")
     long countByPersonAndStatus(@Param("person") Person person, @Param("status") FriendshipStatus status);
 
-    /** Borra todas las amistades del usuario — para borrar cuenta. */
-    @Modifying
+@Modifying
     @Query("DELETE FROM Friendship f WHERE f.requester.id = :personId OR f.receiver.id = :personId")
     void deleteByPersonId(@Param("personId") Long personId);
 }

@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.MatchResponse;
 import com.tfg.inazuma.model.CardAttribute;
@@ -17,10 +17,7 @@ public class MatchController {
 
     private final MatchService matchService;
 
-    // ── Invitación ────────────────────────────────────────────────────────────
-
-    /** RF-31 — Enviar invitación a partida. */
-    @PostMapping("/invite")
+@PostMapping("/invite")
     public ResponseEntity<?> invite(@RequestBody Map<String, Long> body) {
         try {
             Long initiatorId = body.get("initiatorId");
@@ -33,8 +30,7 @@ public class MatchController {
         }
     }
 
-    /** RF-32 — Aceptar o rechazar invitación. */
-    @PatchMapping("/{id}/respond-invite")
+@PatchMapping("/{id}/respond-invite")
     public ResponseEntity<?> respondInvite(@PathVariable Long id,
                                            @RequestBody Map<String, Object> body) {
         try {
@@ -46,8 +42,7 @@ public class MatchController {
         }
     }
 
-    /** Cancelar invitación o salir del lobby. */
-    @PatchMapping("/{id}/cancel")
+@PatchMapping("/{id}/cancel")
     public ResponseEntity<?> cancel(@PathVariable Long id,
                                     @RequestBody Map<String, Long> body) {
         try {
@@ -57,10 +52,7 @@ public class MatchController {
         }
     }
 
-    // ── Lobby ─────────────────────────────────────────────────────────────────
-
-    /** RF-33 — Elegir baraja y marcar listo en el lobby. */
-    @PatchMapping("/{id}/ready")
+@PatchMapping("/{id}/ready")
     public ResponseEntity<?> setReady(@PathVariable Long id,
                                       @RequestBody Map<String, Long> body) {
         try {
@@ -74,8 +66,7 @@ public class MatchController {
         }
     }
 
-    /** Desmarcar listo para poder cambiar de baraja. */
-    @PatchMapping("/{id}/unready")
+@PatchMapping("/{id}/unready")
     public ResponseEntity<?> unsetReady(@PathVariable Long id,
                                         @RequestBody Map<String, Long> body) {
         try {
@@ -88,10 +79,7 @@ public class MatchController {
         }
     }
 
-    // ── Partida en curso ──────────────────────────────────────────────────────
-
-    /** Polling — obtener el estado completo de la partida. */
-    @GetMapping("/{id}/state")
+@GetMapping("/{id}/state")
     public ResponseEntity<?> getState(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(matchService.getState(id));
@@ -100,8 +88,7 @@ public class MatchController {
         }
     }
 
-    /** RF-34 — Enviar jugada (carta + atributo). */
-    @PostMapping("/{id}/move")
+@PostMapping("/{id}/move")
     public ResponseEntity<?> submitMove(@PathVariable Long id,
                                         @RequestBody Map<String, Object> body) {
         try {
@@ -114,16 +101,14 @@ public class MatchController {
         }
     }
 
-    /** RNF-04 — Heartbeat para mantener la sesión activa. */
-    @PatchMapping("/{id}/heartbeat")
+@PatchMapping("/{id}/heartbeat")
     public ResponseEntity<Void> heartbeat(@PathVariable Long id,
                                           @RequestBody Map<String, Long> body) {
         matchService.heartbeat(id, body.get("playerId"));
         return ResponseEntity.noContent().build();
     }
 
-    /** El jugador abandona voluntariamente. */
-    @PatchMapping("/{id}/forfeit")
+@PatchMapping("/{id}/forfeit")
     public ResponseEntity<?> forfeit(@PathVariable Long id,
                                      @RequestBody Map<String, Long> body) {
         try {
@@ -133,10 +118,7 @@ public class MatchController {
         }
     }
 
-    // ── Revancha ──────────────────────────────────────────────────────────────
-
-    /** RF-50 — Votar revancha inmediata (estilo Brawl Stars). */
-    @PatchMapping("/{id}/rematch-vote")
+@PatchMapping("/{id}/rematch-vote")
     public ResponseEntity<?> rematchVote(@PathVariable Long id,
                                          @RequestBody Map<String, Object> body) {
         try {
@@ -148,22 +130,17 @@ public class MatchController {
         }
     }
 
-    // ── Consultas ─────────────────────────────────────────────────────────────
-
-    /** Partidas activas de un jugador (para el banner de invitación y lobby). */
-    @GetMapping("/persons/{personId}/active")
+@GetMapping("/persons/{personId}/active")
     public List<MatchResponse> getActive(@PathVariable Long personId) {
         return matchService.getActive(personId);
     }
 
-    /** Invitaciones pendientes donde el jugador es receptor (para el banner). */
-    @GetMapping("/persons/{personId}/pending-invites")
+@GetMapping("/persons/{personId}/pending-invites")
     public List<MatchResponse> getPendingInvites(@PathVariable Long personId) {
         return matchService.getPendingInvites(personId);
     }
 
-    /** Historial de partidas terminadas. */
-    @GetMapping("/persons/{personId}/history")
+@GetMapping("/persons/{personId}/history")
     public List<MatchResponse> getHistory(@PathVariable Long personId) {
         return matchService.getHistory(personId);
     }

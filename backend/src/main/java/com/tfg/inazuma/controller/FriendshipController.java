@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.FriendshipResponse;
 import com.tfg.inazuma.service.FriendshipService;
@@ -76,8 +76,7 @@ public class FriendshipController {
                 .map(FriendshipResponse::from).toList();
     }
 
-    /** RF-20: búsqueda de usuarios por nickname o playerId */
-    @GetMapping("/search")
+@GetMapping("/search")
     public ResponseEntity<?> search(@PathVariable Long personId,
                                     @RequestParam String q) {
         if (q == null || q.trim().length() < 2)

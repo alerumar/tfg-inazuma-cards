@@ -1,4 +1,4 @@
-import { CardData } from './collection';
+﻿import { CardData } from './collection';
 import { PersonResponse } from './auth';
 
 export type TradeStatus =

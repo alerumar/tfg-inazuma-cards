@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -45,11 +45,7 @@ class FriendshipServiceTest {
         return f;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-21 — Enviar solicitud de amistad
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-21 | Caso positivo: solicitud válida entre dos jugadores distintos → amistad PENDING")
     void sendRequest_casoPositivo_solicitudValida() {
         Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
@@ -107,11 +103,7 @@ class FriendshipServiceTest {
         assertTrue(ex.getMessage().contains("Ya existe una relación de amistad"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-17 — Aceptar / Rechazar solicitud de amistad
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-17 | Caso positivo: receptor acepta la solicitud → estado ACCEPTED")
     void accept_casoPositivo_receptorAcepta() {
         Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
@@ -159,11 +151,7 @@ class FriendshipServiceTest {
         verify(friendshipRepository).delete(friendship);
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-19 — Cancelar solicitud de amistad enviada (aún sin respuesta)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-19 | Caso positivo: solicitante cancela su solicitud pendiente → solicitud eliminada")
     void cancelSentRequest_casoPositivo_cancelaSolicitudPendiente() {
         Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");

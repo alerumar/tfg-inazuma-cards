@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -67,11 +67,7 @@ class TradeServiceTest {
         return t;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-22/23 — Proponer intercambio
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-22 | Caso positivo: amigos, carta repetida → intercambio PENDING_RESPONSE creado")
     void propose_casoPositivo_amigosCartaRepetida() {
         Person initiator = crearPersona(1L, "pedroGarcia");
@@ -181,11 +177,7 @@ class TradeServiceTest {
         assertTrue(ex.getMessage().contains("Solo puedes ofrecer cartas que tengas repetidas"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-24/25 — Responder propuesta (receptor)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-24 | Caso positivo: receptor ofrece carta del mismo tipo → intercambio PENDING_CONFIRMATION")
     void receiverRespond_casoPositivo_ofreceCarta() {
         Person initiator  = crearPersona(1L, "pedroGarcia");
@@ -265,11 +257,7 @@ class TradeServiceTest {
         assertTrue(ex.getMessage().contains("No eres el receptor de este intercambio"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-26/27 — Confirmar o cancelar intercambio (iniciador)
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-26 | Caso positivo: iniciador acepta → intercambio COMPLETED y cartas intercambiadas")
     void initiatorConfirm_casoPositivo_aceptar() {
         Person initiator  = crearPersona(1L, "pedroGarcia");

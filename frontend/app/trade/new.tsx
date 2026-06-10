@@ -1,9 +1,4 @@
-/**
- * trade/new.tsx — Wizard de propuesta de intercambio (RF-22)
- *
- * Paso 1 → Elige un amigo
- * Paso 2 → Elige la carta que ofreces (solo duplicados, qty ≥ 2)
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -31,7 +26,6 @@ import { PersonResponse } from '../../types/auth';
 import { FriendshipData } from '../../types/friendship';
 import { CardData } from '../../types/collection';
 
-// ── Dimensiones ───────────────────────────────────────────────────────────────
 const SCREEN_W = Dimensions.get('window').width;
 const H_PAD    = 16;
 const COLS     = 4;
@@ -46,7 +40,6 @@ const avatarUri = (p: PersonResponse) =>
 const getFriend = (f: FriendshipData, userId: number) =>
   f.requester.id === userId ? f.receiver : f.requester;
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function NewTradeScreen() {
   const router   = useRouter();
   const { user } = useAuth();
@@ -77,7 +70,6 @@ export default function NewTradeScreen() {
       .finally(() => setLoading(false));
   }, [user?.id]);
 
-  // Al pasar al paso 2, cargar colección con duplicados
   useEffect(() => {
     if (step !== 2 || !user) return;
     setLoading(true);
@@ -93,14 +85,12 @@ export default function NewTradeScreen() {
 
   if (!user) return null;
 
-  // ── Paso 1: lista de amigos ───────────────────────────────────────────────
   const filteredFriends = useMemo(() => {
     const q = search.trim().toLowerCase();
     return friends.map(f => getFriend(f, user.id))
       .filter(p => !q || p.nickname.toLowerCase().includes(q) || p.playerId.toLowerCase().includes(q));
   }, [friends, search, user.id]);
 
-  // ── Paso 2: cartas disponibles ───────────────────────────────────────────
   const filteredCards = useMemo(() => {
     const q = search.trim().toLowerCase();
     return cards.filter(c => !q || c.card.name.toLowerCase().includes(q));
@@ -108,7 +98,6 @@ export default function NewTradeScreen() {
 
   const canSend = !!selected && !!pickedCard;
 
-  // ── Enviar propuesta ─────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!canSend) return;
     setSending(true);
@@ -122,12 +111,10 @@ export default function NewTradeScreen() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.root}>
 
-      {/* Header */}
-      <View style={styles.header}>
+<View style={styles.header}>
         <Pressable
           style={styles.cancelBtn}
           onPress={() => {
@@ -159,8 +146,7 @@ export default function NewTradeScreen() {
         </Pressable>
       </View>
 
-      {/* Resumen de selección */}
-      {(selected || pickedCard) && (
+{(selected || pickedCard) && (
         <View style={styles.summaryBar}>
           {selected && (
             <View style={styles.summaryItem}>
@@ -180,8 +166,7 @@ export default function NewTradeScreen() {
         </View>
       )}
 
-      {/* Barra de búsqueda */}
-      <View style={styles.searchWrap}>
+<View style={styles.searchWrap}>
         <Ionicons name="search" size={15} color={Colors.textLight} />
         <TextInput
           style={styles.searchInput}
@@ -198,19 +183,17 @@ export default function NewTradeScreen() {
         )}
       </View>
 
-      {/* Título del paso */}
-      <Text style={styles.stepTitle}>
+<Text style={styles.stepTitle}>
         {step === 1 ? 'Elige un amigo' : 'Elige la carta que ofreces'}
       </Text>
       {step === 2 && (
         <Text style={styles.stepHint}>Solo puedes ofrecer cartas que tengas repetidas (×2 o más)</Text>
       )}
 
-      {/* Contenido */}
-      {loading ? (
+{loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={Colors.primary} /></View>
       ) : step === 1 ? (
-        /* ── Lista de amigos ── */
+        
         filteredFriends.length === 0 ? (
           <View style={styles.center}>
             <Ionicons name="people-outline" size={48} color={Colors.primaryLight} />
@@ -254,7 +237,7 @@ export default function NewTradeScreen() {
           />
         )
       ) : (
-        /* ── Grid de cartas ── */
+        
         filteredCards.length === 0 ? (
           <View style={styles.center}>
             <Ionicons name="albums-outline" size={48} color={Colors.primaryLight} />
@@ -297,12 +280,10 @@ export default function NewTradeScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
-  // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 12, paddingVertical: 10,
@@ -323,7 +304,6 @@ const styles = StyleSheet.create({
   sendBtnText:    { fontSize: 15, fontWeight: '700', color: '#fff' },
   sendBtnTextOff: { color: Colors.textLight },
 
-  // Resumen
   summaryBar: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     paddingHorizontal: H_PAD, paddingVertical: 10,
@@ -334,7 +314,6 @@ const styles = StyleSheet.create({
   summaryAvatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: Colors.border },
   summaryText:   { fontSize: 12, fontWeight: '600', color: Colors.textDark, maxWidth: 90 },
 
-  // Búsqueda
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginHorizontal: H_PAD, marginTop: 12,
@@ -344,7 +323,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 13, color: Colors.textDark, padding: 0 },
 
-  // Títulos de paso
   stepTitle: {
     fontSize: 13, fontWeight: '800', color: Colors.textLight,
     letterSpacing: 0.8, textTransform: 'uppercase',
@@ -355,7 +333,6 @@ const styles = StyleSheet.create({
     marginHorizontal: H_PAD, marginBottom: 6,
   },
 
-  // Lista de amigos
   friendList: { padding: H_PAD, gap: 8 },
   friendRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -371,7 +348,6 @@ const styles = StyleSheet.create({
   friendNick:   { fontSize: 15, fontWeight: '700', color: Colors.textDark },
   friendSub:    { fontSize: 12, color: Colors.textLight },
 
-  // Grid de cartas
   grid:      { paddingHorizontal: H_PAD, paddingBottom: 24, paddingTop: 4 },
   cardCheck: { position: 'absolute', top: -4, right: -4 },
 

@@ -1,11 +1,10 @@
-package com.tfg.inazuma.dto;
+﻿package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.Match;
 import com.tfg.inazuma.model.MatchStatus;
 
 import java.time.LocalDateTime;
 
-/** DTO ligero para listados (historial, banner de invitación). */
 public record MatchResponse(
         Long        id,
         MatchStatus status,
@@ -17,11 +16,11 @@ public record MatchResponse(
         boolean     player2Ready,
         int         roundsWonPlayer1,
         int         roundsWonPlayer2,
-        /** Turnos ganados por el jugador 1 en la última ronda — útil para el sub-marcador del historial. */
+        
         int         turnsWonPlayer1LastRound,
-        /** Turnos ganados por el jugador 2 en la última ronda. */
+        
         int         turnsWonPlayer2LastRound,
-        /** true si la partida terminó por abandono voluntario o desconexión. */
+        
         boolean     wonByAbandon,
         Long        winnerId,
         LocalDateTime createdAt

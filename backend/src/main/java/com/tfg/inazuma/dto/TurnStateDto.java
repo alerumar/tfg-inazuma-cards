@@ -1,4 +1,4 @@
-package com.tfg.inazuma.dto;
+﻿package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.CardAttribute;
 import com.tfg.inazuma.model.MatchTurn;
@@ -7,13 +7,12 @@ import com.tfg.inazuma.model.TurnResult;
 import java.time.LocalDateTime;
 
 public record TurnStateDto(
-        /** Número de ronda (global, no se reinicia). Necesario para identificar turnos unívocamente. */
+        
         int        roundNumber,
         int        turnNumber,
         LocalDateTime turnCreatedAt,
         boolean    player1Submitted,
         boolean    player2Submitted,
-        // Solo se incluyen cuando ambos han jugado (result != PENDING)
         Long       player1CardId,
         String     player1CardName,
         String     player1CardImage,

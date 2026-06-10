@@ -1,4 +1,4 @@
-package com.tfg.inazuma.repository;
+﻿package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Mission;
 import com.tfg.inazuma.model.MissionType;
@@ -27,8 +27,7 @@ public interface PersonMissionRepository extends JpaRepository<PersonMission, Lo
     @Query("UPDATE PersonMission pm SET pm.progress = LEAST(pm.progress + 1, pm.mission.goal) WHERE pm.person = :person AND pm.mission.type = :type AND pm.progress < pm.mission.goal")
     void incrementProgress(@Param("person") Person person, @Param("type") MissionType type);
 
-    /** Borra todas las misiones del usuario — para borrar cuenta. */
-    @Modifying
+@Modifying
     @Query("DELETE FROM PersonMission pm WHERE pm.person.id = :personId")
     void deleteByPersonId(@Param("personId") Long personId);
 }

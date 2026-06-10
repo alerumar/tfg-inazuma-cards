@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.service.CardService;
@@ -30,8 +30,6 @@ public class CardController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Para crear una carta manualmente: POST /api/cards
-    // El rating se calcula automáticamente según posición y estadísticas.
     @PostMapping
     public ResponseEntity<Card> create(@Valid @RequestBody Card card) {
         Card saved = cardService.create(card);
@@ -40,8 +38,6 @@ public class CardController {
         return ResponseEntity.created(location).body(saved);
     }
 
-    // Para editar estadísticas de una carta: PUT /api/cards/{id}
-    // El rating se recalcula automáticamente.
     @PutMapping("/{id}")
     public ResponseEntity<Card> update(@PathVariable Long id, @RequestBody Card updated) {
         return cardService.update(id, updated)

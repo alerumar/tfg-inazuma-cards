@@ -1,4 +1,4 @@
-package com.tfg.inazuma.controller;
+﻿package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.ClaimRewardResponse;
 import com.tfg.inazuma.dto.MissionResponse;
@@ -20,9 +20,7 @@ public class MissionController {
     private final MissionService missionService;
     private final PersonService  personService;
 
-    // ─── Admin ────────────────────────────────────────────────────────────────
-
-    @GetMapping("/api/missions")
+@GetMapping("/api/missions")
     public List<MissionResponse> findAll() {
         return missionService.findAll().stream().map(MissionResponse::from).toList();
     }
@@ -46,16 +44,13 @@ public class MissionController {
                 : ResponseEntity.notFound().build();
     }
 
-    // ─── Jugador ──────────────────────────────────────────────────────────────
-
-    @GetMapping("/api/persons/{personId}/missions")
+@GetMapping("/api/persons/{personId}/missions")
     public List<PersonMissionResponse> getPersonMissions(@PathVariable Long personId) {
         return missionService.getPersonMissions(personId).stream()
                 .map(PersonMissionResponse::from).toList();
     }
 
-    /** Reclamar recompensas de una misión completada. Devuelve misión + jugador actualizados. */
-    @PostMapping("/api/persons/{personId}/missions/{personMissionId}/claim")
+@PostMapping("/api/persons/{personId}/missions/{personMissionId}/claim")
     public ResponseEntity<?> claim(@PathVariable Long personId, @PathVariable Long personMissionId) {
         try {
             var pm = missionService.claim(personId, personMissionId);

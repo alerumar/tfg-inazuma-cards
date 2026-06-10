@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+﻿import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -83,17 +83,15 @@ export default function AuthScreen() {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Título */}
+        
         <Text style={styles.title}>INAZUMA ELEVEN</Text>
         <Text style={styles.subtitle}>CARDS</Text>
 
-        {/* Cabecera del formulario */}
-        <Text style={styles.formTitle}>
+<Text style={styles.formTitle}>
           {isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
         </Text>
 
-        {/* Campos */}
-        <View style={styles.form}>
+<View style={styles.form}>
           {!isLogin && (
             <>
               <TextInput
@@ -157,11 +155,9 @@ export default function AuthScreen() {
             />
           )}
 
-          {/* Error */}
-          {error !== '' && <Text style={styles.error}>{error}</Text>}
+{error !== '' && <Text style={styles.error}>{error}</Text>}
 
-          {/* Botón principal */}
-          <Pressable
+<Pressable
             style={[styles.btn, loading && styles.btnDisabled]}
             onPress={handleSubmit}
             disabled={loading}
@@ -174,8 +170,7 @@ export default function AuthScreen() {
             }
           </Pressable>
 
-          {/* Enlace para cambiar de modo */}
-          <View style={styles.switchRow}>
+<View style={styles.switchRow}>
             <Text style={styles.switchText}>
               {isLogin ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
             </Text>

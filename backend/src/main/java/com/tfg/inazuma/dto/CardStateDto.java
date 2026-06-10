@@ -1,4 +1,4 @@
-package com.tfg.inazuma.dto;
+﻿package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.Card;
 import com.tfg.inazuma.model.CardAttribute;
@@ -20,8 +20,7 @@ public record CardStateDto(
         boolean attackUsed,
         boolean controlUsed,
         boolean defenseUsed,
-        // discarded = attackUsed && controlUsed && defenseUsed  (derivado en el cliente)
-        /** true cuando la carta es LEGEND y el jugador la ha usado 2 turnos consecutivos */
+        
         boolean legendBlocked
 ) {
     public static CardStateDto from(Card card, Set<CardAttribute> usedAttributes, boolean legendBlocked) {

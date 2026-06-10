@@ -1,9 +1,4 @@
-/**
- * trade/[id]/respond.tsx — Pantalla de respuesta a una propuesta de intercambio (RF-23)
- *
- * El receptor ve la carta que le ofrece el iniciador y elige una de sus
- * propias cartas (duplicadas, qty ≥ 2) como contra-oferta.
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -30,7 +25,6 @@ import { PersonResponse } from '../../../types/auth';
 import { CardData } from '../../../types/collection';
 import { TradeData } from '../../../types/trades';
 
-// ── Dimensiones ───────────────────────────────────────────────────────────────
 const SCREEN_W = Dimensions.get('window').width;
 const H_PAD    = 16;
 const COLS     = 4;
@@ -45,7 +39,6 @@ const avatarUri = (p: PersonResponse) =>
     ? { uri: `${BASE_URL}${p.profilePhoto}` }
     : { uri: `${BASE_URL}/images/default_profile.png` };
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function RespondTradeScreen() {
   const router             = useRouter();
   const { id }             = useLocalSearchParams<{ id: string }>();
@@ -62,7 +55,6 @@ export default function RespondTradeScreen() {
 
   const tradeId = Number(id);
 
-  // Carga el intercambio y la colección del receptor en paralelo
   useEffect(() => {
     if (!user || !tradeId) return;
     setLoading(true);
@@ -72,14 +64,12 @@ export default function RespondTradeScreen() {
     ])
       .then(([t, col]) => {
         setTrade(t);
-        // Solo cartas del mismo tipo que la carta ofrecida por el iniciador
         const sameType = t.initiatorCard?.type ?? 'NORMAL';
         setCards(
           col
             .filter(e => e.owned && e.quantity >= 2 && e.card.type === sameType)
             .map(e => ({ card: e.card, quantity: e.quantity })),
         );
-        // ¿El receptor ya tiene al menos 1 copia de la carta ofrecida?
         const offered = col.find(e => e.card.id === t.initiatorCard?.id);
         setAlreadyOwned(!!offered && offered.owned);
       })
@@ -89,13 +79,11 @@ export default function RespondTradeScreen() {
 
   if (!user) return null;
 
-  // ── Cartas filtradas ─────────────────────────────────────────────────────
   const filteredCards = useMemo(() => {
     const q = search.trim().toLowerCase();
     return cards.filter(c => !q || c.card.name.toLowerCase().includes(q));
   }, [cards, search]);
 
-  // ── Enviar respuesta ─────────────────────────────────────────────────────
   const handleSend = async () => {
     if (!pickedCard) return;
     setSending(true);
@@ -109,12 +97,10 @@ export default function RespondTradeScreen() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.root}>
 
-      {/* Header */}
-      <View style={styles.header}>
+<View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()} disabled={sending}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
         </Pressable>
@@ -140,18 +126,17 @@ export default function RespondTradeScreen() {
         </View>
       ) : (
         <>
-          {/* ── Bloque: lo que te ofrecen ── */}
+          
           <View style={styles.offeredSection}>
             <Text style={styles.sectionLabel}>Te ofrecen</Text>
             <View style={styles.offeredRow}>
-              {/* Avatar del iniciador */}
+              
               <View style={styles.partnerWrap}>
                 <Image source={avatarUri(trade.initiator)} style={styles.partnerAvatar} />
                 <Text style={styles.partnerNick} numberOfLines={1}>{trade.initiator.nickname}</Text>
               </View>
 
-              {/* Carta ofrecida + badge de posesión */}
-              {trade.initiatorCard && (
+{trade.initiatorCard && (
                 <View style={styles.offeredCardWrap}>
                   <View style={{ position: 'relative' }}>
                     <CardCell card={trade.initiatorCard} owned width={OFFERED_W} />
@@ -178,8 +163,7 @@ export default function RespondTradeScreen() {
             </View>
           </View>
 
-          {/* ── Barra de búsqueda ── */}
-          <View style={styles.searchWrap}>
+<View style={styles.searchWrap}>
             <Ionicons name="search" size={15} color={Colors.textLight} />
             <TextInput
               style={styles.searchInput}
@@ -196,14 +180,12 @@ export default function RespondTradeScreen() {
             )}
           </View>
 
-          {/* ── Título de la sección ── */}
-          <Text style={styles.stepTitle}>Elige tu carta a cambio</Text>
+<Text style={styles.stepTitle}>Elige tu carta a cambio</Text>
           <Text style={styles.stepHint}>
             {`Solo cartas ${trade.initiatorCard?.type === 'LEGEND' ? 'legendarias' : 'normales'} repetidas (×2 o más)`}
           </Text>
 
-          {/* ── Grid de cartas disponibles ── */}
-          {filteredCards.length === 0 ? (
+{filteredCards.length === 0 ? (
             <View style={styles.center}>
               <Ionicons name="albums-outline" size={48} color={Colors.primaryLight} />
               <Text style={styles.emptyText}>
@@ -242,8 +224,7 @@ export default function RespondTradeScreen() {
             />
           )}
 
-          {/* ── Resumen de selección ── */}
-          {pickedCard && (
+{pickedCard && (
             <View style={styles.summaryBar}>
               <CardCell card={trade.initiatorCard} owned width={36} compact />
               <Ionicons name="swap-horizontal" size={18} color={Colors.textLight} />
@@ -261,12 +242,10 @@ export default function RespondTradeScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
-  // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 12, paddingVertical: 10,
@@ -280,7 +259,6 @@ const styles = StyleSheet.create({
   sendBtnText:    { fontSize: 15, fontWeight: '700', color: '#fff' },
   sendBtnTextOff: { color: Colors.textLight },
 
-  // Sección "te ofrecen"
   offeredSection: {
     backgroundColor: Colors.surface,
     borderBottomWidth: 1, borderBottomColor: Colors.primaryLight,
@@ -318,7 +296,6 @@ const styles = StyleSheet.create({
   ownedBadgeTextYes: { color: '#2E7D32' },
   ownedBadgeTextNo:  { color: '#9E9E9E' },
 
-  // Búsqueda
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginHorizontal: H_PAD, marginTop: 12,
@@ -328,7 +305,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 13, color: Colors.textDark, padding: 0 },
 
-  // Títulos
   stepTitle: {
     fontSize: 13, fontWeight: '800', color: Colors.textLight,
     letterSpacing: 0.8, textTransform: 'uppercase',
@@ -339,11 +315,9 @@ const styles = StyleSheet.create({
     marginHorizontal: H_PAD, marginBottom: 6,
   },
 
-  // Grid
   grid:      { paddingHorizontal: H_PAD, paddingBottom: 80, paddingTop: 4 },
   cardCheck: { position: 'absolute', top: -4, right: -4 },
 
-  // Resumen inferior
   summaryBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', alignItems: 'center', gap: 8,
@@ -357,7 +331,6 @@ const styles = StyleSheet.create({
 
   emptyText: { fontSize: 14, color: Colors.textLight, textAlign: 'center' },
 
-  // Badge NEW (píldora verde, igual que PackOpenModal)
   newBadge: {
     position: 'absolute', top: -9, right: -9,
     flexDirection: 'row', alignItems: 'center', gap: 3,

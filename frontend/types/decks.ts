@@ -1,4 +1,4 @@
-import { CardData } from './collection';
+﻿import { CardData } from './collection';
 
 export interface DeckCardEntry {
   deckCardId: number;

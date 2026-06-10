@@ -1,6 +1,4 @@
-/**
- * PackOpenModal — revela 5 cartas de una en una con efecto de mazo apilado.
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -19,7 +17,6 @@ import { PackCardResult, PackType } from '../types/packs';
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_W   = Math.min(Math.round(SCREEN_W * 0.66), 270);
 const CARD_H   = Math.round(CARD_W * CARD_ASPECT);
-// Espacio extra para que los fantasmas no se corten
 const STACK_W  = CARD_W + 20;
 const STACK_H  = CARD_H + 20;
 
@@ -40,8 +37,6 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
   const scaleAnim   = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
-  // Reiniciar SOLO cuando la visibilidad cambia a true — no depende de cards
-  // para evitar la race condition cuando se abre un segundo sobre
   useEffect(() => {
     if (visible) {
       setCurrentIdx(0);
@@ -53,7 +48,6 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
   if (!visible || cards.length === 0 || !packType) return null;
 
   const current = cards[currentIdx];
-  // Guardia defensiva: si currentIdx aún no se ha reseteado, esperamos al siguiente frame
   if (!current) return null;
   const isLast     = currentIdx === cards.length - 1;
   const remaining  = cards.length - currentIdx - 1; // cartas detrás de la actual
@@ -78,15 +72,13 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => {}}>
       <View style={styles.overlay}>
 
-        {/* Header */}
-        <View style={styles.header}>
+<View style={styles.header}>
           <Text style={styles.packTitle}>{PACK_LABEL[packType]}</Text>
           <Text style={styles.cardCounter}>Carta {currentIdx + 1} de {cards.length}</Text>
         </View>
 
-        {/* Stack de cartas */}
-        <View style={[styles.stackContainer, { width: STACK_W, height: STACK_H }]}>
-          {/* Fantasmas (cartas por detrás) */}
+<View style={[styles.stackContainer, { width: STACK_W, height: STACK_H }]}>
+          
           {remaining >= 3 && (
             <View style={[
               styles.ghostCard,
@@ -106,8 +98,7 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
             ]} />
           )}
 
-          {/* Carta actual */}
-          <Animated.View style={[
+<Animated.View style={[
             styles.mainCard,
             { transform: [{ scale: scaleAnim }], opacity: opacityAnim },
           ]}>
@@ -126,8 +117,7 @@ export function PackOpenModal({ visible, cards, packType, onFinish }: Props) {
           </Animated.View>
         </View>
 
-        {/* Progreso + hint */}
-        <View style={styles.footer}>
+<View style={styles.footer}>
           <View style={styles.dotsRow}>
             {cards.map((_, i) => (
               <View
@@ -170,12 +160,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 
-  // Header
   header: { alignItems: 'center', gap: 4 },
   packTitle:   { fontSize: 20, fontWeight: '900', color: '#fff', letterSpacing: 0.5 },
   cardCounter: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
 
-  // Stack
   stackContainer: { position: 'relative' },
 
   ghostCard: {
@@ -200,7 +188,6 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
 
-  // Badge NEW
   newBadge: {
     position: 'absolute',
     top: -10,
@@ -222,7 +209,6 @@ const styles = StyleSheet.create({
   },
   newBadgeText: { fontSize: 12, fontWeight: '900', color: '#fff', letterSpacing: 1 },
 
-  // Footer
   footer: { alignItems: 'center', gap: 14, width: '100%' },
 
   dotsRow: { flexDirection: 'row', gap: 8 },

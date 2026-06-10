@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -32,13 +32,10 @@ export default function ProfileScreen() {
   const router                        = useRouter();
   const { user, updateUser, logout }  = useAuth();
 
-  // Refresca los datos del usuario (friendCount, cardCount…) cada vez que se abre el perfil.
   useFocusEffect(useCallback(() => {
     if (user?.id) {
       apiGetPerson(user.id).then(updateUser).catch(() => {});
     }
-  // user.id y updateUser son estables — no necesitan recrear el efecto
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []));
 
   const { dialogCfg, showAlert, showConfirm } = useDialog();
@@ -56,7 +53,6 @@ export default function ProfileScreen() {
   const xpToNext = 200 + (user.level - 1) * 100;
   const xpPct    = Math.min((user.experience / xpToNext) * 100, 100);
 
-  // ── Subir foto ──────────────────────────────────────────────────────────────
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -81,7 +77,6 @@ export default function ProfileScreen() {
     }
   };
 
-  // ── Cerrar sesión ───────────────────────────────────────────────────────────
   const handleLogout = () => {
     showConfirm(
       'Cerrar sesión',
@@ -91,7 +86,6 @@ export default function ProfileScreen() {
     );
   };
 
-  // ── Eliminar cuenta ─────────────────────────────────────────────────────────
   const handleDelete = () => {
     showConfirm(
       '⚠️ Eliminar cuenta',
@@ -113,7 +107,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Header */}
+      
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
@@ -123,7 +117,7 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Avatar + nombre */}
+        
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
             <Image source={avatarUri} style={styles.avatar} />
@@ -142,8 +136,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Nivel y XP */}
-        <View style={styles.card}>
+<View style={styles.card}>
           <View style={styles.levelRow}>
             <Text style={styles.cardLabel}>Nivel</Text>
             <Text style={styles.levelNum}>{user.level}</Text>
@@ -154,8 +147,7 @@ export default function ProfileScreen() {
           <Text style={styles.xpText}>{user.experience} / {xpToNext} XP</Text>
         </View>
 
-        {/* Stats — 2 filas de 2 */}
-        <View style={styles.statsGrid}>
+<View style={styles.statsGrid}>
           <StatBox icon="trophy-outline"    label="XP total" value={user.totalExperience.toString()} />
           <StatBox icon="hourglass-outline" label="Sobres"   value={user.packPoints.toString()} />
         </View>
@@ -164,29 +156,25 @@ export default function ProfileScreen() {
           <StatBox icon="people-outline"  label="Amigos"  value={user.friendCount.toString()} />
         </View>
 
-        {/* Info */}
-        <View style={styles.card}>
+<View style={styles.card}>
           <InfoRow icon="mail-outline"   label="Correo"  value={user.email} />
           <View style={styles.divider} />
           <InfoRow icon="person-outline" label="Usuario" value={user.nickname} />
         </View>
 
-        {/* Editar datos */}
-        <Pressable style={styles.editBtn} onPress={() => setShowEdit(true)}>
+<Pressable style={styles.editBtn} onPress={() => setShowEdit(true)}>
           <Ionicons name="create-outline" size={18} color={Colors.white} style={{ marginRight: 8 }} />
           <Text style={styles.editBtnText}>Editar datos</Text>
         </Pressable>
 
-        {/* ── Zona peligrosa ── */}
-        <View style={styles.dangerZone}>
-          {/* Cabecera de la sección */}
+<View style={styles.dangerZone}>
+          
           <View style={styles.dangerHeader}>
             <Ionicons name="warning-outline" size={16} color={DANGER} />
             <Text style={styles.dangerTitle}>ZONA PELIGROSA</Text>
           </View>
 
-          {/* Cambiar contraseña */}
-          <Pressable style={styles.dangerRow} onPress={() => setShowPassword(true)}>
+<Pressable style={styles.dangerRow} onPress={() => setShowPassword(true)}>
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textDark} />
             <Text style={styles.dangerRowText}>Cambiar contraseña</Text>
             <Ionicons name="chevron-forward" size={18} color={Colors.textLight} />
@@ -194,18 +182,15 @@ export default function ProfileScreen() {
 
           <View style={styles.dangerDivider} />
 
-          {/* Cerrar sesión */}
-          <Pressable style={styles.dangerRow} onPress={handleLogout}>
+<Pressable style={styles.dangerRow} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={20} color={Colors.textDark} />
             <Text style={styles.dangerRowText}>Cerrar sesión</Text>
             <Ionicons name="chevron-forward" size={18} color={Colors.textLight} />
           </Pressable>
 
-          {/* Separador rojo más grueso antes del botón más peligroso */}
-          <View style={styles.dangerSeparator} />
+<View style={styles.dangerSeparator} />
 
-          {/* Eliminar cuenta */}
-          <Pressable style={styles.deleteRow} onPress={handleDelete} disabled={deleting}>
+<Pressable style={styles.deleteRow} onPress={handleDelete} disabled={deleting}>
             {deleting
               ? <ActivityIndicator size={20} color={DANGER} />
               : <Ionicons name="trash-outline" size={20} color={DANGER} />}
@@ -217,8 +202,7 @@ export default function ProfileScreen() {
         <View style={{ height: 12 }} />
       </ScrollView>
 
-      {/* Modales */}
-      <EditModal
+<EditModal
         visible={showEdit}
         user={user}
         onClose={() => setShowEdit(false)}
@@ -234,8 +218,6 @@ export default function ProfileScreen() {
     </SafeAreaView>
   );
 }
-
-// ── Modal editar datos ────────────────────────────────────────────────────────
 
 interface EditModalProps {
   visible: boolean;
@@ -298,8 +280,6 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
   );
 }
 
-// ── Modal cambiar contraseña ──────────────────────────────────────────────────
-
 function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId: number; onClose: () => void }) {
   const { dialogCfg, showAlert } = useDialog();
   const [current,  setCurrent]  = useState('');
@@ -350,8 +330,6 @@ function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId:
   );
 }
 
-// ── Campo genérico ────────────────────────────────────────────────────────────
-
 interface FieldProps {
   label: string;
   value: string;
@@ -377,8 +355,6 @@ function Field({ label, value, onChange, autoCapitalize = 'sentences', keyboardT
   );
 }
 
-// ── StatBox / InfoRow ─────────────────────────────────────────────────────────
-
 function StatBox({ icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <View style={styles.statBox}>
@@ -399,10 +375,7 @@ function InfoRow({ icon, label, value }: { icon: any; label: string; value: stri
   );
 }
 
-// ── Constante color peligro ───────────────────────────────────────────────────
 const DANGER = '#C0392B';
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   root:        { flex: 1, backgroundColor: Colors.background },
@@ -415,7 +388,6 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.textDark },
   scroll:      { padding: 20, gap: 16 },
 
-  // Avatar
   avatarSection: { alignItems: 'center', gap: 6, paddingVertical: 8 },
   avatarWrapper: { position: 'relative', width: 100, height: 100, marginBottom: 4 },
   avatar: {
@@ -437,7 +409,6 @@ const styles = StyleSheet.create({
   },
   playerIdText: { fontSize: 13, color: Colors.primary, fontWeight: '600', letterSpacing: 1 },
 
-  // Nivel
   card: {
     backgroundColor: Colors.surface, borderRadius: 16,
     padding: 16, borderWidth: 1, borderColor: Colors.border, gap: 8,
@@ -449,7 +420,6 @@ const styles = StyleSheet.create({
   xpBarFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 8 },
   xpText:    { fontSize: 12, color: Colors.textLight, textAlign: 'right' },
 
-  // Stats
   statsGrid: { flexDirection: 'row', gap: 12 },
   statBox: {
     flex: 1, backgroundColor: Colors.surface, borderRadius: 16,
@@ -459,13 +429,11 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: '900', color: Colors.textDark },
   statLabel: { fontSize: 12, color: Colors.textLight },
 
-  // Info
   infoRow:   { flexDirection: 'row', alignItems: 'center' },
   infoLabel: { fontSize: 14, fontWeight: '600', color: Colors.textMid, width: 70 },
   infoValue: { flex: 1, fontSize: 14, color: Colors.textDark, textAlign: 'right' },
   divider:   { height: 1, backgroundColor: Colors.primaryLight },
 
-  // Editar datos
   editBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.primary, borderRadius: 14,
@@ -473,7 +441,6 @@ const styles = StyleSheet.create({
   },
   editBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 
-  // ── Danger zone ──────────────────────────────────────────────────────────────
   dangerZone: {
     borderRadius: 16,
     borderWidth: 1.5,
@@ -498,7 +465,6 @@ const styles = StyleSheet.create({
   },
   dangerRowText: { flex: 1, fontSize: 15, color: Colors.textDark },
   dangerDivider: { height: 1, backgroundColor: '#FFCDD2', marginHorizontal: 16 },
-  // Separador más grueso antes de "Eliminar cuenta"
   dangerSeparator: { height: 2, backgroundColor: '#FFCDD2' },
   deleteRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -507,7 +473,6 @@ const styles = StyleSheet.create({
   },
   deleteRowText: { flex: 1, fontSize: 15, fontWeight: '700', color: DANGER },
 
-  // Modal
   overlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center', paddingHorizontal: 20,
@@ -524,7 +489,6 @@ const styles = StyleSheet.create({
   btnText:          { fontSize: 15, fontWeight: '700', color: Colors.white },
   btnTextSecondary: { fontSize: 15, fontWeight: '600', color: Colors.textDark },
 
-  // Campo formulario
   fieldGroup: { gap: 4 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.textMid },
   input: {

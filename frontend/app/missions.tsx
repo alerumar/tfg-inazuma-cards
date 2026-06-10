@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -18,7 +18,6 @@ import { apiClaimMission, apiGetMissions } from '../services/missionService';
 import { PersonResponse } from '../types/auth';
 import { MissionType, PersonMissionData } from '../types/missions';
 
-// ── Iconos y labels por tipo ──────────────────────────────────────────────────
 const TYPE_ICON: Record<MissionType, React.ComponentProps<typeof Ionicons>['name']> = {
   WIN_MATCHES:      'medal-outline',
   PLAY_MATCHES:     'game-controller-outline',
@@ -30,7 +29,6 @@ const TYPE_ICON: Record<MissionType, React.ComponentProps<typeof Ionicons>['name
   REACH_LEVEL:      'trending-up-outline',
 };
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function MissionsScreen() {
   const router                              = useRouter();
   const { user, updateUser, setClaimableMissions } = useAuth();
@@ -39,7 +37,6 @@ export default function MissionsScreen() {
   const [loading,   setLoading]   = useState(true);
   const [claiming,  setClaiming]  = useState<number | null>(null);
 
-  // Modal de recompensa
   const [rewardVisible, setRewardVisible] = useState(false);
   const [rewardItems,   setRewardItems]   = useState<RewardItem[]>([]);
   const [pendingUser,   setPendingUser]   = useState<PersonResponse | null>(null);
@@ -58,13 +55,10 @@ export default function MissionsScreen() {
     setClaiming(pm.id);
     try {
       const result = await apiClaimMission(user.id, pm.id);
-      // Actualiza la misión en la lista local
       const updated = missions.map(m => m.id === pm.id ? result.mission : m);
       setMissions(updated);
-      // Actualiza el badge global al instante (sin esperar al polling de 20s)
       setClaimableMissions(updated.filter(m => m.completed && !m.claimed).length);
 
-      // Construye los ítems de recompensa
       const items: RewardItem[] = [];
       if (pm.mission.rewardExperience > 0) {
         items.push({
@@ -83,7 +77,6 @@ export default function MissionsScreen() {
         });
       }
 
-      // Guardamos el usuario actualizado para aplicarlo al cerrar el modal
       setPendingUser(result.person);
       setRewardItems(items);
       setRewardVisible(true);
@@ -102,14 +95,13 @@ export default function MissionsScreen() {
     }
   };
 
-  // Tres grupos ordenados: reclamables → en progreso → ya reclamadas
   const claimable = missions.filter(m =>  m.completed && !m.claimed);
   const inProgress = missions.filter(m => !m.completed && !m.claimed);
   const claimed    = missions.filter(m =>  m.claimed);
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Header */}
+      
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
@@ -132,7 +124,7 @@ export default function MissionsScreen() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── Listas para reclamar (arriba del todo) ── */}
+          
           {claimable.length > 0 && (
             <>
               <Text style={[styles.groupLabel, styles.groupLabelClaimable]}>
@@ -149,8 +141,7 @@ export default function MissionsScreen() {
             </>
           )}
 
-          {/* ── En progreso ── */}
-          {inProgress.length > 0 && (
+{inProgress.length > 0 && (
             <>
               <Text style={[styles.groupLabel, claimable.length > 0 && { marginTop: 8 }]}>
                 En progreso
@@ -166,8 +157,7 @@ export default function MissionsScreen() {
             </>
           )}
 
-          {/* ── Ya reclamadas ── */}
-          {claimed.length > 0 && (
+{claimed.length > 0 && (
             <>
               <Text style={[styles.groupLabel, { marginTop: 8 }]}>Completadas</Text>
               {claimed.map(pm => (
@@ -180,8 +170,7 @@ export default function MissionsScreen() {
         </ScrollView>
       )}
 
-      {/* Modal de recompensa — aparece antes del modal de nivel */}
-      <RewardModal
+<RewardModal
         visible={rewardVisible}
         rewards={rewardItems}
         subtitle="Misión completada"
@@ -192,7 +181,6 @@ export default function MissionsScreen() {
   );
 }
 
-// ── Tarjeta de misión ─────────────────────────────────────────────────────────
 function MissionCard({
   pm, claiming, onClaim,
 }: {
@@ -208,7 +196,7 @@ function MissionCard({
 
   return (
     <View style={[styles.card, isClaimedStyle && styles.cardClaimed]}>
-      {/* Badge "Completada" en esquina superior derecha */}
+      
       {claimed && (
         <View style={styles.claimedBadge}>
           <Ionicons name="checkmark-circle" size={14} color="#fff" />
@@ -216,8 +204,7 @@ function MissionCard({
         </View>
       )}
 
-      {/* Fila superior: icono + título */}
-      <View style={styles.cardTop}>
+<View style={styles.cardTop}>
         <View style={[styles.iconWrap, claimed && styles.iconWrapClaimed]}>
           <Ionicons name={icon} size={22} color={claimed ? '#9E9E9E' : Colors.primary} />
         </View>
@@ -231,8 +218,7 @@ function MissionCard({
         </View>
       </View>
 
-      {/* Barra de progreso */}
-      <View style={styles.progressSection}>
+<View style={styles.progressSection}>
         <View style={styles.barBg}>
           <View style={[styles.barFill, { width: `${percentage}%`, backgroundColor: barColor }]} />
         </View>
@@ -241,8 +227,7 @@ function MissionCard({
         </Text>
       </View>
 
-      {/* Recompensas */}
-      <View style={styles.rewardsRow}>
+<View style={styles.rewardsRow}>
         <Text style={[styles.rewardsLabel, claimed && styles.textFaded]}>Recompensas:</Text>
         {mission.rewardExperience > 0 && (
           <RewardChip icon="trophy-outline" value={`${mission.rewardExperience} XP`} faded={claimed} />
@@ -252,8 +237,7 @@ function MissionCard({
         )}
       </View>
 
-      {/* Botón reclamar (solo si completada y no reclamada) */}
-      {completed && !claimed && (
+{completed && !claimed && (
         <Pressable
           style={[styles.claimBtn, claiming && styles.claimBtnDisabled]}
           onPress={onClaim}
@@ -288,10 +272,8 @@ function RewardChip({
   );
 }
 
-// ── Constantes de color ───────────────────────────────────────────────────────
 const COMPLETE_COLOR = '#2E7D32';
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   header: {
@@ -314,7 +296,6 @@ const styles = StyleSheet.create({
     color: '#2E7D32',  // verde — resalta que hay algo que recoger
   },
 
-  // ── Tarjeta ────────────────────────────────────────────────────────────────
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
@@ -329,7 +310,6 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 
-  // Badge "Completada"
   claimedBadge: {
     position: 'absolute', top: 12, right: 12,
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -338,7 +318,6 @@ const styles = StyleSheet.create({
   },
   claimedBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
 
-  // Fila icono + título
   cardTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingRight: 90 },
   iconWrap: {
     width: 42, height: 42, borderRadius: 12,
@@ -351,7 +330,6 @@ const styles = StyleSheet.create({
   cardTitle:       { fontSize: 15, fontWeight: '700', color: Colors.textDark },
   cardDesc:        { fontSize: 13, color: Colors.textMid, lineHeight: 18 },
 
-  // Progreso
   progressSection: { gap: 4 },
   barBg: {
     height: 8, backgroundColor: Colors.primaryLight,
@@ -360,7 +338,6 @@ const styles = StyleSheet.create({
   barFill:      { height: '100%', borderRadius: 8 },
   progressText: { fontSize: 12, color: Colors.textLight, textAlign: 'right' },
 
-  // Recompensas
   rewardsRow:    { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   rewardsLabel:  { fontSize: 12, fontWeight: '600', color: Colors.textMid },
   rewardChip: {
@@ -371,7 +348,6 @@ const styles = StyleSheet.create({
   rewardChipFaded:  { backgroundColor: '#EEEEEE' },
   rewardChipText:   { fontSize: 12, fontWeight: '600', color: Colors.textDark },
 
-  // Botón reclamar
   claimBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: COMPLETE_COLOR, borderRadius: 12,
@@ -380,6 +356,5 @@ const styles = StyleSheet.create({
   claimBtnDisabled: { opacity: 0.6 },
   claimBtnText:     { fontSize: 14, fontWeight: '700', color: '#fff' },
 
-  // Texto difuminado (misiones reclamadas)
   textFaded: { color: '#9E9E9E' },
 });

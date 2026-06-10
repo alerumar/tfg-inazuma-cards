@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -28,7 +28,6 @@ const PACK_GO   = IMG('Sobre GO.jpg');
 const SHOP_IMG  = IMG('Tienda.jpg');
 const MAX_PACKS = 3;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 function formatMinutes(minutes: number): string {
   if (minutes <= 0) return 'Disponible';
   const h = Math.floor(minutes / 60);
@@ -37,7 +36,6 @@ function formatMinutes(minutes: number): string {
   return `${m}m`;
 }
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const router = useRouter();
   const { user, updateUser, dailyRewardAvailable } = useAuth();
@@ -50,13 +48,10 @@ export default function HomeScreen() {
   const [modalVisible,  setModalVisible]  = useState(false);
   const [cards,         setCards]         = useState<PackCardResult[]>([]);
   const [openPackType,  setOpenPackType]  = useState<PackType | null>(null);
-  // Countdown local en minutos (se decrementa cada 60s)
   const [localMinutes,  setLocalMinutes]  = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── Carga de estado ────────────────────────────────────────────────────────
-
-  const fetchStatus = useCallback(() => {
+const fetchStatus = useCallback(() => {
     if (!user) return;
     apiGetPackStatus(user.id)
       .then(s => {
@@ -69,7 +64,6 @@ export default function HomeScreen() {
 
   useFocusEffect(fetchStatus);
 
-  // Countdown local: decrementa cada minuto
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     if (localMinutes === null || localMinutes <= 0) return;
@@ -87,9 +81,7 @@ export default function HomeScreen() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [localMinutes]);
 
-  // ── Abrir sobre ────────────────────────────────────────────────────────────
-
-  const doOpenPack = async (type: PackType) => {
+const doOpenPack = async (type: PackType) => {
     if (!user || !status) return;
     setOpening(true);
     try {
@@ -110,7 +102,6 @@ export default function HomeScreen() {
   const handleOpen = (type: PackType) => {
     if (!user || !status) return;
 
-    // Si no hay sobres gratis, pedir confirmación antes de gastar puntos
     if (status.accumulatedPacks === 0) {
       showConfirm(
         '¿Canjear puntos?',
@@ -128,7 +119,6 @@ export default function HomeScreen() {
     setModalVisible(false);
     setCards([]);   // limpia estado para evitar re-render con índice obsoleto
     fetchStatus();
-    // Refresca usuario para detectar subida de nivel
     if (user) {
       try {
         const updated = await apiGetPerson(user.id);
@@ -137,11 +127,7 @@ export default function HomeScreen() {
     }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
-  // Coste calculado en vivo desde el countdown local
-  // Fórmula: max(1, min(12, ceil(minutesUntilNextPack / 30)))
-  const localCost = (status && status.accumulatedPacks === 0)
+const localCost = (status && status.accumulatedPacks === 0)
     ? Math.max(1, Math.min(12, Math.ceil((localMinutes ?? 0) / 30)))
     : 0;
 
@@ -172,11 +158,9 @@ export default function HomeScreen() {
         }
       >
 
-        {/* ── Sección sobres ─────────────────────────────────────── */}
-        <View style={styles.packSection}>
+<View style={styles.packSection}>
 
-          {/* Imágenes de los sobres */}
-          <View style={styles.packImagesRow}>
+<View style={styles.packImagesRow}>
             {([
               { title: 'Inazuma Eleven',    image: PACK_IE, type: 'INAZUMA_ELEVEN'    as PackType },
               { title: 'Inazuma Eleven GO', image: PACK_GO, type: 'INAZUMA_ELEVEN_GO' as PackType },
@@ -188,8 +172,7 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {/* ── Botones de abrir ── */}
-          <View style={styles.packBtnsRow}>
+<View style={styles.packBtnsRow}>
             {(['INAZUMA_ELEVEN', 'INAZUMA_ELEVEN_GO'] as PackType[]).map(type => (
               <Pressable
                 key={type}
@@ -214,13 +197,12 @@ export default function HomeScreen() {
             ))}
           </View>
 
-          {/* ── Status (debajo de los botones) ── */}
-          <View style={styles.statusCard}>
+<View style={styles.statusCard}>
             {statusLoading ? (
               <ActivityIndicator size="small" color={Colors.primary} />
             ) : status ? (
               <>
-                {/* Dots de sobres */}
+                
                 <View style={styles.statusRow}>
                   <View style={styles.dotsWrap}>
                     {Array.from({ length: MAX_PACKS }, (_, i) => (
@@ -238,8 +220,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
 
-                {/* Timer / mensaje */}
-                <View style={styles.statusRow}>
+<View style={styles.statusRow}>
                   <Ionicons
                     name={status.accumulatedPacks >= MAX_PACKS ? 'checkmark-circle' : 'time-outline'}
                     size={15}
@@ -257,8 +238,7 @@ export default function HomeScreen() {
                   </Text>
                 </View>
 
-                {/* Coste actual + puntos si no hay sobres gratis */}
-                {status.accumulatedPacks === 0 && (
+{status.accumulatedPacks === 0 && (
                   <>
                     <View style={styles.statusRow}>
                       <Ionicons name="hourglass-outline" size={14} color="#F59E0B" />
@@ -291,8 +271,7 @@ export default function HomeScreen() {
 
         </View>
 
-        {/* ── Tienda ─────────────────────────────────────────────── */}
-        <Pressable style={styles.shopCard} onPress={() => router.push('/shop')}>
+<Pressable style={styles.shopCard} onPress={() => router.push('/shop')}>
           <View style={styles.shopLeft}>
             <Ionicons name="bag-handle-outline" size={44} color={Colors.primary} />
             <Text style={styles.shopLabel}>Tienda</Text>
@@ -303,8 +282,7 @@ export default function HomeScreen() {
 
       </ScrollView>
 
-      {/* ── Modal de apertura de sobre ─────────────────────────── */}
-      <PackOpenModal
+<PackOpenModal
         visible={modalVisible}
         cards={cards}
         packType={openPackType}
@@ -316,12 +294,10 @@ export default function HomeScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: 16, paddingBottom: 24, gap: 20 },
 
-  // ── Sección de sobres ──
   packSection:    { gap: 12 },
   packImagesRow:  { flexDirection: 'row', gap: 12 },
   packImageWrap:  { flex: 1, alignItems: 'center', gap: 6 },
@@ -331,7 +307,6 @@ const styles = StyleSheet.create({
   },
   packTitle: { fontSize: 12, fontWeight: '600', color: Colors.primary, textAlign: 'center' },
 
-  // Status card
   statusCard: {
     backgroundColor: Colors.surface,
     borderRadius: 14,
@@ -358,7 +333,6 @@ const styles = StyleSheet.create({
   statusPointsWarn:  { color: '#EF4444' },
   statusPointsHint:  { color: Colors.textLight, fontStyle: 'italic' },
 
-  // Botones abrir
   packBtnsRow: { flexDirection: 'row', gap: 12 },
   openBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -369,7 +343,6 @@ const styles = StyleSheet.create({
   openBtnText:          { fontSize: 13, fontWeight: '700', color: '#fff' },
   openBtnTextDisabled:  { color: Colors.textLight },
 
-  // Shop
   shopCard: {
     backgroundColor: Colors.primaryLight,
     borderRadius: 20,
@@ -385,7 +358,6 @@ const styles = StyleSheet.create({
   shopLabel: { fontSize: 18, fontWeight: '700', color: Colors.textDark },
   shopImage: { width: '60%', height: '100%' },
 
-  // Badge de regalo diario
   shopDot: {
     position: 'absolute',
     top: 12, right: 12,

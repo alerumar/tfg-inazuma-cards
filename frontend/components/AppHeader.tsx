@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -34,11 +34,10 @@ export function AppHeader() {
 
   return (
     <>
-      {/* ── Barra ── */}
+      
       <View style={styles.header}>
 
-        {/* Botón hamburguesa con punto */}
-        <Pressable style={styles.menuBtn} onPress={handleOpenMenu}>
+<Pressable style={styles.menuBtn} onPress={handleOpenMenu}>
           <Ionicons name="menu-outline" size={28} color={Colors.textDark} />
           {hasAnyPending && <View style={styles.btnDot} />}
         </Pressable>
@@ -53,16 +52,15 @@ export function AppHeader() {
         </View>
       </View>
 
-      {/* ── Modal de menú ── */}
-      <Modal
+<Modal
         visible={open}
         transparent
         animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
-        {/* Tocar fuera cierra */}
+        
         <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
-          {/* Evitar que tocar la tarjeta la cierre */}
+          
           <Pressable style={styles.menuCard} onPress={() => {}}>
             <MenuItem
               icon="trophy-outline"
@@ -91,8 +89,6 @@ export function AppHeader() {
   );
 }
 
-// ── Item de menú ──────────────────────────────────────────────────────────────
-
 function MenuItem({
   icon, label, dot, onPress,
 }: {
@@ -106,7 +102,7 @@ function MenuItem({
       style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
       onPress={onPress}
     >
-      {/* Icono con punto encima */}
+      
       <View style={styles.menuIconContainer}>
         <View style={styles.menuIconWrap}>
           <Ionicons name={icon} size={28} color={Colors.primary} />
@@ -116,20 +112,16 @@ function MenuItem({
 
       <Text style={styles.menuLabel}>{label}</Text>
 
-      {/* Punto a la derecha del label */}
-      {dot && (
+{dot && (
         <View style={styles.labelDot} />
       )}
     </Pressable>
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
-
 const DOT_COLOR = '#EF4444'; // rojo
 
 const styles = StyleSheet.create({
-  // Header bar
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -145,7 +137,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Punto sobre el botón hamburguesa
   btnDot: {
     position: 'absolute',
     top: 6,
@@ -183,7 +174,6 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
   },
 
-  // Overlay
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -192,7 +182,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  // Tarjeta del menú
   menuCard: {
     backgroundColor: Colors.background,
     borderRadius: 18,
@@ -211,7 +200,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
 
-  // Ítem
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -223,7 +211,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
 
-  // Icono con punto encima
   menuIconContainer: {
     position: 'relative',
   },
@@ -235,7 +222,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Punto sobre el icono del ítem
   iconDot: {
     position: 'absolute',
     top: -2,
@@ -255,7 +241,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Punto a la derecha del label
   labelDot: {
     width: 8,
     height: 8,

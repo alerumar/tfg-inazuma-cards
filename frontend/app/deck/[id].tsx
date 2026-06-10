@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -37,7 +37,6 @@ const MAX_LEGENDS = 2;
 const POSITIONS = ['ALL', 'POR', 'DF', 'MC', 'DC'] as const;
 type PosFilter  = typeof POSITIONS[number];
 
-// ── Dimensiones ───────────────────────────────────────────────────────────────
 const SCREEN_W = Dimensions.get('window').width;
 const H_PAD    = 16;
 
@@ -49,7 +48,6 @@ const SLOT_GAP = 6;
 const SLOT_W   = (SCREEN_W - H_PAD * 2 - SLOT_GAP * (MAX_CARDS - 1)) / MAX_CARDS;
 const SLOT_H   = Math.round(SLOT_W * CARD_ASPECT);
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function DeckEditorScreen() {
   const router     = useRouter();
   const navigation = useNavigation();
@@ -69,10 +67,9 @@ export default function DeckEditorScreen() {
   const [actionId,      setActionId]      = useState<number | null>(null);
   const [renaming,      setRenaming]      = useState(false);
   const [deleting,      setDeleting]      = useState(false);
-  /** Carta del slot que el usuario quiere reemplazar (null = modo normal) */
+  
   const [swapTarget,    setSwapTarget]    = useState<DeckCardEntry | null>(null);
 
-  // ── Exit guard: bloquea salir si la baraja tiene < MIN_CARDS ─────────────
   useEffect(() => {
     const unsub = (navigation as any).addListener('beforeRemove', (e: any) => {
       if (!deck || deck.cards.length >= MIN_CARDS) return;
@@ -99,7 +96,6 @@ export default function DeckEditorScreen() {
   const legendCount = deck?.cards.filter(e => e.card.type === 'LEGEND').length ?? 0;
   const isFull      = cardCount >= MAX_CARDS;
 
-  // Cuántas veces aparece cada carta ya en la baraja
   const deckCountMap = useMemo(() => {
     const map = new Map<number, number>();
     for (const e of deck?.cards ?? []) map.set(e.card.id, (map.get(e.card.id) ?? 0) + 1);
@@ -114,14 +110,10 @@ export default function DeckEditorScreen() {
       .filter(e => !q || e.card.name.toLowerCase().includes(q));
   }, [collection, posFilter, searchQuery]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  /** Tap en un slot: entra/sale del modo swap */
-  const handleSlotPress = (entry: DeckCardEntry) =>
+const handleSlotPress = (entry: DeckCardEntry) =>
     setSwapTarget(prev => prev?.deckCardId === entry.deckCardId ? null : entry);
 
-  /** Quitar una carta sin reemplazarla */
-  const handleRemoveDirect = async (entry: DeckCardEntry) => {
+const handleRemoveDirect = async (entry: DeckCardEntry) => {
     setSwapTarget(null);
     setActionId(entry.deckCardId);
     try {
@@ -136,8 +128,7 @@ export default function DeckEditorScreen() {
     }
   };
 
-  /** Intercambiar la carta del swapTarget por una nueva del picker (operación atómica). */
-  const handleSwap = async (newCardId: number) => {
+const handleSwap = async (newCardId: number) => {
     if (!swapTarget) return;
     const target = swapTarget;
     setSwapTarget(null);
@@ -155,8 +146,7 @@ export default function DeckEditorScreen() {
     }
   };
 
-  /** Añadir carta en modo normal (baraja incompleta) */
-  const handleAdd = async (cardId: number) => {
+const handleAdd = async (cardId: number) => {
     if (isFull) { showAlert('Baraja llena', `Solo puedes tener ${MAX_CARDS} cartas.`); return; }
     const alreadyInDeck = deckCountMap.get(cardId) ?? 0;
     if (alreadyInDeck >= 1) {
@@ -175,8 +165,7 @@ export default function DeckEditorScreen() {
     }
   };
 
-  /** Picker press: swap si hay target, add en caso contrario */
-  const handlePickerPress = (item: CollectionEntry) =>
+const handlePickerPress = (item: CollectionEntry) =>
     swapTarget ? handleSwap(item.card.id) : handleAdd(item.card.id);
 
   const handleRename = async () => {
@@ -209,9 +198,7 @@ export default function DeckEditorScreen() {
     );
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
-  if (loading) return (
+if (loading) return (
     <SafeAreaView style={styles.root}>
       <View style={styles.center}><ActivityIndicator size="large" color={Colors.primary} /></View>
     </SafeAreaView>
@@ -225,7 +212,7 @@ export default function DeckEditorScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* ── Header ── */}
+      
       <View style={styles.header}>
         <Pressable style={styles.iconBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
@@ -249,7 +236,7 @@ export default function DeckEditorScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Slots ── */}
+        
         <View style={styles.slotsSection}>
           <View style={styles.slotsSectionHeader}>
             <Text style={styles.sectionTitle}>Cartas en la baraja</Text>
@@ -317,8 +304,7 @@ export default function DeckEditorScreen() {
           ) : null}
         </View>
 
-        {/* ── Filtros ── */}
-        <View style={styles.filterSection}>
+<View style={styles.filterSection}>
           <Text style={styles.sectionTitle}>
             {swapTarget ? 'Elige la carta de reemplazo' : isFull ? 'Cartas de tu colección' : 'Añadir carta'}
           </Text>
@@ -354,8 +340,7 @@ export default function DeckEditorScreen() {
           </View>
         </View>
 
-        {/* ── Grid de cartas (sin reciclado) ── */}
-        {filteredCards.length === 0 ? (
+{filteredCards.length === 0 ? (
           <View style={styles.emptyPicker}>
             <Text style={styles.emptyPickerText}>
               {isFull && !swapTarget ? 'La baraja ya está completa' : 'No tienes cartas de esta posición'}
@@ -388,8 +373,7 @@ export default function DeckEditorScreen() {
         )}
       </ScrollView>
 
-      {/* ── Modal renombrar ── */}
-      <Modal
+<Modal
         visible={renameVisible}
         transparent
         animationType="fade"
@@ -434,7 +418,6 @@ export default function DeckEditorScreen() {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:      { flex: 1, backgroundColor: Colors.background },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -467,7 +450,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  // Overlays sobre las cartas del slot
   slotSelectionRing: {
     borderRadius: 6, borderWidth: 2.5, borderColor: Colors.primary,
   },
@@ -475,7 +457,6 @@ const styles = StyleSheet.create({
     borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.5)',
   },
 
-  // Banner de swap
   swapBanner: {
     backgroundColor: Colors.primaryLight, borderRadius: 12,
     borderWidth: 1.5, borderColor: Colors.primary,
@@ -499,7 +480,6 @@ const styles = StyleSheet.create({
   },
   swapCancelText: { fontSize: 12, fontWeight: '700', color: Colors.textMid },
 
-  // Banner baraja completa
   fullBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#E8F5E9', borderRadius: 10,

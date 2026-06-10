@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -57,11 +57,7 @@ class MissionServiceTest {
         return pm;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-09 — Reclamar recompensa de misión
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-09 | Caso positivo: misión completada y no reclamada → recompensas concedidas")
     void claim_casoPositivo_misionCompletada() {
         Person person   = crearPersona(1L);

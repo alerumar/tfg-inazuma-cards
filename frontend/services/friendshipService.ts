@@ -1,4 +1,4 @@
-import { BASE_URL } from '../constants/api';
+﻿import { BASE_URL } from '../constants/api';
 import { FriendshipData, PersonSearchResult } from '../types/friendship';
 
 const base = (id: number) => `${BASE_URL}/api/persons/${id}/friendships`;
@@ -43,7 +43,6 @@ export async function apiRemoveFriend(personId: number, friendshipId: number): P
   if (!res.ok && res.status !== 204) throw new Error(await res.text());
 }
 
-// Cancelar una solicitud enviada (el remitente la retira)
 export const apiCancelFriendRequest = apiRemoveFriend;
 
 export async function apiGetPendingSent(personId: number): Promise<FriendshipData[]> {

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -40,19 +40,15 @@ const avatarUri = (p: PersonResponse) =>
     ? { uri: `${BASE_URL}${p.profilePhoto}` }
     : { uri: `${BASE_URL}/images/default_profile.png` };
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function SocialScreen() {
   const { user, showFriendRequestBadge, setPendingFriendRequests, dismissFriendRequests } = useAuth();
   const [tab, setTab] = useState<Tab>('friends');
 
-  // Al enfocar: refresco inmediato del conteo de solicitudes.
-  // Al perder foco: dismiss automático del badge (sin necesidad de interactuar).
   useFocusEffect(useCallback(() => {
     if (!user) return;
     apiGetPendingReceived(user.id)
       .then(list => setPendingFriendRequests(list.length))
       .catch(() => {});
-    // cleanup: cuando el usuario navega fuera de Social, ocultar el badge
     return () => { dismissFriendRequests(); };
   }, [user?.id, setPendingFriendRequests, dismissFriendRequests]));
 
@@ -62,8 +58,7 @@ export default function SocialScreen() {
     <SafeAreaView style={styles.root}>
       <AppHeader />
 
-      {/* Selector de pestañas */}
-      <View style={styles.tabRow}>
+<View style={styles.tabRow}>
         <TabBtn label="Amigos"      active={tab === 'friends'}  onPress={() => setTab('friends')}  />
         <TabBtn label="Solicitudes" active={tab === 'requests'} onPress={() => setTab('requests')} dot={showFriendRequestBadge} />
         <TabBtn label="Buscar"      active={tab === 'search'}   onPress={() => setTab('search')}   />
@@ -76,7 +71,6 @@ export default function SocialScreen() {
   );
 }
 
-// ── Pestaña: Amigos (RF-14, RF-15) ───────────────────────────────────────────
 function FriendsTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert, showConfirm } = useDialog();
   const { updateUser } = useAuth();
@@ -108,7 +102,6 @@ function FriendsTab({ user }: { user: PersonResponse }) {
         try {
           await apiRemoveFriend(user.id, f.id);
           setFriends(prev => prev.filter(fr => fr.id !== f.id));
-          // Refrescar user en contexto para que friendCount del perfil se actualice
           apiGetPerson(user.id).then(updateUser).catch(() => {});
         } catch (e) {
           showAlert('Error', e instanceof Error ? e.message : 'Error al eliminar amigo');
@@ -177,11 +170,9 @@ function FriendsTab({ user }: { user: PersonResponse }) {
   );
 }
 
-/** Devuelve el amigo (el extremo de la amistad que NO es el usuario) */
 const getFriend = (f: FriendshipData, userId: number) =>
   f.requester.id === userId ? f.receiver : f.requester;
 
-// ── Pestaña: Solicitudes (recibidas + enviadas) ───────────────────────────────
 function RequestsTab({ user, hasPendingRequests }: {
   user: PersonResponse;
   hasPendingRequests: boolean;
@@ -190,7 +181,7 @@ function RequestsTab({ user, hasPendingRequests }: {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Sub-pestañas */}
+      
       <View style={styles.subTabRow}>
         <SubTabBtn
           label="Recibidas"
@@ -211,7 +202,6 @@ function RequestsTab({ user, hasPendingRequests }: {
   );
 }
 
-// ── Sub-pestaña: Solicitudes recibidas (RF-16, RF-17) ────────────────────────
 function ReceivedTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert } = useDialog();
   const { dismissFriendRequests, updateUser } = useAuth();
@@ -220,7 +210,6 @@ function ReceivedTab({ user }: { user: PersonResponse }) {
   const [refreshing, setRefreshing] = useState(false);
   const [acting,     setActing]     = useState<number | null>(null);
 
-  // El usuario está viendo esta pestaña → limpiar el badge al salir (sin necesidad de interactuar)
   useEffect(() => {
     return () => { dismissFriendRequests(); };
   }, [dismissFriendRequests]);
@@ -243,7 +232,6 @@ function ReceivedTab({ user }: { user: PersonResponse }) {
     try {
       await apiAcceptFriendRequest(user.id, f.id);
       setRequests(prev => prev.filter(r => r.id !== f.id));
-      // Refrescar user en contexto para que friendCount del perfil se actualice
       apiGetPerson(user.id).then(updateUser).catch(() => {});
     } catch (e) {
       showAlert('Error', e instanceof Error ? e.message : 'Error al aceptar solicitud');
@@ -313,7 +301,6 @@ function ReceivedTab({ user }: { user: PersonResponse }) {
   );
 }
 
-// ── Sub-pestaña: Solicitudes enviadas (RF-18, RF-19) ─────────────────────────
 function SentTab({ user }: { user: PersonResponse }) {
   const { dialogCfg, showAlert, showConfirm } = useDialog();
   const [sent,    setSent]    = useState<FriendshipData[]>([]);
@@ -399,7 +386,6 @@ function SentTab({ user }: { user: PersonResponse }) {
   );
 }
 
-// ── Pestaña: Buscar amigos ────────────────────────────────────────────────────
 function SearchTab({ user }: { user: PersonResponse }) {
   const [query,   setQuery]   = useState('');
   const [results, setResults] = useState<PersonSearchResult[]>([]);
@@ -446,7 +432,7 @@ function SearchTab({ user }: { user: PersonResponse }) {
 
   return (
     <View style={styles.searchRoot}>
-      {/* Barra de búsqueda */}
+      
       <View style={styles.searchBarWrap}>
         <Ionicons name="search-outline" size={18} color={Colors.textLight} />
         <TextInput
@@ -494,7 +480,6 @@ function SearchTab({ user }: { user: PersonResponse }) {
   );
 }
 
-// ── Tarjeta de resultado de búsqueda ─────────────────────────────────────────
 function SearchResultCard({
   result, sending, onSend,
 }: {
@@ -552,7 +537,6 @@ function SearchResultCard({
   );
 }
 
-// ── Botón de sub-pestaña ─────────────────────────────────────────────────────
 function SubTabBtn({ label, active, onPress, dot }: { label: string; active: boolean; onPress: () => void; dot?: boolean }) {
   return (
     <Pressable
@@ -565,7 +549,6 @@ function SubTabBtn({ label, active, onPress, dot }: { label: string; active: boo
   );
 }
 
-// ── Botón de pestaña ──────────────────────────────────────────────────────────
 function TabBtn({ label, active, onPress, dot }: { label: string; active: boolean; onPress: () => void; dot?: boolean }) {
   return (
     <Pressable
@@ -578,11 +561,9 @@ function TabBtn({ label, active, onPress, dot }: { label: string; active: boolea
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.background },
 
-  // Sub-tabs (Recibidas / Enviadas)
   subTabRow: {
     flexDirection: 'row',
     marginHorizontal: 16,
@@ -604,7 +585,6 @@ const styles = StyleSheet.create({
   subTabBtnText:       { fontSize: 12, fontWeight: '600', color: Colors.textMid },
   subTabBtnTextActive: { color: Colors.primary },
 
-  // Cancelar solicitud enviada
   cancelBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     borderWidth: 1.5, borderColor: Colors.primary,
@@ -612,7 +592,6 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: { fontSize: 12, fontWeight: '600', color: Colors.primary },
 
-  // Tabs
   tabRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -635,10 +614,8 @@ const styles = StyleSheet.create({
   tabBtnText:       { fontSize: 13, fontWeight: '700', color: Colors.textMid },
   tabBtnTextActive: { color: '#fff' },
 
-  // Listas
   list: { padding: 16, gap: 10 },
 
-  // Tarjeta
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -658,7 +635,6 @@ const styles = StyleSheet.create({
   cardNick: { fontSize: 15, fontWeight: '700', color: Colors.textDark },
   cardSub:  { fontSize: 12, color: Colors.textLight },
 
-  // Acciones
   actionBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   acceptBtn: {
     width: 36, height: 36, borderRadius: 18,
@@ -671,7 +647,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  // Botón añadir
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: Colors.primary,
@@ -679,7 +654,6 @@ const styles = StyleSheet.create({
   },
   addBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
 
-  // Chip de estado
   statusChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: Colors.primaryLight,
@@ -687,7 +661,6 @@ const styles = StyleSheet.create({
   },
   statusChipText: { fontSize: 12, fontWeight: '600', color: Colors.textLight },
 
-  // Búsqueda
   searchRoot: { flex: 1 },
   searchBarWrap: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -702,7 +675,6 @@ const styles = StyleSheet.create({
     fontSize: 13, color: Colors.textLight,
   },
 
-  // Online / offline
   onlineDot: {
     position: 'absolute',
     bottom: 0, right: 0,
@@ -715,7 +687,6 @@ const styles = StyleSheet.create({
   onlinePip: { width: 7, height: 7, borderRadius: 4 },
   onlineLabel: { fontSize: 11, fontWeight: '600' },
 
-  // Eliminar amigo
   removeFriendBtn: {
     backgroundColor: Colors.primary,
     borderRadius: 20,
@@ -727,13 +698,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Centro / vacío
   centerMsg: {
     flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12,
   },
   centerText: { fontSize: 14, color: Colors.textLight },
 
-  // Dot de notificación en la pestaña de Solicitudes
   tabDot: {
     position: 'absolute',
     top: 6, right: 10,
@@ -743,7 +712,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: '#fff',
   },
 
-  // Dot de notificación en la sub-pestaña Recibidas
   subTabDot: {
     position: 'absolute',
     top: 5, right: 8,

@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.PackOpenResult;
 import com.tfg.inazuma.model.*;
@@ -63,11 +63,7 @@ class PackServiceTest {
         return c;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-04 — Abrir sobre gratuito
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-04 | Caso positivo: tiene sobres acumulados → devuelve 5 cartas")
     void openFreePack_casoPositivo_conSobresAcumulados() {
         Person person = crearPersona(2, 0);
@@ -104,11 +100,7 @@ class PackServiceTest {
         assertTrue(ex.getMessage().contains("No tienes sobres disponibles"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-05 — Abrir sobre con puntos
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-05 | Caso positivo: sin sobres gratis y con puntos suficientes → devuelve 5 cartas")
     void openWithPoints_casoPositivo_puntossuficientes() {
         Person person = crearPersona(0, 20);
@@ -160,11 +152,7 @@ class PackServiceTest {
         assertTrue(ex.getMessage().contains("No tienes suficientes puntos"));
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  RF-08 — Reclamar recompensa diaria
-    // ═══════════════════════════════════════════════════════════
-
-    @Test
+@Test
     @DisplayName("RF-08 | Caso positivo: recompensa no reclamada → devuelve 6 puntos")
     void claimDailyReward_casoPositivo_noReclamada() {
         Person person = crearPersona(1, 0);

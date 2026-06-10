@@ -1,10 +1,9 @@
-import { Platform } from 'react-native';
+﻿import { Platform } from 'react-native';
 import { BASE_URL } from '../constants/api';
 import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const HEADERS = { 'Content-Type': 'application/json' };
 
-/** fetch con timeout — evita que en Android la petición cuelgue sin error visible. */
 async function fetchWithTimeout(
   url: string,
   options: RequestInit,
@@ -90,12 +89,10 @@ export async function apiGetPerson(personId: number): Promise<PersonResponse> {
   return res.json();
 }
 
-/** RF-15: heartbeat — avisa al servidor de que el usuario sigue activo */
 export async function apiHeartbeat(personId: number): Promise<void> {
   try {
     await fetch(`${BASE_URL}/api/persons/${personId}/heartbeat`, { method: 'PATCH' });
   } catch {
-    // silencioso — un fallo de red no debe bloquear la app
   }
 }
 
@@ -112,26 +109,22 @@ export async function apiUploadPhoto(
 ): Promise<PersonResponse> {
   const form = new FormData();
 
-  // Extraer nombre y extensión del URI
   const rawName  = imageUri.split('/').pop()?.split('?')[0] ?? 'photo.jpg';
   const filename = rawName.includes('.') ? rawName : 'photo.jpg';
   const ext      = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
   const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
   if (Platform.OS === 'web') {
-    // En web el URI puede ser data: o blob: → obtenemos el Blob real
     const fetchRes = await fetch(imageUri);
     const blob     = await fetchRes.blob();
     form.append('file', blob, filename);
   } else {
-    // En iOS/Android usamos el formato nativo de React Native FormData
     form.append('file', { uri: imageUri, name: filename, type: mimeType } as unknown as Blob);
   }
 
   const res = await fetch(`${BASE_URL}/api/persons/${personId}/photo`, {
     method: 'POST',
     body: form,
-    // NO poner Content-Type manualmente: el browser/RN lo fija con el boundary correcto
   });
 
   if (!res.ok) {

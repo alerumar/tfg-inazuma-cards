@@ -1,13 +1,4 @@
-/**
- * Pantalla de partida completa.
- *
- * Fases:
- *  PENDING_INVITE  → Accept / Reject / Waiting for response
- *  WAITING_READY   → Lobby: elige baraja y marca listo
- *  IN_PROGRESS     → Juego: selecciona carta + atributo, timer, animación de reveal
- *  FINISHED        → Resultado final
- *  REJECTED / CANCELLED → Pantalla informativa
- */
+﻿
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, {
@@ -59,20 +50,14 @@ import {
 import { DeckData } from '../../types/decks';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-// myZone padding 12*2 + 4 gaps de 8 = 56 → 5 cartas activas
 const CARD_W  = Math.floor((SCREEN_W - 24 - 4 * 8) / 5);
 const CARD_H  = Math.round(CARD_W * 1.5);   // para las cajas boca-abajo del rival
-// Cartas de la pila de descartes (más pequeñas)
 const DISC_W  = Math.floor(CARD_W * 0.68);
 const DISC_GAP = 6;
 
-// Preview de barajas en el lobby:
-// Slots en el lobby: phaseContainer padding (24×2) + deckCard padding (14×2) + 4 gaps de 6
 const LOBBY_SLOT_GAP = 6;
 const LOBBY_SLOT_W   = Math.floor((SCREEN_W - 48 - 28 - LOBBY_SLOT_GAP * 4) / 5);
 const LOBBY_SLOT_H   = Math.round(LOBBY_SLOT_W * 1.5); // CARD_ASPECT
-
-// ── Pequeños helpers ──────────────────────────────────────────────────────────
 
 function imgUri(path: string | null) {
   if (!path) return null;
@@ -84,10 +69,6 @@ function secondsLeft(iso: string, total = 45): number {
   const elapsed = (Date.now() - new Date(iso).getTime()) / 1000;
   return Math.max(0, Math.ceil(total - elapsed));
 }
-
-// ── Componente: carta de la mano ─────────────────────────────────────────────
-// Usa CardCell directamente (misma apariencia que en tabs/barajas).
-// Las cartas descartadas van a su propia sección; aquí solo llegan las activas.
 
 function HandCard({
   card,
@@ -104,13 +85,12 @@ function HandCard({
 
   return (
     <View style={styles.handWrapper}>
-      {/* Carta — misma renderización que en la colección */}
+      
       <View style={{ position: 'relative' }}>
         <CardCell
           card={card}
           owned
           width={CARD_W}
-          // No desactivar visualmente: el overlay de bloqueo se encarga del feedback
           disabled={!isMine}
           onPress={isMine && !isBlocked ? onPress : undefined}
         />
@@ -118,10 +98,7 @@ function HandCard({
           <View style={[StyleSheet.absoluteFill, styles.selectedRing]} pointerEvents="none" />
         )}
 
-        {/* Overlay de carta Legend bloqueada:
-            semitransparente + icono de prohibición.
-            Captura el tap para poder mostrar el mensaje al usuario. */}
-        {isBlocked && (
+{isBlocked && (
           <Pressable
             style={[StyleSheet.absoluteFill, styles.legendBlockedOverlay]}
             onPress={onPress}
@@ -131,8 +108,7 @@ function HandCard({
         )}
       </View>
 
-      {/* Barra de atributos: coloreado = disponible, gris = usado */}
-      <View style={styles.attrDots}>
+<View style={styles.attrDots}>
         {(['ATTACK', 'CONTROL', 'DEFENSE'] as CardAttribute[]).map(a => {
           const used =
             a === 'ATTACK'  ? card.attackUsed :
@@ -148,8 +124,6 @@ function HandCard({
     </View>
   );
 }
-
-// ── Componente: selector de atributo ─────────────────────────────────────────
 
 function AttributePicker({
   card,
@@ -183,8 +157,7 @@ function AttributePicker({
         <View style={styles.pickerSheet}>
           <View style={styles.pickerHandle} />
 
-          {/* Card preview */}
-          <View style={styles.pickerCardRow}>
+<View style={styles.pickerCardRow}>
             {imgUri(card.imageUrl) ? (
               <Image
                 source={{ uri: imgUri(card.imageUrl)! }}
@@ -242,8 +215,6 @@ function AttributePicker({
   );
 }
 
-// ── Componente: overlay de reveal ─────────────────────────────────────────────
-
 function RevealOverlay({
   turn,
   myRole,
@@ -261,24 +232,18 @@ function RevealOverlay({
 
   useEffect(() => {
     Animated.sequence([
-      // 1. Fade in overlay
       Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      // 2. Slide both cards in
       Animated.parallel([
         Animated.spring(slide1, { toValue: 0, useNativeDriver: true, tension: 80, friction: 10 }),
         Animated.spring(slide2, { toValue: 0, useNativeDriver: true, tension: 80, friction: 10 }),
       ]),
-      // 3. Pause
       Animated.delay(400),
-      // 4. Show result text
       Animated.parallel([
         Animated.timing(resultOp, { toValue: 1, duration: 300, useNativeDriver: true }),
         Animated.spring(resultScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 8 }),
       ]),
-      // 5. Hold 1.8s then auto-dismiss
       Animated.delay(1800),
     ]).start(() => onDismiss());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isP1 = myRole === 'player1';
@@ -305,8 +270,7 @@ function RevealOverlay({
 
         <View style={styles.revealContent}>
 
-          {/* Mi carta */}
-          <Animated.View style={[
+<Animated.View style={[
             styles.revealCard,
             myWins && styles.revealCardWinner,
             { transform: [{ translateX: slide1 }] },
@@ -326,13 +290,11 @@ function RevealOverlay({
             {myWins && <View style={styles.winGlow} />}
           </Animated.View>
 
-          {/* VS */}
-          <View style={styles.vsWrap}>
+<View style={styles.vsWrap}>
             <Text style={styles.vsText}>VS</Text>
           </View>
 
-          {/* Carta rival */}
-          <Animated.View style={[
+<Animated.View style={[
             styles.revealCard,
             oppWins && styles.revealCardWinner,
             { transform: [{ translateX: slide2 }] },
@@ -353,8 +315,7 @@ function RevealOverlay({
           </Animated.View>
         </View>
 
-        {/* Resultado */}
-        <Animated.View style={[
+<Animated.View style={[
           styles.resultBanner,
           { opacity: resultOp, transform: [{ scale: resultScale }], borderColor: resultColor },
         ]}>
@@ -365,20 +326,7 @@ function RevealOverlay({
   );
 }
 
-// ── Componente: timer circular ────────────────────────────────────────────────
-
-// Técnica de los dos semi-discos con clip:
-//   • Fondo gris completo.
-//   • Mitad derecha (12→6 h): semi-disco de color dentro de un clip de ancho HALF.
-//     La envoltura SIZE×SIZE gira alrededor del centro del círculo para revelar
-//     el semi-disco gradualmente.  rightRotate: -180° (vacío) → 0° (lleno).
-//   • Mitad izquierda (6→12 h): igual para los últimos 180° restantes.
-//     leftRotate: -180° (vacío) → 0° (lleno).
-//   • Círculo interior (donut) con el número de segundos encima.
 function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: string; total?: number }) {
-  // Usamos el momento en que el componente se monta (= cuando el overlay se cerró y el
-  // jugador puede actuar) como origen del contador, no el timestamp del backend.
-  // Así los 45 s siempre arrancan cuando el usuario tiene control.
   const mountMs = useRef(Date.now());
 
   const [secs, setSecs] = useState(total);
@@ -389,11 +337,8 @@ function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: stri
       setSecs(Math.max(0, Math.ceil(total - elapsed)));
     }, 250);
     return () => clearInterval(id);
-  // mountMs.current es constante (sólo se escribe en el mount); total no cambia en la misma partida
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [total]);
 
-  // Cuando el tiempo se agota el scheduler del backend auto-jugará en ≤5 s.
   if (secs === 0) {
     return (
       <View style={styles.waitChip}>
@@ -417,20 +362,17 @@ function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: stri
 
   return (
     <View style={{ width: SIZE, height: SIZE, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Fondo gris */}
+      
       <View style={{ position: 'absolute', width: SIZE, height: SIZE,
         borderRadius: HALF, backgroundColor: '#E5E7EB' }} />
 
-      {/* ── Mitad derecha (12→6 en sentido horario) ─────────────────── */}
-      {/* Clip: sólo la mitad derecha del círculo es visible             */}
-      <View style={{ position: 'absolute', top: 0, left: HALF,
+<View style={{ position: 'absolute', top: 0, left: HALF,
         width: HALF, height: SIZE, overflow: 'hidden' }}>
-        {/* Envoltura SIZE×SIZE — su centro coincide con el del círculo.
-            Al girarla, el semi-disco visible en el clip cambia de tamaño. */}
+        
         <View style={{ position: 'absolute', top: 0, left: -HALF,
           width: SIZE, height: SIZE,
           transform: [{ rotate: `${rightRotate}deg` }] }}>
-          {/* Semi-disco derecho */}
+          
           <View style={{ position: 'absolute', top: 0, right: 0,
             width: HALF, height: SIZE,
             borderTopRightRadius: HALF, borderBottomRightRadius: HALF,
@@ -438,13 +380,12 @@ function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: stri
         </View>
       </View>
 
-      {/* ── Mitad izquierda (6→12 en sentido horario) ──────────────── */}
-      <View style={{ position: 'absolute', top: 0, left: 0,
+<View style={{ position: 'absolute', top: 0, left: 0,
         width: HALF, height: SIZE, overflow: 'hidden' }}>
         <View style={{ position: 'absolute', top: 0, left: 0,
           width: SIZE, height: SIZE,
           transform: [{ rotate: `${leftRotate}deg` }] }}>
-          {/* Semi-disco izquierdo */}
+          
           <View style={{ position: 'absolute', top: 0, left: 0,
             width: HALF, height: SIZE,
             borderTopLeftRadius: HALF, borderBottomLeftRadius: HALF,
@@ -452,8 +393,7 @@ function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: stri
         </View>
       </View>
 
-      {/* Círculo interior — crea el efecto donut y centra el número */}
-      <View style={{ position: 'absolute',
+<View style={{ position: 'absolute',
         width: INNER, height: INNER, borderRadius: INNER / 2,
         backgroundColor: Colors.background,
         alignItems: 'center', justifyContent: 'center' }}>
@@ -462,8 +402,6 @@ function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: stri
     </View>
   );
 }
-
-// ── Animación de inicio de partida (3-2-1 ¡A JUGAR!) ──────────────────────────
 
 function GameStartOverlay({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
@@ -483,7 +421,6 @@ function GameStartOverlay({ onDone }: { onDone: () => void }) {
       Animated.delay(isGo ? 700 : 360),
       Animated.timing(opacity, { toValue: 0, duration: 160, useNativeDriver: true }),
     ]).start(({ finished }) => { if (finished) setStep(s => s + 1); });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const LABELS = ['3', '2', '1', '¡A\nJUGAR!'];
@@ -500,8 +437,6 @@ function GameStartOverlay({ onDone }: { onDone: () => void }) {
     </Modal>
   );
 }
-
-// ── Animación de inicio de ronda ──────────────────────────────────────────────
 
 function RoundStartOverlay({ round, onDone }: { round: number; onDone: () => void }) {
   const bgOp   = useRef(new Animated.Value(0)).current;
@@ -521,7 +456,6 @@ function RoundStartOverlay({ round, onDone }: { round: number; onDone: () => voi
         Animated.timing(textOp,{ toValue: 0, duration: 300, useNativeDriver: true }),
       ]),
     ]).start(() => onDone());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -535,8 +469,6 @@ function RoundStartOverlay({ round, onDone }: { round: number; onDone: () => voi
     </Modal>
   );
 }
-
-// ── Animación de fin de partida ───────────────────────────────────────────────
 
 const STAR_POSITIONS: { top?: number; bottom?: number; left?: number; right?: number }[] = [
   { top: -52, left: 46 },
@@ -605,15 +537,13 @@ function FinishedOverlay({
       Animated.delay(holdMs),
       Animated.timing(bgOp, { toValue: 0, duration: 380, useNativeDriver: true }),
     ]).start(() => onDone());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <Modal visible transparent animationType="none">
       <Animated.View style={[styles.foOverlay, { backgroundColor: bgColor, opacity: bgOp }]}>
 
-        {/* Icono + estrellas */}
-        <View style={styles.foIconWrap}>
+<View style={styles.foIconWrap}>
           <Animated.View style={{ transform: [{ scale: iconScale }], opacity: iconOp }}>
             <Ionicons name={icon as any} size={88} color={iconColor} />
           </Animated.View>
@@ -627,8 +557,7 @@ function FinishedOverlay({
           ))}
         </View>
 
-        {/* Título */}
-        <Animated.Text style={[
+<Animated.Text style={[
           styles.foTitle,
           isWin && styles.foTitleWin,
           { opacity: titleOp, transform: [{ translateY: titleY }] },
@@ -636,15 +565,12 @@ function FinishedOverlay({
           {title}
         </Animated.Text>
 
-        {/* Subtítulo */}
-        <Animated.Text style={[styles.foSub, { opacity: subOp }]}>{sub}</Animated.Text>
+<Animated.Text style={[styles.foSub, { opacity: subOp }]}>{sub}</Animated.Text>
 
       </Animated.View>
     </Modal>
   );
 }
-
-// ── Pantalla principal ────────────────────────────────────────────────────────
 
 export default function GameScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -657,58 +583,49 @@ export default function GameScreen() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
 
-  // Lobby
   const [decks,        setDecks]        = useState<DeckData[]>([]);
   const [selectedDeck, setSelectedDeck] = useState<number | null>(null);
   const [readying,     setReadying]     = useState(false);
   const [unreadying,   setUnreadying]   = useState(false);
 
-  // Juego
   const [pickedCard, setPickedCard] = useState<CardStateDto | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Reveal
   const [revealTurn,          setRevealTurn]          = useState<TurnStateDto | null>(null);
-  /** Clave "roundNumber_turnNumber" del último turno mostrado en el reveal. */
+  
   const lastRevealedKeyRef = useRef<string>('');
 
-  // Cola de animaciones post-reveal (para que se encadenen en orden)
   const pendingRoundStartRef   = useRef<number | null>(null);
   const pendingFinishedAnimRef = useRef(false);
   const finishedAnimShownRef   = useRef(false);
 
-  // Forfeit confirm
   const [showForfeit, setShowForfeit] = useState(false);
   const [forfeiting,  setForfeiting]  = useState(false);
 
-  // Revancha estilo Brawl Stars (RF-50)
   const [votingRematch,       setVotingRematch]       = useState(false);
-  /** true cuando el jugador (o el rival) ha declinado la revancha → oculta la sección */
+  
   const [rematchDeclined,     setRematchDeclined]     = useState(false);
-  /** Nick del rival que rechazó — se muestra brevemente antes de ocultar la sección */
+  
   const [rematchRejectedBy,   setRematchRejectedBy]   = useState<string | null>(null);
-  /** Ref del último voto propio conocido — para detectar que el rival rechazó y resetó los votos */
+  
   const prevMyVoteRef = useRef<boolean>(false);
-  /** tick incrementa cada segundo para forzar re-render del contador de revancha */
+  
   const [rematchTick, setRematchTick] = useState(0);
-  /** timestamp (ms) en el que se marcó la partida como terminada en esta sesión */
+  
   const matchFinishedAtRef = useRef<number | null>(null);
-  /** Ventana de tiempo para aceptar la revancha */
+  
   const REMATCH_WINDOW_MS = 30_000;
 
-  // Animaciones de transición
   const [showGameStart,    setShowGameStart]    = useState(false);
   const [showRoundStart,   setShowRoundStart]   = useState<number | null>(null);
   const [showFinishedAnim, setShowFinishedAnim] = useState(false);
-  /** true cuando la animación de fin de partida terminó y el panel de resultados puede mostrarse */
+  
   const [resultsReady,     setResultsReady]     = useState(false);
   const prevStateRef = useRef<MatchStateResponse | null>(null);
 
-  // true solo si la partida terminó DURANTE esta sesión (no al abrir desde historial)
   const didFinishInSessionRef = useRef(false);
 
-  // Mensaje de carta Legend bloqueada
   const [legendMsgVisible, setLegendMsgVisible] = useState(false);
   const legendMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showLegendMsg = useCallback(() => {
@@ -729,17 +646,14 @@ export default function GameScreen() {
     ? state?.pendingTurn?.player1Submitted
     : state?.pendingTurn?.player2Submitted;
 
-  // ── Detecta transiciones de estado → encola animaciones ─────────────────────
   useEffect(() => {
     if (!state) return;
     const prev = prevStateRef.current;
 
-    // Inicio de partida: se muestra directamente (no hay reveal antes)
     if (prev?.status === 'WAITING_READY' && state.status === 'IN_PROGRESS') {
       setShowGameStart(true);
     }
 
-    // Nueva ronda: ENCOLAR — se mostrará después del reveal del último turno de la ronda anterior
     if (
       state.status === 'IN_PROGRESS' && prev &&
       state.currentRoundNumber > (prev.currentRoundNumber ?? 0) &&
@@ -748,12 +662,10 @@ export default function GameScreen() {
       pendingRoundStartRef.current = state.currentRoundNumber;
     }
 
-    // Fin de partida: ENCOLAR — se mostrará después del reveal (si lo hay)
     if (state.status === 'FINISHED' && prev?.status === 'IN_PROGRESS') {
       didFinishInSessionRef.current = true;
       pendingFinishedAnimRef.current = true;
       matchFinishedAtRef.current = Date.now();   // inicia ventana de revancha
-      // RF-48 — refrescar XP y pack-points (modal de subida de nivel diferido a cuando salga)
       if (user) {
         apiGetPerson(user.id).then(persistUser).catch(() => {});
       }
@@ -762,32 +674,23 @@ export default function GameScreen() {
     prevStateRef.current = state;
   }, [state]);
 
-  // ── Cuenta atrás de revancha (rerender cada segundo mientras la ventana esté abierta) ──
   useEffect(() => {
     if (!didFinishInSessionRef.current || matchFinishedAtRef.current == null) return;
     const id = setInterval(() => setRematchTick(t => t + 1), 1000);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.status]);
 
-  // ── Detectar que el RIVAL rechazó la revancha ────────────────────────────────
-  // Cuando el backend procesa un "No", resetea AMBOS votos a false.
-  // Si yo había votado sí (prevMyVoteRef === true) y mi voto vuelve a false sin
-  // que se haya creado la partida, es porque el rival dijo que no.
   useEffect(() => {
     if (!state || state.status !== 'FINISHED' || !myRole) return;
     const myVote     = myRole === 'player1' ? state.player1WantsRematch : state.player2WantsRematch;
     const oppNick    = (myRole === 'player1' ? state.player2 : state.player1).nickname;
     if (prevMyVoteRef.current === true && !myVote && state.rematchMatchId == null) {
-      // Mostrar mensaje 3 s antes de ocultar la sección
       setRematchRejectedBy(oppNick);
       setTimeout(() => setRematchDeclined(true), 3000);
     }
     prevMyVoteRef.current = myVote;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.player1WantsRematch, state?.player2WantsRematch, state?.rematchMatchId]);
 
-  // ── Drain: muestra la siguiente animación encolada ────────────────────────────
   const drainAnimQueue = useCallback(() => {
     if (pendingRoundStartRef.current !== null) {
       setShowRoundStart(pendingRoundStartRef.current);
@@ -799,15 +702,11 @@ export default function GameScreen() {
     }
   }, []);
 
-  // ── Red de seguridad: forfeit/desconexión no generan reveal ──────────────────
-  // Si la partida acaba FINISHED sin que haya un reveal en curso, mostramos
-  // el overlay directamente (el jugador abandonó o se desconectó).
   useEffect(() => {
     if (state?.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
     if (finishedAnimShownRef.current) return;
     if (revealTurn !== null) return; // el reveal lo encadenará desde su onDismiss
-    // Pequeño delay por si hay un reveal que acaba de dispararse en el mismo ciclo
     const timer = setTimeout(() => {
       if (!finishedAnimShownRef.current && pendingFinishedAnimRef.current) {
         finishedAnimShownRef.current  = true;
@@ -818,14 +717,8 @@ export default function GameScreen() {
     return () => clearTimeout(timer);
   }, [state?.status, revealTurn]);
 
-  // ── applyMatchState: actualiza estado + dispara reveal si hay turno nuevo ─────
-  //
-  //  Se usa en fetchState (polling), handleSubmitMove y handleForfeit para que
-  //  la animación de reveal SIEMPRE se muestre, independientemente del origen.
-  //
   const applyMatchState = useCallback((s: MatchStateResponse) => {
     setState(prev => {
-      // Carga inicial: sincroniza el ref sin mostrar reveal
       if (prev === null) {
         if (s.lastCompletedTurn) {
           lastRevealedKeyRef.current =
@@ -834,7 +727,6 @@ export default function GameScreen() {
         return s;
       }
 
-      // Polling / submit: mostrar reveal si el turno completado es nuevo
       if (s.lastCompletedTurn && s.lastCompletedTurn.result !== 'PENDING') {
         const key = `${s.lastCompletedTurn.roundNumber}_${s.lastCompletedTurn.turnNumber}`;
         if (key !== lastRevealedKeyRef.current) {
@@ -846,9 +738,7 @@ export default function GameScreen() {
     });
   }, []);
 
-  // ── Fetch state ──────────────────────────────────────────────────────────────
-
-  const fetchState = useCallback(async () => {
+const fetchState = useCallback(async () => {
     try {
       const s = await apiGetMatchState(matchId);
       applyMatchState(s);
@@ -859,12 +749,9 @@ export default function GameScreen() {
     }
   }, [matchId, applyMatchState]);
 
-  // ── Al salir de la pantalla: mostrar modal de subida de nivel si estaba pendiente ──
   useEffect(() => releaseLevelUp, [releaseLevelUp]);
 
-  // ── Init ─────────────────────────────────────────────────────────────────────
-
-  useEffect(() => {
+useEffect(() => {
     let cancelled = false;
     fetchState().then(s => {
       if (cancelled) return;
@@ -876,19 +763,15 @@ export default function GameScreen() {
       setLoading(false);
     });
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Polling ──────────────────────────────────────────────────────────────────
-
-  useEffect(() => {
+useEffect(() => {
     if (!state) return;
     const terminal = ['FINISHED', 'REJECTED', 'CANCELLED'];
     if (terminal.includes(state.status)) return;
 
     const interval = setInterval(async () => {
       const s = await fetchState();
-      // Si entra en WAITING_READY, carga barajas
       if (s?.status === 'WAITING_READY' && user && decks.length === 0) {
         apiGetDecks(user.id).then(setDecks).catch(() => {});
       }
@@ -897,9 +780,7 @@ export default function GameScreen() {
     return () => clearInterval(interval);
   }, [state?.status, fetchState, user, decks.length]);
 
-  // ── Heartbeat de partida ──────────────────────────────────────────────────────
-
-  useEffect(() => {
+useEffect(() => {
     if (!user || !state || state.status !== 'IN_PROGRESS') return;
     const tick = () => apiMatchHeartbeat(matchId, user.id);
     tick();
@@ -907,9 +788,6 @@ export default function GameScreen() {
     return () => clearInterval(id);
   }, [matchId, user, state?.status]);
 
-  // ── Polling de revancha: ambos jugadores actualizan estado cada 2 s ─────────────
-  // Se activa en cuanto la partida termina en esta sesión, independientemente de
-  // si yo ya voté o no. Así el rival ve el checkmark en cuanto el otro vota.
   useEffect(() => {
     if (!state || state.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
@@ -917,20 +795,15 @@ export default function GameScreen() {
 
     const interval = setInterval(fetchState, 2000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.status, state?.rematchMatchId]);
 
-  // ── Navegar a la revancha cuando los dos hayan aceptado ───────────────────────
   useEffect(() => {
     if (state?.rematchMatchId != null && didFinishInSessionRef.current) {
       router.replace(`/game/${state.rematchMatchId}` as any);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.rematchMatchId]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
-
-  const handleRespondInvite = async (accept: boolean) => {
+const handleRespondInvite = async (accept: boolean) => {
     if (!user) return;
     try {
       setLoading(true);
@@ -1026,10 +899,8 @@ export default function GameScreen() {
     }
   };
 
-  /** RF-50 — Votar revancha (true = acepto, false = cancelo). */
-  const handleRematchVote = async (wants: boolean) => {
+const handleRematchVote = async (wants: boolean) => {
     if (!user || votingRematch) return;
-    // Ocultar la sección de revancha inmediatamente si el usuario dice No
     if (!wants) setRematchDeclined(true);
     setVotingRematch(true);
     try {
@@ -1043,9 +914,7 @@ export default function GameScreen() {
     }
   };
 
-  // ── Render guards ────────────────────────────────────────────────────────────
-
-  if (loading || !state) {
+if (loading || !state) {
     return (
       <SafeAreaView style={[styles.root, styles.centered]}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -1065,11 +934,9 @@ export default function GameScreen() {
     );
   }
 
-  // ── Renderizados por fase ────────────────────────────────────────────────────
-
-  return (
+return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      {/* Cabecera común */}
+      
       <View style={styles.topBar}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color={Colors.textDark} />
@@ -1090,14 +957,12 @@ export default function GameScreen() {
       {state.status === 'PENDING_INVITE' && renderPendingInvite()}
       {state.status === 'WAITING_READY'  && renderLobby()}
       {state.status === 'IN_PROGRESS'    && renderInProgress()}
-      {/* FINISHED/REJECTED/CANCELLED: mostrar resultados solo cuando las animaciones terminen.
-          Si la partida ya estaba terminada al abrir la pantalla (historial), mostrar directo. */}
+      
       {['FINISHED', 'REJECTED', 'CANCELLED'].includes(state.status)
         && (resultsReady || !didFinishInSessionRef.current)
         && renderFinished()}
 
-      {/* Reveal overlay */}
-      {revealTurn && myRole && (
+{revealTurn && myRole && (
         <RevealOverlay
           turn={revealTurn}
           myRole={myRole}
@@ -1108,21 +973,18 @@ export default function GameScreen() {
         />
       )}
 
-      {/* Attribute picker modal */}
-      <AttributePicker
+<AttributePicker
         card={pickedCard}
         visible={showPicker}
         onSelect={handleSubmitMove}
         onClose={() => { setShowPicker(false); setPickedCard(null); }}
       />
 
-      {/* ── Animación de inicio de partida ── */}
-      {showGameStart && (
+{showGameStart && (
         <GameStartOverlay onDone={() => setShowGameStart(false)} />
       )}
 
-      {/* ── Animación de nueva ronda ── */}
-      {showRoundStart !== null && (
+{showRoundStart !== null && (
         <RoundStartOverlay
           round={showRoundStart}
           onDone={() => {
@@ -1132,8 +994,7 @@ export default function GameScreen() {
         />
       )}
 
-      {/* ── Animación de fin de partida ── */}
-      {showFinishedAnim && state && myRole && (
+{showFinishedAnim && state && myRole && (
         <FinishedOverlay
           state={state}
           userId={user!.id}
@@ -1141,8 +1002,7 @@ export default function GameScreen() {
         />
       )}
 
-      {/* Forfeit confirm */}
-      {showForfeit && (
+{showForfeit && (
         <Modal visible transparent animationType="fade">
           <View style={styles.dialogOverlay}>
             <View style={styles.dialogCard}>
@@ -1169,16 +1029,14 @@ export default function GameScreen() {
     </SafeAreaView>
   );
 
-  // ── Fase: PENDING_INVITE ─────────────────────────────────────────────────────
-
-  function renderPendingInvite() {
+function renderPendingInvite() {
     if (!user || !myRole) return null;
     const initiator  = state!.player1;
     const isReceiver = myRole === 'player2';
 
     return (
       <View style={[styles.phaseContainer, styles.centered]}>
-        {/* Avatar del iniciador */}
+        
         <View style={styles.inviteAvatarWrap}>
           {imgUri(initiator.profilePhoto) ? (
             <Image source={{ uri: imgUri(initiator.profilePhoto)! }} style={styles.inviteAvatar} />
@@ -1221,9 +1079,7 @@ export default function GameScreen() {
     );
   }
 
-  // ── Fase: WAITING_READY ──────────────────────────────────────────────────────
-
-  function renderLobby() {
+function renderLobby() {
     if (!user || !myRole) return null;
     const meReady   = myRole === 'player1' ? state!.player1Ready : state!.player2Ready;
     const oppReady  = myRole === 'player1' ? state!.player2Ready : state!.player1Ready;
@@ -1231,7 +1087,7 @@ export default function GameScreen() {
 
     return (
       <ScrollView style={styles.phaseContainer} contentContainerStyle={{ gap: 20, paddingBottom: 32 }}>
-        {/* Players status */}
+        
         <View style={styles.lobbyPlayers}>
           <View style={styles.lobbyPlayer}>
             {imgUri(user.profilePhoto) ? (
@@ -1270,8 +1126,7 @@ export default function GameScreen() {
           </View>
         </View>
 
-        {/* Deck selection */}
-        {!meReady && (
+{!meReady && (
           <>
             <View style={styles.deckPickHeader}>
               <Text style={styles.deckPickTitle}>Elige tu baraja</Text>
@@ -1300,7 +1155,7 @@ export default function GameScreen() {
                     style={[styles.lobbyDeckCard, isSelected && styles.lobbyDeckCardSelected]}
                     onPress={() => setSelectedDeck(isSelected ? null : deck.id)}
                   >
-                    {/* Cabecera */}
+                    
                     <View style={styles.lobbyDeckTop}>
                       <View style={[styles.lobbyDeckIcon, isSelected && styles.lobbyDeckIconSelected]}>
                         <Ionicons name="layers" size={22} color={isSelected ? Colors.primary : Colors.textMid} />
@@ -1329,8 +1184,7 @@ export default function GameScreen() {
                       />
                     </View>
 
-                    {/* Fila de cartas (siempre visible) */}
-                    <View style={styles.lobbySlotsRow}>
+<View style={styles.lobbySlotsRow}>
                       {deck.cards.map(({ deckCardId, card }) => (
                         <CardCell
                           key={deckCardId}
@@ -1360,14 +1214,14 @@ export default function GameScreen() {
 
         {meReady && (
           <View style={styles.waitingWrap}>
-            {/* Spinner + texto en fila */}
+            
             <View style={styles.waitingRow}>
               <ActivityIndicator color={Colors.primary} />
               <Text style={styles.waitingText}>
                 Esperando a {opponent.nickname}…
               </Text>
             </View>
-            {/* Botón cancelar — debajo del texto */}
+            
             <Pressable
               style={[styles.changeBtn, unreadying && { opacity: 0.6 }]}
               onPress={handleUnsetReady}
@@ -1387,9 +1241,7 @@ export default function GameScreen() {
     );
   }
 
-  // ── Fase: IN_PROGRESS ────────────────────────────────────────────────────────
-
-  function renderInProgress() {
+function renderInProgress() {
     if (!myRole || !state) return null;
 
     const myWinsR   = myRole === 'player1' ? state.roundsWonPlayer1 : state.roundsWonPlayer2;
@@ -1401,22 +1253,17 @@ export default function GameScreen() {
 
     const iWaiting = !!mySubmitted && pt?.result === 'PENDING';
 
-    // El timer no debe mostrar mientras hay cualquier overlay activo;
-    // los 45 s empiezan visualmente cuando el jugador puede actuar.
     const anyOverlayActive = !!revealTurn || showRoundStart !== null || showGameStart;
 
     const oppHasSubmitted = pt?.result === 'PENDING'
       && (myRole === 'player1' ? pt.player2Submitted : pt.player1Submitted);
-    // La flag de conexión viene del backend (heartbeat > 35 s sin actividad = desconectado).
     const oppConnected = myRole === 'player1' ? state.player2Connected : state.player1Connected;
-    // "Rival desconectado" = yo ya jugué + rival no ha jugado + rival sin heartbeat
     const rivalLate = iWaiting && !oppHasSubmitted && !oppConnected;
 
     return (
       <View style={styles.gameContainer}>
 
-        {/* ── Scoreboard ── */}
-        <View style={styles.scoreboard}>
+<View style={styles.scoreboard}>
           <View style={styles.scoreBlock}>
             <Text style={styles.scoreRoundLabel}>Rondas</Text>
             <Text style={styles.scoreRound}>{myWinsR} – {oppWinsR}</Text>
@@ -1427,8 +1274,7 @@ export default function GameScreen() {
           </View>
         </View>
 
-        {/* ── Zona rival (arriba) ── */}
-        {(() => {
+{(() => {
           const oppActive    = (oppCards ?? []).filter(c => !isDiscarded(c));
           const oppDiscarded = (oppCards ?? []).filter(isDiscarded);
           return (
@@ -1456,15 +1302,13 @@ export default function GameScreen() {
                 )}
               </View>
 
-              {/* Mano activa del rival — boca abajo */}
-              <View style={styles.oppCardsRow}>
+<View style={styles.oppCardsRow}>
                 {oppActive.map(c => (
                   <View key={c.cardId} style={styles.oppCard} />
                 ))}
               </View>
 
-              {/* Pila de descartes del rival */}
-              {oppDiscarded.length > 0 && (
+{oppDiscarded.length > 0 && (
                 <View style={styles.discardSection}>
                   <Text style={styles.discardLabel}>
                     Descartes rival ({oppDiscarded.length})
@@ -1486,16 +1330,13 @@ export default function GameScreen() {
           );
         })()}
 
-        {/* ── Timer central ── */}
-        <View style={styles.timerZone}>
+<View style={styles.timerZone}>
           {pt && pt.result === 'PENDING' ? (
             anyOverlayActive ? (
-              // Hay un overlay en pantalla → no mostrar el timer todavía
               null
             ) : (
-              // Siempre mostramos el countdown; debajo el estado de espera
               <>
-                {/* key = turnCreatedAt → remonta en cada turno nuevo, resetea el origen */}
+                
                 <CountdownTimer key={pt.turnCreatedAt} createdAt={pt.turnCreatedAt} />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
@@ -1517,8 +1358,7 @@ export default function GameScreen() {
           )}
         </View>
 
-        {/* ── Zona mía (abajo) ── */}
-        {(() => {
+{(() => {
           const myActive    = (myCards ?? []).filter(c => !isDiscarded(c));
           const myDiscarded = (myCards ?? []).filter(isDiscarded);
           return (
@@ -1527,8 +1367,7 @@ export default function GameScreen() {
                 {iWaiting ? 'Esperando al rival' : submitting ? 'Enviando…' : 'Tu mano — elige una carta'}
               </Text>
 
-              {/* Aviso de carta Legend bloqueada */}
-              {legendMsgVisible && (
+{legendMsgVisible && (
                 <View style={styles.legendBlockChip}>
                   <Ionicons name="ban" size={14} color="#EF4444" />
                   <Text style={styles.legendBlockChipText}>
@@ -1537,8 +1376,7 @@ export default function GameScreen() {
                 </View>
               )}
 
-              {/* Mano activa */}
-              <View style={styles.myCardsRow}>
+<View style={styles.myCardsRow}>
                 {myActive.map(c => (
                   <HandCard
                     key={c.cardId}
@@ -1550,8 +1388,7 @@ export default function GameScreen() {
                 ))}
               </View>
 
-              {/* Pila de descartes propia */}
-              {myDiscarded.length > 0 && (
+{myDiscarded.length > 0 && (
                 <View style={styles.discardSection}>
                   <Text style={styles.discardLabel}>
                     Descartadas ({myDiscarded.length})
@@ -1570,8 +1407,7 @@ export default function GameScreen() {
                 </View>
               )}
 
-              {/* Botón de abandono — siempre visible en la zona del jugador */}
-              <Pressable
+<Pressable
                 style={({ pressed }) => [
                   styles.forfeitGameBtn,
                   pressed && { opacity: 0.7 },
@@ -1588,9 +1424,7 @@ export default function GameScreen() {
     );
   }
 
-  // ── Fase: FINISHED / REJECTED / CANCELLED ────────────────────────────────────
-
-  function renderFinished() {
+function renderFinished() {
     if (!user || !state) return null;
 
     const isFinished   = state.status === 'FINISHED';
@@ -1636,26 +1470,20 @@ export default function GameScreen() {
     const oppTurnsW  = isP1 ? state.turnsWonPlayer2InRound : state.turnsWonPlayer1InRound;
     const opponent   = isP1 ? state.player2 : state.player1;
 
-    // Colores del marcador de rondas
     const myWon  = isFinished && state.winnerId === user.id;
     const oppWon = isFinished && state.winnerId !== null && state.winnerId !== user.id;
     const isDraw = isFinished && state.draw;
     const myRoundColor  = myWon  ? '#22C55E' : oppWon ? Colors.textLight : isDraw ? '#F59E0B' : Colors.primary;
     const oppRoundColor = oppWon ? '#EF4444' : myWon  ? Colors.textLight : isDraw ? '#F59E0B' : Colors.textMid;
 
-    // Sub-marcador de turnos (solo cuando ningún jugador llegó a 3 rondas)
     const showTurnsSub = isFinished && Math.max(state.roundsWonPlayer1, state.roundsWonPlayer2) < 3;
 
-    // RF-48 — recompensas de esta partida
     const myXp  = isP1 ? state.rewardXpPlayer1  : state.rewardXpPlayer2;
     const myPts = isP1 ? state.rewardPackPointsPlayer1 : state.rewardPackPointsPlayer2;
 
-    // RF-50 — revancha estilo Brawl Stars
-    // Solo visible si la partida terminó en esta sesión y la ventana de 30 s no expiró
     const rematchSecsLeft = matchFinishedAtRef.current != null
       ? Math.max(0, Math.ceil((matchFinishedAtRef.current + REMATCH_WINDOW_MS - Date.now()) / 1000))
       : 0;
-    // Referenciamos rematchTick para que el render se actualice cada segundo
     void rematchTick;
     const showRematchSection = isFinished
       && didFinishInSessionRef.current
@@ -1664,7 +1492,6 @@ export default function GameScreen() {
     const myVotedRematch  = isP1 ? state.player1WantsRematch : state.player2WantsRematch;
     const oppVotedRematch = isP1 ? state.player2WantsRematch : state.player1WantsRematch;
 
-    // Golpe de gracia — último turno completado (estático, sin animación)
     const lastTurn = state.lastCompletedTurn;
 
     return (
@@ -1673,15 +1500,14 @@ export default function GameScreen() {
         contentContainerStyle={styles.finishContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Icono + resultado */}
+        
         <View style={styles.finishedIconWrap}>
           <Ionicons name={icon} size={64} color={iconColor} />
         </View>
         <Text style={styles.finishedTitle}>{title}</Text>
         <Text style={styles.finishedSub}>{sub}</Text>
 
-        {/* Marcador de rondas */}
-        {isFinished && (
+{isFinished && (
           <View style={styles.finalScore}>
             <Text style={styles.finalScoreLabel}>Resultado</Text>
             <View style={styles.finalScoreRow}>
@@ -1690,7 +1516,7 @@ export default function GameScreen() {
               <Text style={[styles.finalScoreNum, { color: oppRoundColor }]}>{oppRoundsW}</Text>
             </View>
             <Text style={styles.finalScoreVs}>Tú vs {opponent.nickname}</Text>
-            {/* Sub-marcador de turnos */}
+            
             {showTurnsSub && (
               <View style={styles.finalTurnsRow}>
                 <Text style={styles.finalTurnsScore}>{myTurnsW}–{oppTurnsW}</Text>
@@ -1700,10 +1526,7 @@ export default function GameScreen() {
           </View>
         )}
 
-        {/* Golpe de gracia — último enfrentamiento (estático).
-            Se omite si la partida acabó por abandono (voluntario o desconexión):
-            en ese caso no fue la última jugada sino la actitud del rival lo que decidió. */}
-        {isFinished && lastTurn && !state.wonByAbandon && (() => {
+{isFinished && lastTurn && !state.wonByAbandon && (() => {
           const myCardName = isP1 ? lastTurn.player1CardName  : lastTurn.player2CardName;
           const myAttr     = isP1 ? lastTurn.player1Attribute : lastTurn.player2Attribute;
           const myVal      = isP1 ? lastTurn.player1Value      : lastTurn.player2Value;
@@ -1721,7 +1544,7 @@ export default function GameScreen() {
             <View style={styles.gcCard}>
               <Text style={styles.gcTitle}>Golpe de gracia · Ronda {lastTurn.roundNumber} · Turno {lastTurn.turnNumber}</Text>
               <View style={styles.gcRow}>
-                {/* Mi carta */}
+                
                 <View style={[styles.gcCardSlot, gcMyWins && styles.gcCardWinner]}>
                   {imgUri(myImg) ? (
                     <Image source={{ uri: imgUri(myImg)! }} style={styles.gcImg} resizeMode="contain" />
@@ -1736,11 +1559,11 @@ export default function GameScreen() {
                   )}
                   <Text style={[styles.gcValue, gcMyWins && { color: '#22C55E' }]}>{myVal ?? '–'}</Text>
                 </View>
-                {/* VS */}
+                
                 <View style={styles.gcVs}>
                   <Text style={styles.gcVsText}>VS</Text>
                 </View>
-                {/* Carta rival */}
+                
                 <View style={[styles.gcCardSlot, gcOppWins && styles.gcCardWinner]}>
                   {imgUri(oppImg) ? (
                     <Image source={{ uri: imgUri(oppImg)! }} style={styles.gcImg} resizeMode="contain" />
@@ -1763,8 +1586,7 @@ export default function GameScreen() {
           );
         })()}
 
-        {/* Recompensas obtenidas — RF-48 */}
-        {isFinished && (
+{isFinished && (
           <View style={styles.rewardsCard}>
             <Text style={styles.rewardsCardTitle}>Recompensas obtenidas</Text>
             <View style={styles.rewardsRow}>
@@ -1783,14 +1605,13 @@ export default function GameScreen() {
           </View>
         )}
 
-        {/* ── Revancha estilo Brawl Stars — RF-50 ──────────────────────── */}
-        {showRematchSection && (() => {
+{showRematchSection && (() => {
           const meAvatar    = imgUri(user.profilePhoto);
           const oppAvatar   = imgUri(opponent.profilePhoto);
 
           return (
             <View style={styles.rematchCard}>
-              {/* Cabecera con título y cuenta atrás */}
+              
               <View style={styles.rematchHeader}>
                 <Text style={styles.rematchTitle}>¿Revancha?</Text>
                 <View style={styles.rematchCountdownBadge}>
@@ -1804,9 +1625,8 @@ export default function GameScreen() {
                 </View>
               </View>
 
-              {/* Avatares con indicador de voto */}
-              <View style={styles.rematchPlayers}>
-                {/* Yo */}
+<View style={styles.rematchPlayers}>
+                
                 <View style={styles.rematchPlayer}>
                   <View style={[
                     styles.rematchAvatarWrap,
@@ -1834,11 +1654,9 @@ export default function GameScreen() {
                   </Text>
                 </View>
 
-                {/* VS */}
-                <Text style={styles.rematchVs}>VS</Text>
+<Text style={styles.rematchVs}>VS</Text>
 
-                {/* Rival */}
-                <View style={styles.rematchPlayer}>
+<View style={styles.rematchPlayer}>
                   <View style={[
                     styles.rematchAvatarWrap,
                     oppVotedRematch && styles.rematchAvatarAccepted,
@@ -1866,8 +1684,7 @@ export default function GameScreen() {
                 </View>
               </View>
 
-              {/* Mensaje de rechazo del rival (3 s antes de ocultar la sección) */}
-              {rematchRejectedBy ? (
+{rematchRejectedBy ? (
                 <View style={styles.rematchRejectedRow}>
                   <Ionicons name="close-circle-outline" size={18} color="#EF4444" />
                   <Text style={styles.rematchRejectedText}>
@@ -1875,7 +1692,7 @@ export default function GameScreen() {
                   </Text>
                 </View>
               ) : !myVotedRematch ? (
-                /* Botones: mostrar mientras no se haya votado sí */
+                
                 <View style={styles.rematchBtnRow}>
                   <Pressable
                     style={[styles.rematchAcceptBtn, (votingRematch || rematchSecsLeft === 0) && styles.readyBtnDisabled]}
@@ -1910,8 +1727,7 @@ export default function GameScreen() {
           );
         })()}
 
-        {/* Volver — primario si no hay sección de revancha, secundario si la hay */}
-        <Pressable
+<Pressable
           style={showRematchSection ? styles.backBtnOutline : styles.readyBtn}
           onPress={() => router.back()}
         >
@@ -1924,13 +1740,10 @@ export default function GameScreen() {
   }
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   root:      { flex: 1, backgroundColor: Colors.background },
   centered:  { alignItems: 'center', justifyContent: 'center' },
 
-  // Top bar
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, height: 52,
@@ -1944,11 +1757,9 @@ const styles = StyleSheet.create({
   retryBtn:     { marginTop: 20, backgroundColor: Colors.primary, borderRadius: 12, paddingHorizontal: 28, paddingVertical: 12 },
   retryBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
-  // Phase containers
   phaseContainer: { flex: 1, padding: 24 },
   gameContainer:  { flex: 1 },
 
-  // ── PENDING_INVITE ─────────────────────────────────────────────────────────
   inviteAvatarWrap: { position: 'relative', marginBottom: 20 },
   inviteAvatar: { width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: Colors.primary },
   inviteAvatarFallback: { backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
@@ -1976,7 +1787,6 @@ const styles = StyleSheet.create({
   },
   cancelInviteText: { fontSize: 13, fontWeight: '600', color: Colors.textMid },
 
-  // ── LOBBY ──────────────────────────────────────────────────────────────────
   lobbyPlayers: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.surface, borderRadius: 20,
@@ -2048,9 +1858,7 @@ const styles = StyleSheet.create({
   },
   changeBtnText: { fontSize: 14, fontWeight: '700', color: Colors.textMid },
 
-  // ── IN_PROGRESS ────────────────────────────────────────────────────────────
-
-  scoreboard: {
+scoreboard: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
     borderBottomWidth: 1, borderBottomColor: Colors.primaryLight,
@@ -2110,7 +1918,6 @@ const styles = StyleSheet.create({
   myZoneLabel: { fontSize: 12, fontWeight: '700', color: Colors.textMid, marginBottom: 8 },
   myCardsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
 
-  // Hand cards — CardCell wraps the image; attr dots go below it
   handWrapper: {
     alignItems: 'center',
   },
@@ -2126,14 +1933,12 @@ const styles = StyleSheet.create({
     borderRadius: 8, borderWidth: 2.5, borderColor: Colors.primary,
   },
 
-  // Legend blocked overlay — aparece encima de la carta cuando legendBlocked=true
   legendBlockedOverlay: {
     backgroundColor: 'rgba(0,0,0,0.48)',
     alignItems: 'center', justifyContent: 'center',
     borderRadius: 8,
   },
 
-  // Chip de aviso que aparece brevemente debajo de la etiqueta de zona
   legendBlockChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#FEE2E2', borderRadius: 12,
@@ -2145,14 +1950,12 @@ const styles = StyleSheet.create({
     fontSize: 12, fontWeight: '700', color: '#EF4444', flexShrink: 1,
   },
 
-  // Discard piles
   discardSection: { marginTop: 10, gap: 4 },
   discardLabel: {
     fontSize: 11, fontWeight: '700', color: Colors.textLight, letterSpacing: 0.4,
   },
   discardRow: { flexDirection: 'row', flexWrap: 'wrap', gap: DISC_GAP },
 
-  // ── ATTRIBUTE PICKER ──────────────────────────────────────────────────────
   pickerOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
@@ -2190,7 +1993,6 @@ const styles = StyleSheet.create({
   attrLabelUsed: { color: Colors.textLight },
   attrValue: { fontSize: 22, fontWeight: '900', color: Colors.textDark, minWidth: 36, textAlign: 'right' },
 
-  // ── REVEAL OVERLAY ────────────────────────────────────────────────────────
   revealOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
     alignItems: 'center', justifyContent: 'center',
@@ -2238,7 +2040,6 @@ const styles = StyleSheet.create({
   },
   resultText: { fontSize: 22, fontWeight: '900', textAlign: 'center' },
 
-  // Botón de rendición dentro de la zona del jugador
   forfeitGameBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     alignSelf: 'center', marginTop: 14,
@@ -2248,7 +2049,6 @@ const styles = StyleSheet.create({
   },
   forfeitGameBtnText: { fontSize: 13, fontWeight: '700', color: '#EF4444' },
 
-  // ── FORFEIT DIALOG ────────────────────────────────────────────────────────
   dialogOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center', justifyContent: 'center', padding: 24,
@@ -2271,7 +2071,6 @@ const styles = StyleSheet.create({
   },
   dialogBtnConfirmText: { fontSize: 14, fontWeight: '700', color: '#fff', textAlign: 'center' },
 
-  // ── GAME START OVERLAY ────────────────────────────────────────────────────
   gsOverlay: {
     flex: 1,
     backgroundColor: 'rgba(10,10,25,0.88)',
@@ -2294,7 +2093,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 
-  // ── ROUND START OVERLAY ────────────────────────────────────────────────────
   rsOverlay: {
     flex: 1,
     backgroundColor: 'rgba(10,10,25,0.80)',
@@ -2327,7 +2125,6 @@ const styles = StyleSheet.create({
     textShadowRadius: 20,
   },
 
-  // ── FINISHED OVERLAY ──────────────────────────────────────────────────────
   foOverlay: {
     flex: 1,
     alignItems: 'center',
@@ -2364,10 +2161,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ── FINISHED ───────────────────────────────────────────────────────────────
-
-  // Contenedor ScrollView de la pantalla de resultado
-  finishContent: {
+finishContent: {
     alignItems: 'center',
     gap: 14,
     paddingVertical: 20,
@@ -2375,7 +2169,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Tarjeta de recompensas (RF-48)
   rewardsCard: {
     width: '100%',
     backgroundColor: Colors.surface,
@@ -2419,7 +2212,6 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
   },
 
-  // ── REVANCHA (RF-50) — estilo Brawl Stars ────────────────────────────────
   rematchCard: {
     width: '100%',
     backgroundColor: Colors.surface,
@@ -2545,7 +2337,6 @@ const styles = StyleSheet.create({
     fontSize: 14, fontWeight: '700', color: '#EF4444',
   },
 
-  // Botón "Volver" secundario (cuando hay botón de revancha encima)
   backBtnOutline: {
     width: '100%',
     alignItems: 'center',
@@ -2576,12 +2367,10 @@ const styles = StyleSheet.create({
   finalScoreSep: { fontSize: 24, color: Colors.textLight },
   finalScoreVs:  { fontSize: 13, color: Colors.textMid },
 
-  // Sub-marcador de turnos en la pantalla de resultado
   finalTurnsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   finalTurnsScore: { fontSize: 15, fontWeight: '800', color: Colors.textMid },
   finalTurnsLabel: { fontSize: 12, color: Colors.textLight },
 
-  // ── GOLPE DE GRACIA (último turno, estático) ──────────────────────────────
   gcCard: {
     width: '100%',
     backgroundColor: Colors.surface,

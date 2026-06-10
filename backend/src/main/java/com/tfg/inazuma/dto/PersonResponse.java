@@ -1,4 +1,4 @@
-package com.tfg.inazuma.dto;
+﻿package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.Person;
 
@@ -26,7 +26,7 @@ public record PersonResponse(
         boolean online,         // true si lastSeen en los últimos 2 minutos
         boolean inActiveMatch   // true si el jugador tiene una partida activa en curso
 ) {
-    /** Versión completa con conteos y estado de partida activa. */
+    
     public static PersonResponse from(Person p, int cardCount, int totalCardCount, int friendCount, boolean inActiveMatch) {
         boolean isOnline = p.getLastSeen() != null
                 && p.getLastSeen().isAfter(LocalDateTime.now().minusMinutes(2));
@@ -53,13 +53,11 @@ public record PersonResponse(
         );
     }
 
-    /** Versión con conteos pero sin información de partida activa (inActiveMatch = false). */
-    public static PersonResponse from(Person p, int cardCount, int totalCardCount, int friendCount) {
+public static PersonResponse from(Person p, int cardCount, int totalCardCount, int friendCount) {
         return from(p, cardCount, totalCardCount, friendCount, false);
     }
 
-    /** Compatibilidad hacia atrás — los conteos se calcularán a 0, inActiveMatch = false */
-    public static PersonResponse from(Person p) {
+public static PersonResponse from(Person p) {
         return from(p, 0, 0, 0, false);
     }
 }

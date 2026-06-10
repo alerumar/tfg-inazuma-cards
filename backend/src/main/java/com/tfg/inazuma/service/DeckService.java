@@ -1,4 +1,4 @@
-package com.tfg.inazuma.service;
+﻿package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
@@ -69,11 +69,9 @@ public class DeckService {
         validateOwner(deck, personId);
         Card card = findCardOrThrow(cardId);
 
-        // Comprobar que el jugador posee la carta
         if (!personCardRepository.findByPersonAndCard(deck.getPerson(), card).isPresent())
             throw new IllegalArgumentException("No tienes esta carta en tu colección");
 
-        // No se puede añadir la misma carta dos veces a la misma baraja
         if (deckCardRepository.countByDeckAndCardId(deck, cardId) >= 1)
             throw new IllegalArgumentException(
                     "\"" + card.getName() + "\" ya está en esta baraja");
@@ -90,11 +88,7 @@ public class DeckService {
         return deckCardRepository.save(dc);
     }
 
-    /**
-     * Intercambia una carta de la baraja por otra en una sola transacción.
-     * Si la nueva carta no cumple las validaciones, la baraja queda intacta.
-     */
-    @Transactional
+@Transactional
     public DeckCard swapCard(Long personId, Long deckId, Long deckCardId, Long newCardId) {
         Deck deck = findDeckOrThrow(deckId);
         validateOwner(deck, personId);
@@ -106,18 +100,14 @@ public class DeckService {
 
         Card newCard = findCardOrThrow(newCardId);
 
-        // El jugador debe poseer la nueva carta
         if (!personCardRepository.findByPersonAndCard(deck.getPerson(), newCard).isPresent())
             throw new IllegalArgumentException("No tienes esta carta en tu colección");
 
-        // No se puede añadir una carta que ya esté en la baraja
-        // (salvo que sea la misma que se está reemplazando)
         boolean replacingItself = target.getCard().getId().equals(newCardId);
         if (!replacingItself && deckCardRepository.countByDeckAndCardId(deck, newCardId) >= 1)
             throw new IllegalArgumentException(
                     "\"" + newCard.getName() + "\" ya está en esta baraja");
 
-        // Validar límite de leyendas descontando la carta que se va a reemplazar
         if (newCard.getType() == CardType.LEGEND) {
             int currentLegends   = deckCardRepository.countLegendsByDeck(deck);
             int legendsAfterSwap = currentLegends
@@ -127,7 +117,6 @@ public class DeckService {
                         "La baraja ya tiene " + MAX_LEGENDS + " cartas Legend");
         }
 
-        // Todo correcto: actualizar la carta en el mismo registro (sin borrar/crear)
         target.setCard(newCard);
         return deckCardRepository.save(target);
     }
@@ -147,7 +136,6 @@ public class DeckService {
     public void deleteDeck(Long personId, Long deckId) {
         Deck deck = findDeckOrThrow(deckId);
         validateOwner(deck, personId);
-        // Quitar referencias en partidas históricas antes de borrar (evita FK constraint)
         matchRepository.clearDeck1References(deckId);
         matchRepository.clearDeck2References(deckId);
         deckCardRepository.deleteByDeck(deck);

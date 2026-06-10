@@ -1,4 +1,4 @@
-package com.tfg.inazuma.model;
+﻿package com.tfg.inazuma.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -23,11 +23,9 @@ public class MatchTurn {
     @Column(nullable = false)
     private int turnNumber;
 
-    /** Momento en que el turno fue creado (para el countdown de 45 s). */
-    @Column(nullable = false)
+@Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // ── Jugada del jugador 1 ─────────────────────────────────────────────────
     @ManyToOne
     @JoinColumn(name = "p1_card_id")
     private Card player1Card;
@@ -38,7 +36,6 @@ public class MatchTurn {
 
     private LocalDateTime player1SubmittedAt;
 
-    // ── Jugada del jugador 2 ─────────────────────────────────────────────────
     @ManyToOne
     @JoinColumn(name = "p2_card_id")
     private Card player2Card;
@@ -49,7 +46,6 @@ public class MatchTurn {
 
     private LocalDateTime player2SubmittedAt;
 
-    // ── Resultado ────────────────────────────────────────────────────────────
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TurnResult result = TurnResult.PENDING;

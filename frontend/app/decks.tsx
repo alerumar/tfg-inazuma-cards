@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+﻿import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -22,14 +22,11 @@ const MAX_DECKS   = 10;
 const MAX_CARDS   = 5;
 const MAX_LEGENDS = 2;
 
-// Dimensiones de los slots dentro de la tarjeta de baraja:
-// scroll padding 16×2 + deckCard padding 14×2 + 4 gaps de 6
 const SCREEN_W  = Dimensions.get('window').width;
 const SLOT_GAP  = 6;
 const SLOT_W    = (SCREEN_W - 16 * 2 - 14 * 2 - SLOT_GAP * (MAX_CARDS - 1)) / MAX_CARDS;
 const SLOT_H    = Math.round(SLOT_W * CARD_ASPECT);
 
-// ── Pantalla ──────────────────────────────────────────────────────────────────
 export default function DecksScreen() {
   const router   = useRouter();
   const { user } = useAuth();
@@ -57,7 +54,7 @@ export default function DecksScreen() {
 
   return (
     <SafeAreaView style={styles.root}>
-      {/* Header */}
+      
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={26} color={Colors.textDark} />
@@ -73,8 +70,7 @@ export default function DecksScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-          {/* ── Contador de barajas ── */}
-          <View style={styles.progressCard}>
+<View style={styles.progressCard}>
             <View style={styles.progressTop}>
               <View style={styles.progressIconWrap}>
                 <Ionicons name="layers" size={22} color={Colors.primary} />
@@ -98,8 +94,7 @@ export default function DecksScreen() {
             </View>
           </View>
 
-          {/* ── Lista o estado vacío ── */}
-          {deckCount === 0 ? (
+{deckCount === 0 ? (
             <View style={styles.emptyBox}>
               <Ionicons name="layers-outline" size={52} color={Colors.primaryLight} />
               <Text style={styles.emptyTitle}>Aún no tienes barajas</Text>
@@ -123,8 +118,7 @@ export default function DecksScreen() {
         </ScrollView>
       )}
 
-      {/* ── FAB: nueva baraja ── */}
-      {!atMax && (
+{!atMax && (
         <Pressable
           style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           onPress={() => router.push('/deck/new' as any)}
@@ -137,7 +131,6 @@ export default function DecksScreen() {
   );
 }
 
-// ── Tarjeta de baraja ─────────────────────────────────────────────────────────
 function DeckCard({ deck, onPress }: { deck: DeckData; onPress: () => void }) {
   const cardCount   = deck.cards.length;
   const legendCount = deck.cards.filter(e => e.card.type === 'LEGEND').length;
@@ -190,7 +183,6 @@ function DeckCard({ deck, onPress }: { deck: DeckData; onPress: () => void }) {
   );
 }
 
-// ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root:   { flex: 1, backgroundColor: Colors.background },
   header: {
