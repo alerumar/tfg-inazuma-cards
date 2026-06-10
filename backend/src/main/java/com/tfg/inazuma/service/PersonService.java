@@ -134,8 +134,8 @@ public class PersonService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         if (!person.getPassword().equals(req.currentPassword()))
             throw new IllegalArgumentException("La contraseña actual no es correcta");
-        if (req.newPassword().length() < 6)
-            throw new IllegalArgumentException("La nueva contraseña debe tener al menos 6 caracteres");
+        if (req.newPassword().length() < 8)
+            throw new IllegalArgumentException("La nueva contraseña debe tener al menos 8 caracteres");
         person.setPassword(req.newPassword());
         personRepository.save(person);
     }
