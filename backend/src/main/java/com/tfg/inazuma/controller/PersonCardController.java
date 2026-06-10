@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.controller;
+package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.CollectionEntryResponse;
 import com.tfg.inazuma.dto.PersonCardResponse;

@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.dto;
+package com.tfg.inazuma.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

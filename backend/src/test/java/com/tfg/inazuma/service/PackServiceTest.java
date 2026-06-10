@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.service;
+package com.tfg.inazuma.service;
 
 import com.tfg.inazuma.dto.PackOpenResult;
 import com.tfg.inazuma.model.*;

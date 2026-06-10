@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.dto;
+package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.DeckCard;
 

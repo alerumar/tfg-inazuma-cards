@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.controller;
+package com.tfg.inazuma.controller;
 
 import com.tfg.inazuma.dto.NotificationResponse;
 import com.tfg.inazuma.service.NotificationService;

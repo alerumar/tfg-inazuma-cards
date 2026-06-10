@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.repository;
+package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Match;
 import com.tfg.inazuma.model.MatchRound;
