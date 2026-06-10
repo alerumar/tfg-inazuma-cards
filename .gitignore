@@ -9,6 +9,7 @@ backend/HELP.md
 frontend/node_modules/
 frontend/dist/
 frontend/.env.local
+frontend/.claude
 
 ### STS ###
 .apt_generated
