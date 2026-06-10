@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.dto;
+package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.Friendship;
 import com.tfg.inazuma.model.FriendshipStatus;

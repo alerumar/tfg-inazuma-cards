@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.config;
+package com.tfg.inazuma.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

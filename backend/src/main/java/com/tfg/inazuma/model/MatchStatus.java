@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.model;
+package com.tfg.inazuma.model;
 
 public enum MatchStatus {
     PENDING_INVITE,

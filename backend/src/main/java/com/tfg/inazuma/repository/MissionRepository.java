@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.repository;
+package com.tfg.inazuma.repository;
 
 import com.tfg.inazuma.model.Mission;
 import com.tfg.inazuma.model.MissionType;

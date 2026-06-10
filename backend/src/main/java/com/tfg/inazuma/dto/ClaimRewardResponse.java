@@ -1,4 +1,4 @@
-﻿package com.tfg.inazuma.dto;
+package com.tfg.inazuma.dto;
 
 public record ClaimRewardResponse(
         PersonMissionResponse mission,
