@@ -191,7 +191,7 @@ class TradeServiceTest {
         Person initiator  = crearPersona(1L, "pedroGarcia");
         Person receiver   = crearPersona(2L, "luisRuiz");
         Card   cartaA     = crearCarta(5L, CardType.NORMAL, "Mark Evans");
-        Card   cartaB     = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Card   cartaB     = crearCarta(6L, CardType.NORMAL, "Axel Blaze");
         PersonCard pcB    = crearPersonCard(receiver, cartaB, 2);
         Trade  trade      = crearTrade(20L, initiator, receiver, cartaA, null,
                                        TradeStatus.PENDING_RESPONSE);
@@ -275,7 +275,7 @@ class TradeServiceTest {
         Person initiator  = crearPersona(1L, "pedroGarcia");
         Person receiver   = crearPersona(2L, "luisRuiz");
         Card   cartaA     = crearCarta(5L, CardType.NORMAL, "Mark Evans");
-        Card   cartaB     = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Card   cartaB     = crearCarta(6L, CardType.NORMAL, "Axel Blaze");
         PersonCard pcIA   = crearPersonCard(initiator, cartaA, 2);
         PersonCard pcRB   = crearPersonCard(receiver,  cartaB, 2);
         Trade  trade      = crearTrade(20L, initiator, receiver, cartaA, cartaB,
@@ -308,7 +308,7 @@ class TradeServiceTest {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
         Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
-        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Axel Blaze");
         Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, cartaB,
                                       TradeStatus.PENDING_CONFIRMATION);
 
@@ -328,7 +328,7 @@ class TradeServiceTest {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
         Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
-        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Axel Blaze");
         Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, cartaB,
                                       TradeStatus.PENDING_CONFIRMATION);
 
@@ -347,7 +347,7 @@ class TradeServiceTest {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
         Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
-        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Axel Blaze");
         Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, cartaB,
                                       TradeStatus.PENDING_CONFIRMATION);
 
