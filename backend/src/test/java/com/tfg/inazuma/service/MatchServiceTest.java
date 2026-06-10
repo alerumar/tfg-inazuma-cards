@@ -168,6 +168,26 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("Ya tienes una partida activa"));
     }
 
+    @Test
+    @DisplayName("RF-45 | Caso negativo: el receptor ya tiene una partida activa → IllegalStateException")
+    void invitePlayer_casoNegativo_receptorEnPartida() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match activa = crearPartida(10L, p1, p2, MatchStatus.IN_PROGRESS);
+
+        when(personRepo.findById(1L)).thenReturn(Optional.of(p1));
+        when(personRepo.findById(2L)).thenReturn(Optional.of(p2));
+        when(matchRepo.findActiveForPerson(p1)).thenReturn(List.of());
+        when(matchRepo.findActiveForPerson(p2)).thenReturn(List.of(activa));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> matchService.invitePlayer(1L, 2L)
+        );
+
+        assertTrue(ex.getMessage().contains("ya tiene una partida activa"));
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  RF-46 — Aceptar / Rechazar invitación
     // ═══════════════════════════════════════════════════════════
@@ -250,39 +270,6 @@ class MatchServiceTest {
     }
 
     @Test
-    @DisplayName("RF-49 | Caso positivo: ambos jugadores listos → partida comienza (IN_PROGRESS)")
-    void setReady_casoPositivo_ambosListosPartidaEmpieza() {
-        Person p1 = crearPersona(1L, "pedro");
-        Person p2 = crearPersona(2L, "luis");
-        Match match = crearPartida(20L, p1, p2, MatchStatus.WAITING_READY);
-        Deck deck1 = crearBaraja(100L, p1);
-        Deck deck2 = crearBaraja(200L, p2);
-
-        match.setDeck2(deck2);
-        match.setPlayer2Ready(true);
-
-        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
-        when(deckRepo.findById(100L)).thenReturn(Optional.of(deck1));
-        when(deckCardRepo.countByDeck(deck1)).thenReturn(5);
-        when(matchRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        when(roundRepo.save(any())).thenAnswer(inv -> {
-            MatchRound r = inv.getArgument(0); r.setId(100L); return r;
-        });
-        when(turnRepo.findByRoundOrderByTurnNumberAsc(any())).thenReturn(List.of());
-        when(turnRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        when(roundRepo.findFirstByMatchAndCompletedFalse(any())).thenReturn(Optional.empty());
-        when(turnRepo.findAllCompletedByMatch(any())).thenReturn(List.of());
-        when(deckCardRepo.findByDeck(any())).thenReturn(List.of());
-
-        MatchStateResponse result = matchService.setReady(20L, 1L, 100L);
-
-        assertEquals(MatchStatus.IN_PROGRESS, match.getStatus());
-        assertNotNull(result);
-    }
-
-    @Test
     @DisplayName("RF-47 | Caso negativo: baraja no tiene 5 cartas → IllegalArgumentException")
     void setReady_casoNegativo_barajaSinCincoCartas() {
         Person p1 = crearPersona(1L, "pedro");
@@ -321,6 +308,65 @@ class MatchServiceTest {
         assertTrue(ex.getMessage().contains("Esta baraja no te pertenece"));
     }
 
+    @Test
+    @DisplayName("RF-49 | Caso positivo: ambos jugadores listos → partida comienza (IN_PROGRESS)")
+    void setReady_casoPositivo_ambosListosPartidaEmpieza() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match match = crearPartida(20L, p1, p2, MatchStatus.WAITING_READY);
+        Deck deck1 = crearBaraja(100L, p1);
+        Deck deck2 = crearBaraja(200L, p2);
+
+        match.setDeck2(deck2);
+        match.setPlayer2Ready(true);
+
+        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+        when(deckRepo.findById(100L)).thenReturn(Optional.of(deck1));
+        when(deckCardRepo.countByDeck(deck1)).thenReturn(5);
+        when(matchRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(roundRepo.save(any())).thenAnswer(inv -> {
+            MatchRound r = inv.getArgument(0); r.setId(100L); return r;
+        });
+        when(turnRepo.findByRoundOrderByTurnNumberAsc(any())).thenReturn(List.of());
+        when(turnRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        when(roundRepo.findFirstByMatchAndCompletedFalse(any())).thenReturn(Optional.empty());
+        when(turnRepo.findAllCompletedByMatch(any())).thenReturn(List.of());
+        when(deckCardRepo.findByDeck(any())).thenReturn(List.of());
+
+        MatchStateResponse result = matchService.setReady(20L, 1L, 100L);
+
+        assertEquals(MatchStatus.IN_PROGRESS, match.getStatus());
+        assertNotNull(result);
+    }
+
+    @Test
+    @DisplayName("RF-49 | Caso negativo: segundo jugador marca listo con baraja incompleta → partida no inicia")
+    void setReady_casoNegativo_segundoJugadorBarajaIncompleta() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match match = crearPartida(20L, p1, p2, MatchStatus.WAITING_READY);
+        Deck deck1 = crearBaraja(100L, p1);
+        Deck deck2 = crearBaraja(200L, p2);
+
+        // Jugador 1 ya está listo
+        match.setDeck1(deck1);
+        match.setPlayer1Ready(true);
+
+        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+        when(deckRepo.findById(200L)).thenReturn(Optional.of(deck2));
+        when(deckCardRepo.countByDeck(deck2)).thenReturn(3);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> matchService.setReady(20L, 2L, 200L)
+        );
+
+        assertTrue(ex.getMessage().contains("La baraja debe tener exactamente 5 cartas"));
+        assertNotEquals(MatchStatus.IN_PROGRESS, match.getStatus());
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  RF-50 — Deshacer listo (cambiar baraja antes de empezar)
     // ═══════════════════════════════════════════════════════════
@@ -344,6 +390,23 @@ class MatchServiceTest {
         assertFalse(match.isPlayer1Ready());
         assertNull(match.getDeck1());
         assertNotNull(result);
+    }
+
+    @Test
+    @DisplayName("RF-50 | Caso negativo: la partida no está en fase lobby → IllegalStateException")
+    void unsetReady_casoNegativo_partidaNoEnLobby() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match match = crearPartida(20L, p1, p2, MatchStatus.IN_PROGRESS);
+
+        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> matchService.unsetReady(20L, 1L)
+        );
+
+        assertTrue(ex.getMessage().contains("La partida no está en fase de lobby"));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -386,6 +449,38 @@ class MatchServiceTest {
     // ═══════════════════════════════════════════════════════════
     //  RF-59 — Seleccionar carta y atributo en el turno
     // ═══════════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("RF-59 | Caso positivo: carta en baraja y atributo no usado → jugada registrada")
+    void submitMove_casoPositivo_jugadaRegistrada() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match match = crearPartida(20L, p1, p2, MatchStatus.IN_PROGRESS);
+        Deck deck1 = crearBaraja(100L, p1);
+        match.setDeck1(deck1);
+        Card carta = crearCarta(5L, CardType.NORMAL);
+        DeckCard dc = crearDeckCard(deck1, carta);
+
+        MatchRound round = crearRonda(50L, match);
+        MatchTurn  turn  = crearTurno(300L, round);
+
+        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+        when(roundRepo.findFirstByMatchAndCompletedFalse(any())).thenReturn(Optional.of(round));
+        when(turnRepo.findFirstByRoundAndResult(round, TurnResult.PENDING)).thenReturn(Optional.of(turn));
+        when(deckCardRepo.findByDeck(deck1)).thenReturn(List.of(dc));
+        when(turnRepo.findAllCompletedByMatch(match)).thenReturn(List.of());
+        when(turnRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(matchRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(turnRepo.findByRoundOrderByTurnNumberAsc(round)).thenReturn(List.of(turn));
+        when(roundRepo.findByMatchOrderByRoundNumberAsc(match)).thenReturn(List.of());
+
+        MatchStateResponse result = matchService.submitMove(20L, 1L, 5L, CardAttribute.ATTACK);
+
+        assertNotNull(result);
+        assertEquals(carta, turn.getPlayer1Card());
+        assertEquals(CardAttribute.ATTACK, turn.getPlayer1Attribute());
+        assertNotNull(turn.getPlayer1SubmittedAt());
+    }
 
     @Test
     @DisplayName("RF-59 | Caso negativo: carta no está en la baraja del jugador → IllegalArgumentException")
@@ -548,6 +643,23 @@ class MatchServiceTest {
     }
 
     @Test
+    @DisplayName("RF-66 | Caso negativo: la partida no ha terminado → IllegalStateException")
+    void voteRematch_casoNegativo_confirmar_partidaNoTerminada() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match match = crearPartida(20L, p1, p2, MatchStatus.IN_PROGRESS);
+
+        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> matchService.voteRematch(20L, 1L, true)
+        );
+
+        assertTrue(ex.getMessage().contains("La partida no ha terminado"));
+    }
+
+    @Test
     @DisplayName("RF-67 | Caso positivo: jugador rechaza la revancha → votos reseteados, sin nueva partida")
     void voteRematch_casoPositivo_rechazarRevancha() {
         Person p1 = crearPersona(1L, "pedro");
@@ -566,5 +678,22 @@ class MatchServiceTest {
         assertFalse(match.isPlayer2WantsRematch());
         assertNull(match.getRematchMatchId());
         assertNotNull(result);
+    }
+
+    @Test
+    @DisplayName("RF-67 | Caso negativo: la partida no ha terminado → IllegalStateException")
+    void voteRematch_casoNegativo_rechazar_partidaNoTerminada() {
+        Person p1 = crearPersona(1L, "pedro");
+        Person p2 = crearPersona(2L, "luis");
+        Match match = crearPartida(20L, p1, p2, MatchStatus.IN_PROGRESS);
+
+        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> matchService.voteRematch(20L, 1L, false)
+        );
+
+        assertTrue(ex.getMessage().contains("La partida no ha terminado"));
     }
 }

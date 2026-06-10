@@ -53,7 +53,7 @@ class PackServiceTest {
     private Card crearCartaNormal() {
         Card c = new Card();
         c.setId(1L);
-        c.setName("Endou Mamoru");
+        c.setName("Mark Evans");
         c.setCardPackage(CardPackage.INAZUMA_ELEVEN);
         c.setType(CardType.NORMAL);
         c.setPosition(CardPosition.POR);

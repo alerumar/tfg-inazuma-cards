@@ -192,6 +192,24 @@ class PersonServiceTest {
         assertTrue(ex.getMessage().contains("La contraseña actual no es correcta"));
     }
 
+    @Test
+    @DisplayName("RF-32 | Caso negativo: nueva contraseña demasiado corta → IllegalArgumentException")
+    void changePassword_casoNegativo_nuevaPasswordCorta() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setPassword("password123");
+
+        when(personRepository.findById(1L)).thenReturn(Optional.of(person));
+
+        ChangePasswordRequest req = new ChangePasswordRequest("password123", "abc");
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> personService.changePassword(1L, req)
+        );
+
+        assertTrue(ex.getMessage().contains("La nueva contraseña debe tener al menos 8 caracteres"));
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  RF-31 — Editar perfil
     // ═══════════════════════════════════════════════════════════
@@ -215,6 +233,25 @@ class PersonServiceTest {
     }
 
     @Test
+    @DisplayName("RF-31 | Caso positivo: email válido y no registrado → email actualizado")
+    void update_casoPositivo_emailCambiado() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setNickname("pedroGarcia");
+        person.setEmail("pedro@email.com");
+
+        when(personRepository.findById(1L)).thenReturn(Optional.of(person));
+        when(personRepository.existsByEmail("nuevo@email.com")).thenReturn(false);
+        when(personRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UpdatePersonRequest req = new UpdatePersonRequest(null, null, null, "nuevo@email.com", null);
+        Optional<Person> result = personService.update(1L, req);
+
+        assertTrue(result.isPresent());
+        assertEquals("nuevo@email.com", result.get().getEmail());
+    }
+
+    @Test
     @DisplayName("RF-31 | Caso negativo: nickname ya en uso por otro jugador → IllegalArgumentException")
     void update_casoNegativo_nicknameEnUso() {
         Person person = new Person();
@@ -232,6 +269,27 @@ class PersonServiceTest {
         );
 
         assertTrue(ex.getMessage().contains("Nickname ya en uso"));
+    }
+
+    @Test
+    @DisplayName("RF-31 | Caso negativo: email ya en uso por otro jugador → IllegalArgumentException")
+    void update_casoNegativo_emailEnUso() {
+        Person person = new Person();
+        person.setId(1L);
+        person.setNickname("pedroGarcia");
+        person.setEmail("pedro@email.com");
+
+        when(personRepository.findById(1L)).thenReturn(Optional.of(person));
+        when(personRepository.existsByEmail("nuevo@email.com")).thenReturn(true);
+
+        UpdatePersonRequest req = new UpdatePersonRequest(null, null, null, "nuevo@email.com", null);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> personService.update(1L, req)
+        );
+
+        assertTrue(ex.getMessage().contains("Email ya en uso"));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -260,21 +318,4 @@ class PersonServiceTest {
         verify(personRepository, never()).deleteById(any());
     }
 
-    @Test
-    @DisplayName("RF-32 | Caso negativo: nueva contraseña demasiado corta → IllegalArgumentException")
-    void changePassword_casoNegativo_nuevaPasswordCorta() {
-        Person person = new Person();
-        person.setId(1L);
-        person.setPassword("password123");
-
-        when(personRepository.findById(1L)).thenReturn(Optional.of(person));
-
-        ChangePasswordRequest req = new ChangePasswordRequest("password123", "abc");
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> personService.changePassword(1L, req)
-        );
-
-        assertTrue(ex.getMessage().contains("La nueva contraseña debe tener al menos 6 caracteres"));
-    }
 }

@@ -52,11 +52,11 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-21 | Caso positivo: solicitud válida entre dos jugadores distintos → amistad PENDING")
     void sendRequest_casoPositivo_solicitudValida() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
 
         when(personRepository.findById(1L)).thenReturn(Optional.of(requester));
-        when(personRepository.findByPlayerId("BBB-002")).thenReturn(Optional.of(receiver));
+        when(personRepository.findByPlayerId("bbbbbb22")).thenReturn(Optional.of(receiver));
         when(friendshipRepository.findBetween(requester, receiver)).thenReturn(Optional.empty());
         when(friendshipRepository.save(any())).thenAnswer(inv -> {
             Friendship f = inv.getArgument(0);
@@ -64,7 +64,7 @@ class FriendshipServiceTest {
             return f;
         });
 
-        Friendship result = friendshipService.sendRequest(1L, "BBB-002");
+        Friendship result = friendshipService.sendRequest(1L, "bbbbbb22");
 
         assertNotNull(result);
         assertEquals(FriendshipStatus.PENDING, result.getStatus());
@@ -75,14 +75,14 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-21 | Caso negativo: jugador se envía solicitud a sí mismo → IllegalArgumentException")
     void sendRequest_casoNegativo_mismaPersoa() {
-        Person persona = crearPersona(1L, "AAA-001", "pedroGarcia");
+        Person persona = crearPersona(1L, "aaaaaa11", "pedroGarcia");
 
         when(personRepository.findById(1L)).thenReturn(Optional.of(persona));
-        when(personRepository.findByPlayerId("AAA-001")).thenReturn(Optional.of(persona));
+        when(personRepository.findByPlayerId("aaaaaa11")).thenReturn(Optional.of(persona));
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> friendshipService.sendRequest(1L, "AAA-001")
+                () -> friendshipService.sendRequest(1L, "aaaaaa11")
         );
 
         assertTrue(ex.getMessage().contains("No puedes enviarte una solicitud a ti mismo"));
@@ -91,17 +91,17 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-21 | Caso negativo: ya existe una relación de amistad → IllegalArgumentException")
     void sendRequest_casoNegativo_relacionExistente() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
         Friendship existing = crearAmistad(5L, requester, receiver, FriendshipStatus.ACCEPTED);
 
         when(personRepository.findById(1L)).thenReturn(Optional.of(requester));
-        when(personRepository.findByPlayerId("BBB-002")).thenReturn(Optional.of(receiver));
+        when(personRepository.findByPlayerId("bbbbbb22")).thenReturn(Optional.of(receiver));
         when(friendshipRepository.findBetween(requester, receiver)).thenReturn(Optional.of(existing));
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> friendshipService.sendRequest(1L, "BBB-002")
+                () -> friendshipService.sendRequest(1L, "bbbbbb22")
         );
 
         assertTrue(ex.getMessage().contains("Ya existe una relación de amistad"));
@@ -114,8 +114,8 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-17 | Caso positivo: receptor acepta la solicitud → estado ACCEPTED")
     void accept_casoPositivo_receptorAcepta() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
         Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
@@ -131,8 +131,8 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-17 | Caso negativo: un tercero intenta aceptar la solicitud → IllegalArgumentException")
     void accept_casoNegativo_noEsReceptor() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
         Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
@@ -148,8 +148,8 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-17 | Caso positivo: receptor rechaza la solicitud → amistad eliminada")
     void reject_casoPositivo_receptorRechaza() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
         Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
@@ -166,14 +166,13 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-19 | Caso positivo: solicitante cancela su solicitud pendiente → solicitud eliminada")
     void cancelSentRequest_casoPositivo_cancelaSolicitudPendiente() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
-        // La solicitud está en estado PENDING: el receptor aún no ha respondido
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
         Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
 
-        friendshipService.removeFriend(1L, 10L); // jugador 1 (quien envió) cancela
+        friendshipService.removeFriend(1L, 10L);
 
         verify(friendshipRepository).delete(friendship);
     }
@@ -181,15 +180,15 @@ class FriendshipServiceTest {
     @Test
     @DisplayName("RF-19 | Caso negativo: jugador ajeno intenta cancelar la solicitud → IllegalArgumentException")
     void cancelSentRequest_casoNegativo_noEsElSolicitante() {
-        Person requester = crearPersona(1L, "AAA-001", "pedroGarcia");
-        Person receiver  = crearPersona(2L, "BBB-002", "luisRuiz");
+        Person requester = crearPersona(1L, "aaaaaa11", "pedroGarcia");
+        Person receiver  = crearPersona(2L, "bbbbbb22", "luisRuiz");
         Friendship friendship = crearAmistad(10L, requester, receiver, FriendshipStatus.PENDING);
 
         when(friendshipRepository.findById(10L)).thenReturn(Optional.of(friendship));
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> friendshipService.removeFriend(99L, 10L) // tercero con ID 99
+                () -> friendshipService.removeFriend(99L, 10L)
         );
 
         assertTrue(ex.getMessage().contains("No perteneces a esta amistad"));

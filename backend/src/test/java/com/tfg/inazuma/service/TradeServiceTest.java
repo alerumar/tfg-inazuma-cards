@@ -30,8 +30,6 @@ class TradeServiceTest {
     @InjectMocks
     TradeService tradeService;
 
-    // ── Helpers ────────────────────────────────────────────────
-
     private Person crearPersona(Long id, String nickname) {
         Person p = new Person();
         p.setId(id);
@@ -78,8 +76,8 @@ class TradeServiceTest {
     void propose_casoPositivo_amigosCartaRepetida() {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
-        Card   card      = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
-        PersonCard pc    = crearPersonCard(initiator, card, 2); // tiene 2 copias
+        Card   card      = crearCarta(5L, CardType.NORMAL, "Mark Evans");
+        PersonCard pc    = crearPersonCard(initiator, card, 2); 
 
         Friendship amistad = new Friendship();
         amistad.setRequester(initiator);
@@ -124,12 +122,44 @@ class TradeServiceTest {
     }
 
     @Test
+    @DisplayName("RF-23 | Caso positivo: jugador tiene 2 copias de la carta → intercambio propuesto")
+    void propose_casoPositivo_cartaRepetida() {
+        Person initiator = crearPersona(1L, "pedroGarcia");
+        Person receiver  = crearPersona(2L, "luisRuiz");
+        Card   card      = crearCarta(5L, CardType.NORMAL, "Mark Evans");
+        PersonCard pc    = crearPersonCard(initiator, card, 2);
+
+        Friendship amistad = new Friendship();
+        amistad.setRequester(initiator);
+        amistad.setReceiver(receiver);
+        amistad.setStatus(FriendshipStatus.ACCEPTED);
+
+        when(personRepository.findById(1L)).thenReturn(Optional.of(initiator));
+        when(personRepository.findById(2L)).thenReturn(Optional.of(receiver));
+        when(friendshipRepository.findBetween(initiator, receiver)).thenReturn(Optional.of(amistad));
+        when(tradeRepository.findActiveByPerson(eq(initiator), any())).thenReturn(List.of());
+        when(cardRepository.findById(5L)).thenReturn(Optional.of(card));
+        when(personCardRepository.findByPersonAndCard(initiator, card)).thenReturn(Optional.of(pc));
+        when(tradeRepository.save(any())).thenAnswer(inv -> {
+            Trade t = inv.getArgument(0);
+            t.setId(21L);
+            return t;
+        });
+
+        Trade result = tradeService.propose(1L, 2L, 5L);
+
+        assertNotNull(result);
+        assertEquals(TradeStatus.PENDING_RESPONSE, result.getStatus());
+        assertEquals(card, result.getInitiatorCard());
+    }
+
+    @Test
     @DisplayName("RF-23 | Caso negativo: el jugador solo tiene 1 copia de la carta → IllegalArgumentException")
     void propose_casoNegativo_cartaNoRepetida() {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
-        Card   card      = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
-        PersonCard pc    = crearPersonCard(initiator, card, 1); // solo 1 copia
+        Card   card      = crearCarta(5L, CardType.NORMAL, "Mark Evans");
+        PersonCard pc    = crearPersonCard(initiator, card, 1);
 
         Friendship amistad = new Friendship();
         amistad.setRequester(initiator);
@@ -160,7 +190,7 @@ class TradeServiceTest {
     void receiverRespond_casoPositivo_ofreceCarta() {
         Person initiator  = crearPersona(1L, "pedroGarcia");
         Person receiver   = crearPersona(2L, "luisRuiz");
-        Card   cartaA     = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
+        Card   cartaA     = crearCarta(5L, CardType.NORMAL, "Mark Evans");
         Card   cartaB     = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
         PersonCard pcB    = crearPersonCard(receiver, cartaB, 2);
         Trade  trade      = crearTrade(20L, initiator, receiver, cartaA, null,
@@ -183,7 +213,7 @@ class TradeServiceTest {
     void receiverRespond_casoNegativo_tipoDistinto() {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
-        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
+        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
         Card   cartaB    = crearCarta(6L, CardType.LEGEND, "Inazuma X");
         Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, null,
                                       TradeStatus.PENDING_RESPONSE);
@@ -204,7 +234,7 @@ class TradeServiceTest {
     void receiverRespond_casoPositivo_rechazo() {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
-        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
+        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
         Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, null,
                                       TradeStatus.PENDING_RESPONSE);
 
@@ -216,6 +246,25 @@ class TradeServiceTest {
         assertEquals(TradeStatus.REJECTED_BY_RECEIVER, result.getStatus());
     }
 
+    @Test
+    @DisplayName("RF-25 | Caso negativo: jugador ajeno intenta rechazar la propuesta → IllegalArgumentException")
+    void receiverRespond_casoNegativo_noEsReceptor() {
+        Person initiator = crearPersona(1L, "pedroGarcia");
+        Person receiver  = crearPersona(2L, "luisRuiz");
+        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
+        Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, null,
+                                      TradeStatus.PENDING_RESPONSE);
+
+        when(tradeRepository.findById(20L)).thenReturn(Optional.of(trade));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> tradeService.receiverRespond(20L, 99L, null)
+        );
+
+        assertTrue(ex.getMessage().contains("No eres el receptor de este intercambio"));
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  RF-26/27 — Confirmar o cancelar intercambio (iniciador)
     // ═══════════════════════════════════════════════════════════
@@ -225,7 +274,7 @@ class TradeServiceTest {
     void initiatorConfirm_casoPositivo_aceptar() {
         Person initiator  = crearPersona(1L, "pedroGarcia");
         Person receiver   = crearPersona(2L, "luisRuiz");
-        Card   cartaA     = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
+        Card   cartaA     = crearCarta(5L, CardType.NORMAL, "Mark Evans");
         Card   cartaB     = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
         PersonCard pcIA   = crearPersonCard(initiator, cartaA, 2);
         PersonCard pcRB   = crearPersonCard(receiver,  cartaB, 2);
@@ -254,11 +303,31 @@ class TradeServiceTest {
     }
 
     @Test
+    @DisplayName("RF-26 | Caso negativo: jugador ajeno intenta confirmar el intercambio → IllegalArgumentException")
+    void initiatorConfirm_casoNegativo_confirmar_noEsIniciador() {
+        Person initiator = crearPersona(1L, "pedroGarcia");
+        Person receiver  = crearPersona(2L, "luisRuiz");
+        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
+        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, cartaB,
+                                      TradeStatus.PENDING_CONFIRMATION);
+
+        when(tradeRepository.findById(20L)).thenReturn(Optional.of(trade));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> tradeService.initiatorConfirm(20L, 99L, true)
+        );
+
+        assertTrue(ex.getMessage().contains("No eres el iniciador de este intercambio"));
+    }
+
+    @Test
     @DisplayName("RF-27 | Caso positivo: iniciador rechaza la oferta → intercambio REJECTED_BY_INITIATOR")
     void initiatorConfirm_casoPositivo_rechazar() {
         Person initiator = crearPersona(1L, "pedroGarcia");
         Person receiver  = crearPersona(2L, "luisRuiz");
-        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Endou Mamoru");
+        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
         Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
         Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, cartaB,
                                       TradeStatus.PENDING_CONFIRMATION);
@@ -270,5 +339,25 @@ class TradeServiceTest {
 
         assertEquals(TradeStatus.REJECTED_BY_INITIATOR, result.getStatus());
         verify(missionService, never()).recordEvent(any(Person.class), any(MissionType.class));
+    }
+
+    @Test
+    @DisplayName("RF-27 | Caso negativo: jugador ajeno intenta rechazar el intercambio → IllegalArgumentException")
+    void initiatorConfirm_casoNegativo_rechazar_noEsIniciador() {
+        Person initiator = crearPersona(1L, "pedroGarcia");
+        Person receiver  = crearPersona(2L, "luisRuiz");
+        Card   cartaA    = crearCarta(5L, CardType.NORMAL, "Mark Evans");
+        Card   cartaB    = crearCarta(6L, CardType.NORMAL, "Gouenji Shuuya");
+        Trade  trade     = crearTrade(20L, initiator, receiver, cartaA, cartaB,
+                                      TradeStatus.PENDING_CONFIRMATION);
+
+        when(tradeRepository.findById(20L)).thenReturn(Optional.of(trade));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> tradeService.initiatorConfirm(20L, 99L, false)
+        );
+
+        assertTrue(ex.getMessage().contains("No eres el iniciador de este intercambio"));
     }
 }

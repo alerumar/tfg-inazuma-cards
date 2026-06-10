@@ -243,6 +243,22 @@ class DeckServiceTest {
         verify(deckRepository).delete(deck);
     }
 
+    @Test
+    @DisplayName("RF-38 | Caso negativo: la baraja pertenece a otro jugador → IllegalArgumentException")
+    void deleteDeck_casoNegativo_noEsDuenyo() {
+        Person otroPropietario = crearPersona(99L);
+        Deck   deck            = crearBaraja(10L, otroPropietario);
+
+        when(deckRepository.findById(10L)).thenReturn(Optional.of(deck));
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> deckService.deleteDeck(1L, 10L)
+        );
+
+        assertTrue(ex.getMessage().contains("Esta baraja no te pertenece"));
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  RF-35 — Ver barajas
     // ═══════════════════════════════════════════════════════════
@@ -263,18 +279,16 @@ class DeckServiceTest {
     }
 
     @Test
-    @DisplayName("RF-38 | Caso negativo: la baraja pertenece a otro jugador → IllegalArgumentException")
-    void deleteDeck_casoNegativo_noEsDuenyo() {
-        Person otroPropietario = crearPersona(99L);
-        Deck   deck            = crearBaraja(10L, otroPropietario);
-
-        when(deckRepository.findById(10L)).thenReturn(Optional.of(deck));
+    @DisplayName("RF-35 | Caso negativo: jugador inexistente → IllegalArgumentException")
+    void getDecks_casoNegativo_jugadorNoExiste() {
+        when(personRepository.findById(99L)).thenReturn(Optional.empty());
 
         IllegalArgumentException ex = assertThrows(
                 IllegalArgumentException.class,
-                () -> deckService.deleteDeck(1L, 10L)
+                () -> deckService.getDecks(99L)
         );
 
-        assertTrue(ex.getMessage().contains("Esta baraja no te pertenece"));
+        assertTrue(ex.getMessage().contains("Persona no encontrada"));
     }
+
 }
