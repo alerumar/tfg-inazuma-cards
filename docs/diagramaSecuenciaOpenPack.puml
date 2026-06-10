@@ -1,0 +1,85 @@
+@startuml
+
+actor "Jugador" as J
+participant "Vista" as V
+participant "Controlador" as C
+participant "Modelo" as M
+database "BBDD" as DB
+
+== Abrir sobre gratuito ==
+
+J -> V: Pulsa "Abrir sobre"
+V -> C: POST /api/persons/{personId}/packs/open/free\n{type: "INAZUMA_ELEVEN"}
+C -> M: openFreePack(personId, type)
+M -> DB: SELECT Person
+DB --> M: Person
+
+M -> M: syncAccumulatedPacks(person)
+note right: Calcula sobres acumulados\nsegún tiempo transcurrido\ndesde lastPackDate
+
+alt accumulatedPacks <= 0
+  M --> C: "No tienes sobres disponibles"
+  C --> V: 400 Bad Request
+  V --> J: "No tienes sobres disponibles"
+
+else accumulatedPacks > 0
+  M -> DB: UPDATE Person\n(accumulatedPacks - 1,\nlastPackDate si estaba al máximo)
+
+  M -> DB: SELECT Cards NORMAL filtradas por tipo de sobre
+  DB --> M: Lista de cartas normales
+  M -> DB: SELECT Cards LEGEND filtradas por tipo de sobre
+  DB --> M: Lista de cartas legendarias
+
+  M -> M: rollLegendCount()
+  M -> M: drawRandom(normales, normalCount)\ndrawRandom(legendarias, legendCount)\nCollections.shuffle()
+
+  loop Para cada carta obtenida (5 en total)
+    M -> DB: existsByPersonAndCard(person, card)
+    DB --> M: isNew (true/false)
+    M -> DB: INSERT PersonCard (si es nueva)\nUPDATE PersonCard +1 (si repetida)
+  end
+
+  M -> M: grantExperience(person, XP_PER_PACK=10)
+  M -> DB: UPDATE Person\n(experience, level, packPoints si sube de nivel)
+  M -> DB: UPDATE PersonMission\n(OPEN_PACKS, COLLECT_CARDS)
+  note right: Si hay legendarias nuevas\ntambién COLLECT_LEGENDS
+  DB --> M: OK
+  M --> C: PackOpenResult (cartas + isNew)
+  C --> V: 200 OK + cartas obtenidas
+  V --> J: Animación apertura de sobre\n+ cartas conseguidas
+end
+
+== Abrir sobre con puntos ==
+
+J -> V: Pulsa "Abrir con puntos"
+V -> C: POST /api/persons/{personId}/packs/open/points\n{type: "INAZUMA_ELEVEN"}
+C -> M: openWithPoints(personId, type)
+M -> DB: SELECT Person
+DB --> M: Person
+
+M -> M: syncAccumulatedPacks(person)
+
+alt accumulatedPacks > 0
+  M --> C: "Tienes sobres gratis, úsalos primero"
+  C --> V: 400 Bad Request
+  V --> J: "Tienes sobres gratis disponibles"
+
+else No tiene sobres acumulados
+  M -> M: pointsCost(person)\n(coste variable según tiempo restante,\nmáximo 12 puntos)
+
+  alt packPoints < cost
+    M --> C: "No tienes suficientes puntos"
+    C --> V: 400 Bad Request
+    V --> J: "No tienes suficientes puntos"
+
+  else packPoints >= cost
+    M -> DB: UPDATE Person\n(packPoints - cost,\nlastPackDate adelantado según overpay)
+    M -> M: doOpenPack(person, type)
+    note right: Mismo flujo interno\nque el sobre gratuito
+    M --> C: PackOpenResult (cartas + isNew)
+    C --> V: 200 OK + cartas obtenidas
+    V --> J: Animación apertura de sobre\n+ cartas conseguidas
+  end
+end
+
+@enduml
