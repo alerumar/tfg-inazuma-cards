@@ -2174,9 +2174,8 @@ scoreboard: {
 finishContent: {
     alignItems: 'center',
     gap: 14,
-    paddingVertical: 20,
-    flexGrow: 1,
-    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 48,
   },
 
   rewardsCard: {
