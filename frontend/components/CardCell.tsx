@@ -67,6 +67,7 @@ export function CardCell({
         styles.cell,
         { width, height },
         isLegend && styles.cellLegend,
+        !isLegend && styles.cellUnowned,
         disabled && styles.cellDisabled,
         pressed && !disabled && onPress && styles.cellPressed,
       ]}
@@ -142,6 +143,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellLegend:   { borderWidth: 1.5, borderColor: '#F9A825', backgroundColor: '#FFF8E1' },
+  cellUnowned:  { borderWidth: 1.5, borderColor: Colors.border },
   cellDisabled: { opacity: 0.35 },
   cellPressed:  { opacity: 0.75 },
 

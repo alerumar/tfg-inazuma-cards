@@ -246,7 +246,7 @@ function CardDetailModal({
           showsVerticalScrollIndicator={false}
         >
           
-          <View style={[styles.detailImgWrap, { width: IMG_W, height: IMG_H }]}>
+          <View style={[styles.detailImgWrap, { width: IMG_W, height: IMG_H }, isLegend ? styles.detailImgWrapLegend : styles.detailImgWrapNormal]}>
             {hasImage ? (
               <>
                 <View style={[styles.ratingBadge, isLegend && styles.ratingBadgeLegend, styles.ratingBadgeLg]}>
@@ -259,8 +259,8 @@ function CardDetailModal({
                 />
               </>
             ) : (
-              <View style={styles.detailNoImg}>
-                <Text style={styles.detailNoImgNum}>{numStr}</Text>
+              <View style={[styles.detailNoImg, isLegend && styles.detailNoImgLegend]}>
+                <Text style={[styles.detailNoImgNum, isLegend && styles.detailNoImgNumLegend]}>{numStr}</Text>
               </View>
             )}
           </View>
@@ -273,14 +273,14 @@ function CardDetailModal({
             </View>
           )}
 
-<View style={styles.quantityPill}>
+<View style={[styles.quantityPill, isLegend && styles.quantityPillLegend]}>
             <Text style={styles.quantityPillText}>
               Cantidad de esta carta obtenida:{' '}
               <Text style={{ fontWeight: '800' }}>{quantity}</Text>
             </Text>
           </View>
 
-<View style={styles.detailCard}>
+<View style={[styles.detailCard, isLegend && styles.detailCardLegend]}>
             <Text style={styles.detailCardTitle}>Detalles</Text>
             <DetailRow label="Nombre"     value={card.name} />
             <DetailRow label="Equipo"     value={card.team ?? '—'} />
@@ -293,7 +293,7 @@ function CardDetailModal({
             <DetailRow label="Defensa"    value={String(card.defense)} />
           </View>
 
-<Pressable style={styles.backBtn} onPress={onClose}>
+<Pressable style={[styles.backBtn, isLegend && styles.backBtnLegend]} onPress={onClose}>
             <Text style={styles.backBtnText}>Volver</Text>
           </Pressable>
 
@@ -377,12 +377,17 @@ const styles = StyleSheet.create({
 detailRoot:   { flex: 1, backgroundColor: Colors.background },
   detailScroll: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, gap: 16 },
 
-  detailImgWrap: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  detailImgWrap:       { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  detailImgWrapNormal: { borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10, overflow: 'hidden', backgroundColor: Colors.primaryLight },
+  detailImgWrapLegend: { borderWidth: 1.5, borderColor: '#F9A825',     borderRadius: 10, overflow: 'hidden', backgroundColor: '#FFF8E1' },
   detailNoImg: {
     flex: 1, width: '100%', backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center', borderRadius: 10,
+    borderWidth: 1.5, borderColor: Colors.border,
   },
-  detailNoImgNum: { fontSize: 28, fontWeight: '700', color: Colors.border },
+  detailNoImgLegend:    { backgroundColor: '#FFF8E1', borderWidth: 1.5, borderColor: '#F9A825' },
+  detailNoImgNum:       { fontSize: 28, fontWeight: '700', color: Colors.border },
+  detailNoImgNumLegend: { color: '#C8860D' },
 
   ratingBadge:       { position: 'absolute', zIndex: 2, backgroundColor: Colors.primary },
   ratingBadgeLegend: { backgroundColor: '#F9A825' },
@@ -402,6 +407,7 @@ detailRoot:   { flex: 1, backgroundColor: Colors.background },
     paddingHorizontal: 16, paddingVertical: 6,
     backgroundColor: Colors.surface,
   },
+  quantityPillLegend: { backgroundColor: '#FFF8E1', borderColor: '#F9A825' },
   quantityPillText: { fontSize: 13, color: Colors.textMid },
 
   detailCard: {
@@ -409,6 +415,7 @@ detailRoot:   { flex: 1, backgroundColor: Colors.background },
     borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
     padding: 16, gap: 6,
   },
+  detailCardLegend: { backgroundColor: '#FFF8E1', borderColor: '#F9A825' },
   detailCardTitle: {
     fontSize: 16, fontWeight: '800', fontStyle: 'italic',
     color: Colors.textDark, textAlign: 'center', marginBottom: 4,
@@ -422,5 +429,6 @@ detailRoot:   { flex: 1, backgroundColor: Colors.background },
     paddingHorizontal: 40, paddingVertical: 12,
     backgroundColor: Colors.background,
   },
+  backBtnLegend: { borderColor: '#F9A825' },
   backBtnText: { fontSize: 15, fontWeight: '600', color: Colors.textDark },
 });
