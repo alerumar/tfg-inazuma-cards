@@ -326,18 +326,28 @@ function RevealOverlay({
   );
 }
 
-function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: string; total?: number }) {
-  const mountMs = useRef(Date.now());
+function CountdownTimer({ initialSeconds, total = 45 }: { initialSeconds: number; total?: number }) {
+  // initialSeconds viene del servidor: cuántos segundos quedaban cuando se construyó la respuesta.
+  // Contamos hacia atrás desde ese valor usando el reloj local, evitando problemas de zona horaria.
+  const mountMs      = useRef(Date.now());
+  const startSeconds = useRef(initialSeconds);
 
-  const [secs, setSecs] = useState(total);
+  const [secs, setSecs] = useState(initialSeconds);
+
+  useEffect(() => {
+    // Si el servidor envía un nuevo turno, reiniciamos el punto de inicio.
+    mountMs.current      = Date.now();
+    startSeconds.current = initialSeconds;
+    setSecs(initialSeconds);
+  }, [initialSeconds]);
 
   useEffect(() => {
     const id = setInterval(() => {
       const elapsed = (Date.now() - mountMs.current) / 1000;
-      setSecs(Math.max(0, Math.ceil(total - elapsed)));
+      setSecs(Math.max(0, Math.ceil(startSeconds.current - elapsed)));
     }, 250);
     return () => clearInterval(id);
-  }, [total]);
+  }, []);
 
   if (secs === 0) {
     return (
@@ -1337,7 +1347,7 @@ function renderInProgress() {
             ) : (
               <>
                 
-                <CountdownTimer key={pt.turnCreatedAt} createdAt={pt.turnCreatedAt} />
+                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={pt.turnSecondsRemaining} />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
                     {rivalLate

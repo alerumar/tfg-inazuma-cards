@@ -5,12 +5,14 @@ import com.tfg.inazuma.model.MatchTurn;
 import com.tfg.inazuma.model.TurnResult;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 public record TurnStateDto(
-        
+
         int        roundNumber,
         int        turnNumber,
         LocalDateTime turnCreatedAt,
+        int        turnSecondsRemaining,
         boolean    player1Submitted,
         boolean    player2Submitted,
         Long       player1CardId,
@@ -25,12 +27,18 @@ public record TurnStateDto(
         Integer    player2Value,
         TurnResult result
 ) {
+    private static final int TURN_TIMEOUT_SECONDS = 45;
+
     public static TurnStateDto from(MatchTurn t) {
         boolean revealed = t.getResult() != TurnResult.PENDING;
+        int secRemaining = revealed ? 0
+                : (int) Math.max(0, TURN_TIMEOUT_SECONDS
+                        - ChronoUnit.SECONDS.between(t.getCreatedAt(), LocalDateTime.now()));
         return new TurnStateDto(
                 t.getRound().getRoundNumber(),
                 t.getTurnNumber(),
                 t.getCreatedAt(),
+                secRemaining,
                 t.getPlayer1SubmittedAt() != null,
                 t.getPlayer2SubmittedAt() != null,
                 revealed && t.getPlayer1Card() != null ? t.getPlayer1Card().getId()       : null,

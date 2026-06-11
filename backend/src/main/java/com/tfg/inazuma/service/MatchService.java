@@ -342,12 +342,12 @@ public MatchStateResponse getState(Long matchId) {
             round.setCompleted(true);
             roundRepo.save(round);
             match.setRoundsWonPlayer1(match.getRoundsWonPlayer1() + 1);
-            tryFinishOrContinue(match);
+            tryFinishOrContinue(match, round);
         } else if (round.getTurnsWonPlayer2() >= TURN_WINS_PER_ROUND) {
             round.setCompleted(true);
             roundRepo.save(round);
             match.setRoundsWonPlayer2(match.getRoundsWonPlayer2() + 1);
-            tryFinishOrContinue(match);
+            tryFinishOrContinue(match, round);
         } else {
             roundRepo.save(round);
             if (!anyMovesAvailable(match)) {
@@ -358,13 +358,15 @@ public MatchStateResponse getState(Long matchId) {
         }
     }
 
-private void tryFinishOrContinue(Match match) {
+private void tryFinishOrContinue(Match match, MatchRound completedRound) {
         if (match.getRoundsWonPlayer1() >= ROUNDS_TO_WIN) {
             finishMatch(match, match.getPlayer1());
         } else if (match.getRoundsWonPlayer2() >= ROUNDS_TO_WIN) {
             finishMatch(match, match.getPlayer2());
         } else if (!anyMovesAvailable(match)) {
-            applyTiebreaker(match, currentRound(match));
+            // La ronda ya está completada; pasamos la referencia directamente
+            // para evitar llamar a currentRound() cuando no hay ronda activa.
+            applyTiebreaker(match, completedRound);
         } else {
             int nextRoundNum = roundRepo.countByMatch(match) + 1;
             createNextRoundAndTurn(match, nextRoundNum);
