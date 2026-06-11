@@ -50,8 +50,8 @@ export default function ProfileScreen() {
     ? { uri: `${BASE_URL}${user.profilePhoto}` }
     : { uri: `${BASE_URL}/images/default_profile.png` };
 
-  const xpToNext = 200 + (user.level - 1) * 100;
-  const xpPct    = Math.min((user.experience / xpToNext) * 100, 100);
+  const xpToNext = 200 + ((user.level ?? 1) - 1) * 100;
+  const xpPct    = Math.min(((user.experience ?? 0) / xpToNext) * 100, 100);
 
   const pickAndUpload = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -144,7 +144,7 @@ export default function ProfileScreen() {
           <View style={styles.xpBarBg}>
             <View style={[styles.xpBarFill, { width: `${xpPct}%` }]} />
           </View>
-          <Text style={styles.xpText}>{user.experience} / {xpToNext} XP</Text>
+          <Text style={styles.xpText}>{user.experience ?? 0} / {xpToNext} XP</Text>
         </View>
 
 <View style={styles.statsGrid}>
@@ -152,8 +152,8 @@ export default function ProfileScreen() {
           <StatBox icon="hourglass-outline" label="Sobres"   value={(user.packPoints ?? 0).toString()} />
         </View>
         <View style={styles.statsGrid}>
-          <StatBox icon="albums-outline"  label="Cartas"  value={`${user.cardCount}/${user.totalCardCount}`} />
-          <StatBox icon="people-outline"  label="Amigos"  value={user.friendCount.toString()} />
+          <StatBox icon="albums-outline"  label="Cartas"  value={`${user.cardCount ?? 0}/${user.totalCardCount ?? 0}`} />
+          <StatBox icon="people-outline"  label="Amigos"  value={(user.friendCount ?? 0).toString()} />
         </View>
 
 <View style={styles.card}>
