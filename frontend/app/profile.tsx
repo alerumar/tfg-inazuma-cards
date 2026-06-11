@@ -148,8 +148,8 @@ export default function ProfileScreen() {
         </View>
 
 <View style={styles.statsGrid}>
-          <StatBox icon="trophy-outline"    label="XP total" value={user.totalExperience.toString()} />
-          <StatBox icon="hourglass-outline" label="Sobres"   value={user.packPoints.toString()} />
+          <StatBox icon="trophy-outline"    label="XP total" value={(user.totalExperience ?? 0).toString()} />
+          <StatBox icon="hourglass-outline" label="Sobres"   value={(user.packPoints ?? 0).toString()} />
         </View>
         <View style={styles.statsGrid}>
           <StatBox icon="albums-outline"  label="Cartas"  value={`${user.cardCount}/${user.totalCardCount}`} />
