@@ -2,6 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ComponentProps } from 'react';
 import { ColorValue, View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../context/AuthContext';
 
@@ -30,6 +31,7 @@ function TabIcon({
 
 export default function TabsLayout() {
   const { showFriendRequestBadge, pendingTrades, pendingGameInvites, dailyRewardAvailable } = useAuth();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -44,8 +46,8 @@ export default function TabsLayout() {
           shadowColor: '#000',
           shadowOpacity: 0.06,
           shadowRadius: 8,
-          height: 64,
-          paddingBottom: 8,
+          height: 64 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
         },
         headerShown: false,
       }}
