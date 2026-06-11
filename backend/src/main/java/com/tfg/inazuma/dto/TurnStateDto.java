@@ -9,10 +9,10 @@ import java.time.temporal.ChronoUnit;
 
 public record TurnStateDto(
 
-        int        roundNumber,
-        int        turnNumber,
-        LocalDateTime turnCreatedAt,
-        int        turnSecondsRemaining,
+        int    roundNumber,
+        int    turnNumber,
+        String turnCreatedAt,         // ISO-8601 string, e.g. "2024-01-15T10:30:00"
+        int    turnSecondsRemaining,
         boolean    player1Submitted,
         boolean    player2Submitted,
         Long       player1CardId,
@@ -37,7 +37,7 @@ public record TurnStateDto(
         return new TurnStateDto(
                 t.getRound().getRoundNumber(),
                 t.getTurnNumber(),
-                t.getCreatedAt(),
+                t.getCreatedAt().toString(),   // "2024-01-15T10:30:00"
                 secRemaining,
                 t.getPlayer1SubmittedAt() != null,
                 t.getPlayer2SubmittedAt() != null,
