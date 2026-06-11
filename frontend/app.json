@@ -23,6 +23,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite acceder a tu galería para cambiar la foto de perfil."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "81b501b0-bdb1-4bb2-ba16-1dd1ec569ce2"
