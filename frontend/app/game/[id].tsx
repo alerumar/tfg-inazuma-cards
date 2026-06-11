@@ -1849,6 +1849,7 @@ const styles = StyleSheet.create({
   lobbyMetaDot: { fontSize: 12, color: Colors.textLight },
   lobbySlotsRow: { flexDirection: 'row', gap: LOBBY_SLOT_GAP },
   readyBtn: {
+    width: '100%',
     backgroundColor: Colors.primary, borderRadius: 14,
     paddingVertical: 15, alignItems: 'center',
     shadowColor: Colors.primary, shadowOffset: { width: 0, height: 3 },
