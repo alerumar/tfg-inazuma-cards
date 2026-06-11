@@ -326,18 +326,25 @@ function RevealOverlay({
   );
 }
 
-function CountdownTimer({ createdAt: _createdAt, total = 45 }: { createdAt: string; total?: number }) {
-  const mountMs = useRef(Date.now());
+function CountdownTimer({ initialSeconds, total = 45 }: { initialSeconds: number; total?: number }) {
+  const mountMs      = useRef(Date.now());
+  const startSeconds = useRef(initialSeconds);
 
-  const [secs, setSecs] = useState(total);
+  const [secs, setSecs] = useState(initialSeconds);
+
+  useEffect(() => {
+    mountMs.current      = Date.now();
+    startSeconds.current = initialSeconds;
+    setSecs(initialSeconds);
+  }, [initialSeconds]);
 
   useEffect(() => {
     const id = setInterval(() => {
       const elapsed = (Date.now() - mountMs.current) / 1000;
-      setSecs(Math.max(0, Math.ceil(total - elapsed)));
+      setSecs(Math.max(0, Math.ceil(startSeconds.current - elapsed)));
     }, 250);
     return () => clearInterval(id);
-  }, [total]);
+  }, []);
 
   if (secs === 0) {
     return (
@@ -1337,7 +1344,7 @@ function renderInProgress() {
             ) : (
               <>
                 
-                <CountdownTimer key={pt.turnCreatedAt} createdAt={pt.turnCreatedAt} />
+                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={pt.turnSecondsRemaining} />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
                     {rivalLate
@@ -1842,6 +1849,7 @@ const styles = StyleSheet.create({
   lobbyMetaDot: { fontSize: 12, color: Colors.textLight },
   lobbySlotsRow: { flexDirection: 'row', gap: LOBBY_SLOT_GAP },
   readyBtn: {
+    width: '100%',
     backgroundColor: Colors.primary, borderRadius: 14,
     paddingVertical: 15, alignItems: 'center',
     shadowColor: Colors.primary, shadowOffset: { width: 0, height: 3 },
@@ -2164,9 +2172,8 @@ scoreboard: {
 finishContent: {
     alignItems: 'center',
     gap: 14,
-    paddingVertical: 20,
-    flexGrow: 1,
-    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 48,
   },
 
   rewardsCard: {

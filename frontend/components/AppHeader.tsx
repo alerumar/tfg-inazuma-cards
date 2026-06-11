@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+
 import { BASE_URL } from '../constants/api';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../context/AuthContext';
@@ -24,17 +25,13 @@ export function AppHeader() {
   const hasNotificationsPending = unreadNotifications > 0;
   const hasAnyPending           = hasMissionsPending || hasNotificationsPending;
 
-  const avatarUri = user.profilePhoto
-    ? { uri: `${BASE_URL}${user.profilePhoto}` }
-    : { uri: `${BASE_URL}/images/default_profile.png` };
-
   const go = (path: string) => { setOpen(false); router.push(path as any); };
 
   const handleOpenMenu = () => setOpen(true);
 
   return (
     <>
-      
+
       <View style={styles.header}>
 
 <Pressable style={styles.menuBtn} onPress={handleOpenMenu}>
@@ -42,8 +39,18 @@ export function AppHeader() {
           {hasAnyPending && <View style={styles.btnDot} />}
         </Pressable>
 
-        <Pressable onPress={() => router.push('/profile')}>
-          <Image source={avatarUri} style={styles.avatar} />
+        <Pressable style={styles.avatar} onPress={() => router.push('/profile')}>
+          {user.profilePhoto ? (
+            <Image
+              source={{ uri: `${BASE_URL}${user.profilePhoto}` }}
+              style={styles.avatarImg}
+              onError={() => {}}
+            />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={24} color={Colors.primary} />
+            </View>
+          )}
         </Pressable>
 
         <View style={styles.pointsBadge}>
@@ -149,6 +156,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.background,
   },
 
+  // Pressable contenedor del avatar
   avatar: {
     width: 48,
     height: 48,
@@ -156,6 +164,21 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: Colors.primary,
     backgroundColor: Colors.primaryLight,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Image cuando hay foto real
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+  },
+  // Placeholder cuando no hay foto
+  avatarPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pointsBadge: {
     flexDirection: 'row',

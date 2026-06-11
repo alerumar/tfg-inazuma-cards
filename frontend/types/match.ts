@@ -55,11 +55,12 @@ export function isDiscarded(c: CardStateDto): boolean {
 }
 
 export interface TurnStateDto {
-  
+
   roundNumber: number;
   turnNumber: number;
-  
+
   turnCreatedAt: string;
+  turnSecondsRemaining: number;
   player1Submitted: boolean;
   player2Submitted: boolean;
   

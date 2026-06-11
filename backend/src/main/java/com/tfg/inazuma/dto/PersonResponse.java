@@ -2,7 +2,6 @@ package com.tfg.inazuma.dto;
 
 import com.tfg.inazuma.model.Person;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record PersonResponse(
@@ -18,15 +17,15 @@ public record PersonResponse(
         int totalExperience,
         int packPoints,
         int accumulatedPacks,
-        LocalDateTime lastPackDate,
-        LocalDate lastDailyReward,
+        String lastPackDate,      
+        String lastDailyReward,  
         int cardCount,
         int totalCardCount,
         int friendCount,
-        boolean online,         
-        boolean inActiveMatch  
+        boolean online,
+        boolean inActiveMatch
 ) {
-    
+
     public static PersonResponse from(Person p, int cardCount, int totalCardCount, int friendCount, boolean inActiveMatch) {
         boolean isOnline = p.getLastSeen() != null
                 && p.getLastSeen().isAfter(LocalDateTime.now().minusMinutes(2));
@@ -43,8 +42,8 @@ public record PersonResponse(
                 p.getTotalExperience(),
                 p.getPackPoints(),
                 p.getAccumulatedPacks(),
-                p.getLastPackDate(),
-                p.getLastDailyReward(),
+                p.getLastPackDate()    != null ? p.getLastPackDate().toString()    : null,
+                p.getLastDailyReward() != null ? p.getLastDailyReward().toString() : null,
                 cardCount,
                 totalCardCount,
                 friendCount,

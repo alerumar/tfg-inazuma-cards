@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppDialog, useDialog } from '../components/AppDialog';
 import { CardCell, CARD_ASPECT } from '../components/CardCell';
 import { Colors } from '../constants/colors';
@@ -31,6 +31,7 @@ export default function DecksScreen() {
   const router   = useRouter();
   const { user } = useAuth();
   const { dialogCfg, showAlert } = useDialog();
+  const insets   = useSafeAreaInsets();
   const [decks,   setDecks]   = useState<DeckData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,7 +121,7 @@ export default function DecksScreen() {
 
 {!atMax && (
         <Pressable
-          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+          style={({ pressed }) => [styles.fab, { bottom: 28 + insets.bottom }, pressed && styles.fabPressed]}
           onPress={() => router.push('/deck/new' as any)}
         >
           <Ionicons name="add" size={30} color="#fff" />
@@ -229,6 +230,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  fab:       { position: 'absolute', bottom: 28, right: 24, width: 58, height: 58, borderRadius: 29, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 8 },
+  fab:       { position: 'absolute', right: 24, width: 58, height: 58, borderRadius: 29, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 8 },
   fabPressed: { opacity: 0.85 },
 });

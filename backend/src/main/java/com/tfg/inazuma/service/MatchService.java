@@ -342,12 +342,12 @@ public MatchStateResponse getState(Long matchId) {
             round.setCompleted(true);
             roundRepo.save(round);
             match.setRoundsWonPlayer1(match.getRoundsWonPlayer1() + 1);
-            tryFinishOrContinue(match);
+            tryFinishOrContinue(match, round);
         } else if (round.getTurnsWonPlayer2() >= TURN_WINS_PER_ROUND) {
             round.setCompleted(true);
             roundRepo.save(round);
             match.setRoundsWonPlayer2(match.getRoundsWonPlayer2() + 1);
-            tryFinishOrContinue(match);
+            tryFinishOrContinue(match, round);
         } else {
             roundRepo.save(round);
             if (!anyMovesAvailable(match)) {
@@ -358,13 +358,13 @@ public MatchStateResponse getState(Long matchId) {
         }
     }
 
-private void tryFinishOrContinue(Match match) {
+private void tryFinishOrContinue(Match match, MatchRound completedRound) {
         if (match.getRoundsWonPlayer1() >= ROUNDS_TO_WIN) {
             finishMatch(match, match.getPlayer1());
         } else if (match.getRoundsWonPlayer2() >= ROUNDS_TO_WIN) {
             finishMatch(match, match.getPlayer2());
         } else if (!anyMovesAvailable(match)) {
-            applyTiebreaker(match, currentRound(match));
+            applyTiebreaker(match, completedRound);
         } else {
             int nextRoundNum = roundRepo.countByMatch(match) + 1;
             createNextRoundAndTurn(match, nextRoundNum);
@@ -529,28 +529,15 @@ public MatchStateResponse buildState(Match match) {
         TurnStateDto pendingTurn = null;
         TurnStateDto lastCompleted = null;
 
-        if (currentRound != null) {
-            List<MatchTurn> turns = turnRepo.findByRoundOrderByTurnNumberAsc(currentRound);
-            for (int i = turns.size() - 1; i >= 0; i--) {
-                MatchTurn t = turns.get(i);
-                if (t.getResult() == TurnResult.PENDING && pendingTurn == null) {
-                    pendingTurn = TurnStateDto.from(t);
-                } else if (t.getResult() != TurnResult.PENDING && lastCompleted == null) {
-                    lastCompleted = TurnStateDto.from(t);
-                }
-                if (pendingTurn != null && lastCompleted != null) break;
+        List<MatchTurn> allTurns = turnRepo.findAllByMatchOrdered(match);
+        for (int i = allTurns.size() - 1; i >= 0; i--) {
+            MatchTurn t = allTurns.get(i);
+            if (t.getResult() == TurnResult.PENDING && pendingTurn == null) {
+                pendingTurn = TurnStateDto.from(t);
+            } else if (t.getResult() != TurnResult.PENDING && lastCompleted == null) {
+                lastCompleted = TurnStateDto.from(t);
             }
-            if (lastCompleted == null) {
-                List<MatchRound> allRounds = roundRepo.findByMatchOrderByRoundNumberAsc(match);
-                for (int r = allRounds.size() - 1; r >= 0 && lastCompleted == null; r--) {
-                    MatchRound prev = allRounds.get(r);
-                    if (prev.getId().equals(currentRound.getId())) continue;
-                    List<MatchTurn> prevTurns = turnRepo.findByRoundOrderByTurnNumberAsc(prev);
-                    if (!prevTurns.isEmpty()) {
-                        lastCompleted = TurnStateDto.from(prevTurns.get(prevTurns.size() - 1));
-                    }
-                }
-            }
+            if (pendingTurn != null && lastCompleted != null) break;
         }
 
         int rwXpP1 = 0, rwPtsP1 = 0, rwXpP2 = 0, rwPtsP2 = 0;
