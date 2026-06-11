@@ -1,12 +1,34 @@
 ﻿import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext';
 
 const splashImage = require('../assets/images/Portada_1.jpg');
 
 export default function SplashScreen() {
-  const router  = useRouter();
-  const insets  = useSafeAreaInsets();
+  const router        = useRouter();
+  const insets        = useSafeAreaInsets();
+  const { user, loading } = useAuth();
+
+  // Si ya hay sesión guardada, saltar directamente a las tabs
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/(tabs)/');
+    }
+  }, [loading, user]);
+
+  // Mientras AsyncStorage carga, mostrar spinner en lugar de la pantalla de splash
+  if (loading) {
+    return (
+      <View style={[styles.root, styles.center]}>
+        <ActivityIndicator size="large" color="#1565C0" />
+      </View>
+    );
+  }
+
+  // Si ya hay usuario (la redirección está en marcha), no renderizar nada más
+  if (user) return null;
 
   return (
     <Pressable
@@ -32,6 +54,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     height: 72,
