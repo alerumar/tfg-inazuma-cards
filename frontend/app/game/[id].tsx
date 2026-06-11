@@ -327,15 +327,12 @@ function RevealOverlay({
 }
 
 function CountdownTimer({ initialSeconds, total = 45 }: { initialSeconds: number; total?: number }) {
-  // initialSeconds viene del servidor: cuántos segundos quedaban cuando se construyó la respuesta.
-  // Contamos hacia atrás desde ese valor usando el reloj local, evitando problemas de zona horaria.
   const mountMs      = useRef(Date.now());
   const startSeconds = useRef(initialSeconds);
 
   const [secs, setSecs] = useState(initialSeconds);
 
   useEffect(() => {
-    // Si el servidor envía un nuevo turno, reiniciamos el punto de inicio.
     mountMs.current      = Date.now();
     startSeconds.current = initialSeconds;
     setSecs(initialSeconds);

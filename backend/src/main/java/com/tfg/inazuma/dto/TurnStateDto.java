@@ -11,7 +11,7 @@ public record TurnStateDto(
 
         int    roundNumber,
         int    turnNumber,
-        String turnCreatedAt,         // ISO-8601 string, e.g. "2024-01-15T10:30:00"
+        String turnCreatedAt,
         int    turnSecondsRemaining,
         boolean    player1Submitted,
         boolean    player2Submitted,
