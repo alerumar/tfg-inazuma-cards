@@ -46,10 +46,6 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
-  const avatarUri = user.profilePhoto
-    ? { uri: `${BASE_URL}${user.profilePhoto}` }
-    : { uri: `${BASE_URL}/images/default_profile.png` };
-
   const xpToNext = 200 + ((user.level ?? 1) - 1) * 100;
   const xpPct    = Math.min(((user.experience ?? 0) / xpToNext) * 100, 100);
 
@@ -120,7 +116,17 @@ export default function ProfileScreen() {
         
         <View style={styles.avatarSection}>
           <View style={styles.avatarWrapper}>
-            <Image source={avatarUri} style={styles.avatar} />
+            {user.profilePhoto ? (
+              <Image
+                source={{ uri: `${BASE_URL}${user.profilePhoto}` }}
+                style={styles.avatar}
+                onError={() => {}}
+              />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Ionicons name="person" size={46} color={Colors.primary} />
+              </View>
+            )}
             <Pressable style={styles.editPhotoBtn} onPress={pickAndUpload} disabled={uploading}>
               {uploading
                 ? <ActivityIndicator size={14} color={Colors.white} />
@@ -393,6 +399,11 @@ const styles = StyleSheet.create({
   avatar: {
     width: 100, height: 100, borderRadius: 50,
     borderWidth: 3, borderColor: Colors.primary, backgroundColor: Colors.primaryLight,
+    overflow: 'hidden',
+  },
+  avatarPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editPhotoBtn: {
     position: 'absolute', bottom: 2, right: 2,
