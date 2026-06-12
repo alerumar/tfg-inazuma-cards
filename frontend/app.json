@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.alerumar.inazuma"
+      "package": "com.alerumar.inazuma",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
