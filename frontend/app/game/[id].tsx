@@ -71,6 +71,26 @@ function secondsLeft(iso: string, total = 45): number {
   return Math.max(0, Math.ceil(total - elapsed));
 }
 
+/**
+ * Combina dos listas de cartas aplicando anti-regresión en los flags de atributos usados.
+ * Una vez que un atributo está marcado como usado, nunca puede revertirse a false
+ * por una respuesta de polling antigua. Esto evita que una carta aparezca en el
+ * descarte de forma prematura o que el picker muestre atributos ya gastados como disponibles.
+ */
+function mergeCardAttributes(prev: CardStateDto[], next: CardStateDto[]): CardStateDto[] {
+  if (prev.length === 0) return next;
+  const prevMap = new Map(prev.map(c => [c.cardId, c]));
+  return next.map(c => {
+    const p = prevMap.get(c.cardId);
+    if (!p) return c;
+    const attackUsed  = p.attackUsed  || c.attackUsed;
+    const controlUsed = p.controlUsed || c.controlUsed;
+    const defenseUsed = p.defenseUsed || c.defenseUsed;
+    if (attackUsed === c.attackUsed && controlUsed === c.controlUsed && defenseUsed === c.defenseUsed) return c;
+    return { ...c, attackUsed, controlUsed, defenseUsed };
+  });
+}
+
 function HandCard({
   card,
   selected,
@@ -734,6 +754,24 @@ export default function GameScreen() {
         return s;
       }
 
+      if (
+        prev.pendingTurn && s.pendingTurn &&
+        prev.pendingTurn.roundNumber === s.pendingTurn.roundNumber &&
+        prev.pendingTurn.turnNumber  === s.pendingTurn.turnNumber
+      ) {
+        const p1Sub = prev.pendingTurn.player1Submitted || s.pendingTurn.player1Submitted;
+        const p2Sub = prev.pendingTurn.player2Submitted || s.pendingTurn.player2Submitted;
+        if (p1Sub !== s.pendingTurn.player1Submitted || p2Sub !== s.pendingTurn.player2Submitted) {
+          s = { ...s, pendingTurn: { ...s.pendingTurn, player1Submitted: p1Sub, player2Submitted: p2Sub } };
+        }
+      }
+
+      const p1Cards = mergeCardAttributes(prev.player1Cards ?? [], s.player1Cards ?? []);
+      const p2Cards = mergeCardAttributes(prev.player2Cards ?? [], s.player2Cards ?? []);
+      if (p1Cards !== s.player1Cards || p2Cards !== s.player2Cards) {
+        s = { ...s, player1Cards: p1Cards, player2Cards: p2Cards };
+      }
+
       if (s.lastCompletedTurn && s.lastCompletedTurn.result !== 'PENDING') {
         const key = `${s.lastCompletedTurn.roundNumber}_${s.lastCompletedTurn.turnNumber}`;
         if (key !== lastRevealedKeyRef.current) {
@@ -885,11 +923,15 @@ const handleRespondInvite = async (accept: boolean) => {
     setSubmitting(true);
     try {
       const s = await apiSubmitMove(matchId, user.id, pickedCard.cardId, attr);
-      applyMatchState(s); 
-      setPickedCard(null);
+      applyMatchState(s);
     } catch (e: any) {
-      setError(e.message);
+      if (e.message?.includes('Ya has enviado')) {
+        fetchState().catch(() => {});
+      } else {
+        setError(e.message);
+      }
     } finally {
+      setPickedCard(null);
       setSubmitting(false);
     }
   };
