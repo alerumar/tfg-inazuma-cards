@@ -548,7 +548,7 @@ function FinishedOverlay({
   }, []);
 
   return (
-    <Modal visible transparent animationType="none">
+    <Modal visible transparent animationType="none" onRequestClose={onDone}>
       <Animated.View style={[styles.foOverlay, { backgroundColor: bgColor, opacity: bgOp }]}>
 
 <View style={styles.foIconWrap}>
@@ -629,7 +629,6 @@ export default function GameScreen() {
   const [showRoundStart,   setShowRoundStart]   = useState<number | null>(null);
   const [showFinishedAnim, setShowFinishedAnim] = useState(false);
   
-  const [resultsReady,     setResultsReady]     = useState(false);
   const prevStateRef = useRef<MatchStateResponse | null>(null);
 
   const didFinishInSessionRef = useRef(false);
@@ -897,12 +896,13 @@ const handleRespondInvite = async (accept: boolean) => {
 
   const handleForfeit = async () => {
     if (!user || forfeiting) return;
-    setShowForfeit(false);
     setForfeiting(true);
     try {
       const s = await apiForfeit(matchId, user.id);
+      setShowForfeit(false);
       applyMatchState(s);
     } catch (e: any) {
+      setShowForfeit(false);
       setError(e.message);
     } finally {
       setForfeiting(false);
@@ -969,7 +969,6 @@ return (
       {state.status === 'IN_PROGRESS'    && renderInProgress()}
       
       {['FINISHED', 'REJECTED', 'CANCELLED'].includes(state.status)
-        && (resultsReady || !didFinishInSessionRef.current)
         && renderFinished()}
 
 {revealTurn && myRole && (
@@ -1008,12 +1007,12 @@ return (
         <FinishedOverlay
           state={state}
           userId={user!.id}
-          onDone={() => { setShowFinishedAnim(false); setResultsReady(true); }}
+          onDone={() => setShowFinishedAnim(false)}
         />
       )}
 
 {showForfeit && (
-        <Modal visible transparent animationType="fade">
+        <Modal visible transparent animationType="fade" onRequestClose={() => { if (!forfeiting) setShowForfeit(false); }}>
           <View style={styles.dialogOverlay}>
             <View style={styles.dialogCard}>
               <Ionicons name="flag" size={36} color="#EF4444" />
@@ -1022,7 +1021,7 @@ return (
                 Si abandonas, tu rival gana automáticamente.
               </Text>
               <View style={styles.dialogBtns}>
-                <Pressable style={styles.dialogBtnCancel} onPress={() => setShowForfeit(false)}>
+                <Pressable style={[styles.dialogBtnCancel, forfeiting && { opacity: 0.4 }]} onPress={() => { if (!forfeiting) setShowForfeit(false); }} disabled={forfeiting}>
                   <Text style={styles.dialogBtnCancelText}>Seguir jugando</Text>
                 </Pressable>
                 <Pressable style={styles.dialogBtnConfirm} onPress={handleForfeit} disabled={forfeiting}>
