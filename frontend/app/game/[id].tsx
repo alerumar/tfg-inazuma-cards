@@ -1,6 +1,6 @@
 ﻿
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import React, {
   useCallback,
   useEffect,
@@ -11,6 +11,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
   Modal,
@@ -864,6 +865,12 @@ useEffect(() => {
   }, [matchId, user, state?.status]);
 
   useEffect(() => {
+    if (state?.status !== 'IN_PROGRESS') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, [state?.status]);
+
+  useEffect(() => {
     if (!state || state.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
     if (state.rematchMatchId != null) return;
@@ -1016,11 +1023,16 @@ if (loading || !state) {
 
 return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      
+      <Stack.Screen options={{ gestureEnabled: state.status !== 'IN_PROGRESS' }} />
+
       <View style={styles.topBar}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textDark} />
-        </Pressable>
+        {state.status === 'IN_PROGRESS' ? (
+          <View style={{ width: 40 }} />
+        ) : (
+          <Pressable style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={22} color={Colors.textDark} />
+          </Pressable>
+        )}
         <Text style={styles.topBarTitle} numberOfLines={1}>
           {state.status === 'IN_PROGRESS'
             ? `Ronda ${state.currentRoundNumber}`
