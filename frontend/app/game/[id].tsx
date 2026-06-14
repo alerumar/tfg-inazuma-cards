@@ -353,11 +353,6 @@ function CountdownTimer({ initialSeconds, total = 45 }: { initialSeconds: number
 
   const [secs, setSecs] = useState(initialSeconds);
 
-  useEffect(() => {
-    mountMs.current      = Date.now();
-    startSeconds.current = initialSeconds;
-    setSecs(initialSeconds);
-  }, [initialSeconds]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -754,6 +749,11 @@ export default function GameScreen() {
         return s;
       }
 
+      const TERMINAL = ['FINISHED', 'REJECTED', 'CANCELLED'] as const;
+      if (TERMINAL.includes(prev.status as any) && !TERMINAL.includes(s.status as any)) {
+        return prev;
+      }
+
       if (
         prev.pendingTurn && s.pendingTurn &&
         prev.pendingTurn.roundNumber === s.pendingTurn.roundNumber &&
@@ -766,10 +766,38 @@ export default function GameScreen() {
         }
       }
 
+      if (prev.pendingTurn && s.pendingTurn) {
+        const ptPrevNewer =
+          prev.pendingTurn.roundNumber > s.pendingTurn.roundNumber ||
+          (prev.pendingTurn.roundNumber === s.pendingTurn.roundNumber &&
+           prev.pendingTurn.turnNumber  >  s.pendingTurn.turnNumber);
+        if (ptPrevNewer) {
+          s = {
+            ...s,
+            pendingTurn:            prev.pendingTurn,
+            currentRoundNumber:     prev.currentRoundNumber,
+            turnsWonPlayer1InRound: prev.turnsWonPlayer1InRound,
+            turnsWonPlayer2InRound: prev.turnsWonPlayer2InRound,
+            roundsWonPlayer1:       prev.roundsWonPlayer1,
+            roundsWonPlayer2:       prev.roundsWonPlayer2,
+          };
+        }
+      }
+
       const p1Cards = mergeCardAttributes(prev.player1Cards ?? [], s.player1Cards ?? []);
       const p2Cards = mergeCardAttributes(prev.player2Cards ?? [], s.player2Cards ?? []);
       if (p1Cards !== s.player1Cards || p2Cards !== s.player2Cards) {
         s = { ...s, player1Cards: p1Cards, player2Cards: p2Cards };
+      }
+
+      if (prev.lastCompletedTurn && s.lastCompletedTurn) {
+        const prevNewer =
+          prev.lastCompletedTurn.roundNumber > s.lastCompletedTurn.roundNumber ||
+          (prev.lastCompletedTurn.roundNumber === s.lastCompletedTurn.roundNumber &&
+           prev.lastCompletedTurn.turnNumber  >  s.lastCompletedTurn.turnNumber);
+        if (prevNewer) {
+          s = { ...s, lastCompletedTurn: prev.lastCompletedTurn };
+        }
       }
 
       if (s.lastCompletedTurn && s.lastCompletedTurn.result !== 'PENDING') {
@@ -1388,7 +1416,7 @@ function renderInProgress() {
             ) : (
               <>
                 
-                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={45} />
+                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={secondsLeft(pt.turnCreatedAt)} />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
                     {rivalLate
