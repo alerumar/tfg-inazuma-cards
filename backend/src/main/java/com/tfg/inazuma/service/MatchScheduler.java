@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MatchScheduler {
 
-    private static final long TURN_TIMEOUT_SECONDS       = 45;
+    private static final long TURN_TIMEOUT_SECONDS       = 60;
     private static final long DISCONNECT_TIMEOUT_SECONDS = 60;
 
     private final MatchService        matchService;

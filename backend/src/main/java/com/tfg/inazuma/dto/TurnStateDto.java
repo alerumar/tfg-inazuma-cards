@@ -27,7 +27,7 @@ public record TurnStateDto(
         Integer    player2Value,
         TurnResult result
 ) {
-    private static final int TURN_TIMEOUT_SECONDS = 45;
+    private static final int TURN_TIMEOUT_SECONDS = 60;
 
     public static TurnStateDto from(MatchTurn t) {
         boolean revealed = t.getResult() != TurnResult.PENDING;

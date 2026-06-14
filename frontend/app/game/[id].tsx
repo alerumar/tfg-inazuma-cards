@@ -1347,7 +1347,7 @@ function renderInProgress() {
             ) : (
               <>
                 
-                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={pt.turnSecondsRemaining} />
+                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={45} />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
                     {rivalLate

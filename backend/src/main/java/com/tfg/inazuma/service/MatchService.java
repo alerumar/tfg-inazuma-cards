@@ -33,7 +33,7 @@ public class MatchService {
 
     private static final int  ROUNDS_TO_WIN       = 3;
     private static final int  TURN_WINS_PER_ROUND = 2;
-    private static final long TURN_TIMEOUT_SECONDS = 45;
+    private static final long TURN_TIMEOUT_SECONDS = 60;
     
     private final MatchRepository     matchRepo;
     private final MatchRoundRepository roundRepo;
