@@ -47,6 +47,7 @@ import {
   MatchStateResponse,
   TurnStateDto,
 } from '../../types/match';
+import { parseServerDate } from '../../utils/date';
 import { DeckData } from '../../types/decks';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -66,7 +67,7 @@ function imgUri(path: string | null) {
 }
 
 function secondsLeft(iso: string, total = 45): number {
-  const elapsed = (Date.now() - new Date(iso).getTime()) / 1000;
+  const elapsed = (Date.now() - parseServerDate(iso).getTime()) / 1000;
   return Math.max(0, Math.ceil(total - elapsed));
 }
 
@@ -777,15 +778,17 @@ useEffect(() => {
     const terminal = ['FINISHED', 'REJECTED', 'CANCELLED'];
     if (terminal.includes(state.status)) return;
 
+    const delay = (state.status === 'IN_PROGRESS' && mySubmitted) ? 500 : 2000;
+
     const interval = setInterval(async () => {
       const s = await fetchState();
       if (s?.status === 'WAITING_READY' && user && decks.length === 0) {
         apiGetDecks(user.id).then(setDecks).catch(() => {});
       }
-    }, 2500);
+    }, delay);
 
     return () => clearInterval(interval);
-  }, [state?.status, fetchState, user, decks.length]);
+  }, [state?.status, mySubmitted, fetchState, user, decks.length]);
 
 useEffect(() => {
     if (!user || !state || state.status !== 'IN_PROGRESS') return;

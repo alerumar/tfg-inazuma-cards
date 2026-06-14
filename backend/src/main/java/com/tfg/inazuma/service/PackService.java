@@ -5,7 +5,6 @@ import com.tfg.inazuma.dto.PackOpenResult.PackCardResult;
 import com.tfg.inazuma.model.*;
 import com.tfg.inazuma.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,12 +121,8 @@ public class PackService {
     }
 
     private PackOpenResult doOpenPack(Person person, CardPackage type) {
-        List<Card> normals = cardRepository.findAll(Sort.unsorted()).stream()
-                .filter(c -> c.getCardPackage() == type && c.getType() == CardType.NORMAL)
-                .toList();
-        List<Card> legends = cardRepository.findAll(Sort.unsorted()).stream()
-                .filter(c -> c.getCardPackage() == type && c.getType() == CardType.LEGEND)
-                .toList();
+        List<Card> normals = cardRepository.findByCardPackageAndType(type, CardType.NORMAL);
+        List<Card> legends = cardRepository.findByCardPackageAndType(type, CardType.LEGEND);
 
         int legendCount = rollLegendCount();
         int normalCount = PACK_CARDS - legendCount;

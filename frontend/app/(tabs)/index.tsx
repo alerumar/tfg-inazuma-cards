@@ -84,15 +84,25 @@ const fetchStatus = useCallback(() => {
 const doOpenPack = async (type: PackType) => {
     if (!user || !status) return;
     setOpening(true);
+
+    const usingPoints = status.accumulatedPacks === 0;
+    if (usingPoints) {
+      setStatus(prev => prev ? { ...prev, packPoints: prev.packPoints - localCost } : prev);
+      updateUser({ ...user, packPoints: user.packPoints - localCost });
+    } else {
+      setStatus(prev => prev ? { ...prev, accumulatedPacks: prev.accumulatedPacks - 1 } : prev);
+    }
+
     try {
-      const result = status.accumulatedPacks > 0
-        ? await apiOpenFreePack(user.id, type)
-        : await apiOpenPackWithPoints(user.id, type);
+      const result = usingPoints
+        ? await apiOpenPackWithPoints(user.id, type)
+        : await apiOpenFreePack(user.id, type);
 
       setCards(result.cards);
       setOpenPackType(type);
       setModalVisible(true);
     } catch (e: unknown) {
+      fetchStatus();
       showAlert('Error', e instanceof Error ? e.message : 'Error al abrir el sobre');
     } finally {
       setOpening(false);

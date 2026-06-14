@@ -182,7 +182,9 @@ public class MatchService {
         Deck myDeck = isP1 ? match.getDeck1() : match.getDeck2();
         Card card = findCardInDeck(myDeck, cardId);
 
-        Set<CardAttribute> usedForCard = getUsedAttributesForCard(match, isP1, card);
+        List<MatchTurn> completedTurns = turnRepo.findAllCompletedByMatch(match);
+
+        Set<CardAttribute> usedForCard = usedAttributesForCard(completedTurns, isP1, card);
         if (usedForCard.contains(attribute))
             throw new IllegalArgumentException("Ya usaste ese atributo de esa carta");
 
@@ -192,7 +194,7 @@ public class MatchService {
         if (card.getType() == CardType.LEGEND && consecutiveLegend >= 2) {
             boolean hasNonLegendAvailable = deckCardRepo.findByDeck(myDeck).stream()
                     .filter(dc -> dc.getCard().getType() != CardType.LEGEND)
-                    .anyMatch(dc -> getUsedAttributesForCard(match, isP1, dc.getCard()).size() < 3);
+                    .anyMatch(dc -> usedAttributesForCard(completedTurns, isP1, dc.getCard()).size() < 3);
             if (hasNonLegendAvailable)
                 throw new IllegalArgumentException(
                         "No puedes usar una carta Legend tres turnos consecutivos");
@@ -590,6 +592,10 @@ public MatchStateResponse buildState(Match match) {
     }
 
     private List<CardStateDto> buildCardStates(Match match, boolean isP1) {
+        return buildCardStates(match, isP1, turnRepo.findAllCompletedByMatch(match));
+    }
+
+    private List<CardStateDto> buildCardStates(Match match, boolean isP1, List<MatchTurn> completed) {
         Deck deck = isP1 ? match.getDeck1() : match.getDeck2();
         if (deck == null) return List.of();
 
@@ -597,24 +603,16 @@ public MatchStateResponse buildState(Match match) {
                 ? match.getConsecutiveLegendPlayer1()
                 : match.getConsecutiveLegendPlayer2();
 
-        List<MatchTurn> completed = turnRepo.findAllCompletedByMatch(match);
-        List<DeckCard> deckCards  = deckCardRepo.findByDeck(deck);
+        List<DeckCard> deckCards = deckCardRepo.findByDeck(deck);
 
         boolean hasNonLegendAvailable = consecutiveLegend >= 2 && deckCards.stream()
                 .filter(dc -> dc.getCard().getType() != CardType.LEGEND)
-                .anyMatch(dc -> getUsedAttributesForCard(match, isP1, dc.getCard()).size() < 3);
+                .anyMatch(dc -> usedAttributesForCard(completed, isP1, dc.getCard()).size() < 3);
 
         return deckCards.stream()
                 .map(dc -> {
                     Card card = dc.getCard();
-                    Set<CardAttribute> used = completed.stream()
-                            .filter(t -> {
-                                Card c = isP1 ? t.getPlayer1Card() : t.getPlayer2Card();
-                                return c != null && c.getId().equals(card.getId());
-                            })
-                            .map(t -> isP1 ? t.getPlayer1Attribute() : t.getPlayer2Attribute())
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toSet());
+                    Set<CardAttribute> used = usedAttributesForCard(completed, isP1, card);
                     boolean legendBlocked = card.getType() == CardType.LEGEND
                             && consecutiveLegend >= 2
                             && hasNonLegendAvailable;
@@ -644,8 +642,14 @@ private void createNextRoundAndTurn(Match match, int roundNumber) {
                 .orElseThrow(() -> new IllegalStateException("No hay ronda activa"));
     }
 
+    /** Versión con carga diferida — solo usar cuando no hay lista pre-cargada disponible */
     private Set<CardAttribute> getUsedAttributesForCard(Match match, boolean isP1, Card card) {
-        return turnRepo.findAllCompletedByMatch(match).stream()
+        return usedAttributesForCard(turnRepo.findAllCompletedByMatch(match), isP1, card);
+    }
+
+    /** Versión rápida: recibe los turns ya cargados para evitar N+1 queries */
+    private Set<CardAttribute> usedAttributesForCard(List<MatchTurn> completed, boolean isP1, Card card) {
+        return completed.stream()
                 .filter(t -> {
                     Card c = isP1 ? t.getPlayer1Card() : t.getPlayer2Card();
                     return c != null && c.getId().equals(card.getId());
@@ -656,15 +660,19 @@ private void createNextRoundAndTurn(Match match, int roundNumber) {
     }
 
     private boolean anyMovesAvailable(Match match) {
-        return hasMovesForPlayer(match, true) || hasMovesForPlayer(match, false);
+        List<MatchTurn> completed = turnRepo.findAllCompletedByMatch(match);
+        return hasMovesForPlayer(match, true, completed) || hasMovesForPlayer(match, false, completed);
     }
 
     private boolean hasMovesForPlayer(Match match, boolean isP1) {
+        return hasMovesForPlayer(match, isP1, turnRepo.findAllCompletedByMatch(match));
+    }
+
+    private boolean hasMovesForPlayer(Match match, boolean isP1, List<MatchTurn> completed) {
         Deck deck = isP1 ? match.getDeck1() : match.getDeck2();
         if (deck == null) return false;
         for (DeckCard dc : deckCardRepo.findByDeck(deck)) {
-            Set<CardAttribute> used = getUsedAttributesForCard(match, isP1, dc.getCard());
-            if (used.size() < 3) return true;
+            if (usedAttributesForCard(completed, isP1, dc.getCard()).size() < 3) return true;
         }
         return false;
     }

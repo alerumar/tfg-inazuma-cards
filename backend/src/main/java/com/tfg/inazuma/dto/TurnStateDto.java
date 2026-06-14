@@ -37,7 +37,7 @@ public record TurnStateDto(
         return new TurnStateDto(
                 t.getRound().getRoundNumber(),
                 t.getTurnNumber(),
-                t.getCreatedAt().toString(),   // "2024-01-15T10:30:00"
+                t.getCreatedAt().toString(),
                 secRemaining,
                 t.getPlayer1SubmittedAt() != null,
                 t.getPlayer2SubmittedAt() != null,
