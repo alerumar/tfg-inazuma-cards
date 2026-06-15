@@ -150,19 +150,19 @@ class Trade {
 class Match {
     +Long id
     +MatchStatus status
-    +boolean player1Ready
-    +boolean player2Ready
-    +int roundsWonPlayer1
-    +int roundsWonPlayer2
-    +int consecutiveLegendPlayer1
-    +int consecutiveLegendPlayer2
     +boolean wonByAbandon
-    +boolean player1WantsRematch
-    +boolean player2WantsRematch
     +Long rematchMatchId
-    +LocalDateTime lastActivityPlayer1
-    +LocalDateTime lastActivityPlayer2
     +LocalDateTime createdAt
+}
+
+class MatchPlayer {
+    +Long id
+    +boolean ready
+    +int roundsWon
+    +int consecutiveLegend
+    +int turnsWonLastRound
+    +LocalDateTime lastActivity
+    +boolean wantsRematch
 }
 
 class MatchRound {
@@ -176,12 +176,14 @@ class MatchRound {
 class MatchTurn {
     +Long id
     +int turnNumber
-    +CardAttribute player1Attribute
-    +CardAttribute player2Attribute
-    +LocalDateTime player1SubmittedAt
-    +LocalDateTime player2SubmittedAt
     +TurnResult result
     +LocalDateTime createdAt
+}
+
+class MatchTurnMove {
+    +Long id
+    +CardAttribute attribute
+    +LocalDateTime submittedAt
 }
 
 class Notification {
@@ -198,25 +200,29 @@ Person "1" --> "0..*" PersonMission
 Person "1" --> "0..*" Friendship
 Person "1" --> "0..*" Trade
 Person "1" --> "0..*" Match
+Person "1" --> "0..*" MatchPlayer
+Person "1" --> "0..*" MatchTurnMove
 Person "1" --> "0..*" Notification
 
 Card "1" --> "0..*" PersonCard
 Card "1" --> "0..*" DeckCard
 Card "1" --> "0..*" Trade
-Card "1" --> "0..*" MatchTurn
+Card "1" --> "0..*" MatchTurnMove
 
 Deck "1" --> "0..*" DeckCard
-Deck "1" --> "0..*" Match
+Deck "1" --> "0..*" MatchPlayer
 
 Mission "1" --> "0..*" PersonMission
 
+Match "1" --> "2" MatchPlayer
 Match "1" --> "1..*" MatchRound
 MatchRound "1" --> "1..*" MatchTurn
+MatchTurn "1" --> "1..2" MatchTurnMove
 
 Card ..> CardType
 Card ..> CardPackage
 Card ..> CardPosition
-MatchTurn ..> CardAttribute
+MatchTurnMove ..> CardAttribute
 MatchTurn ..> TurnResult
 Friendship ..> FriendshipStatus
 Trade ..> TradeStatus
