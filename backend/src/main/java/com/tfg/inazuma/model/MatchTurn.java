@@ -6,11 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-/**
- * Turno dentro de una ronda.
- * Las jugadas concretas de cada jugador viven en {@link MatchTurnMove},
- * una fila por jugador, eliminando la carrera de escritura anterior.
- */
 @Entity
 @Table(name = "match_turns")
 @Data
