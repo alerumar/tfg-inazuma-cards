@@ -1,6 +1,6 @@
 ﻿
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import React, {
   useCallback,
   useEffect,
@@ -11,6 +11,7 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
   Modal,
@@ -28,6 +29,7 @@ import { useAuth } from '../../context/AuthContext';
 import { apiGetPerson } from '../../services/authService';
 import { apiGetDecks } from '../../services/deckService';
 import {
+  ApiError,
   apiCancelMatch,
   apiForfeit,
   apiGetMatchState,
@@ -65,9 +67,24 @@ function imgUri(path: string | null) {
   return `${BASE_URL}${path}`;
 }
 
-function secondsLeft(iso: string, total = 45): number {
-  const elapsed = (Date.now() - new Date(iso).getTime()) / 1000;
-  return Math.max(0, Math.ceil(total - elapsed));
+/**
+ * Combina dos listas de cartas aplicando anti-regresión en los flags de atributos usados.
+ * Una vez que un atributo está marcado como usado, nunca puede revertirse a false
+ * por una respuesta de polling antigua. Esto evita que una carta aparezca en el
+ * descarte de forma prematura o que el picker muestre atributos ya gastados como disponibles.
+ */
+function mergeCardAttributes(prev: CardStateDto[], next: CardStateDto[]): CardStateDto[] {
+  if (prev.length === 0) return next;
+  const prevMap = new Map(prev.map(c => [c.cardId, c]));
+  return next.map(c => {
+    const p = prevMap.get(c.cardId);
+    if (!p) return c;
+    const attackUsed  = p.attackUsed  || c.attackUsed;
+    const controlUsed = p.controlUsed || c.controlUsed;
+    const defenseUsed = p.defenseUsed || c.defenseUsed;
+    if (attackUsed === c.attackUsed && controlUsed === c.controlUsed && defenseUsed === c.defenseUsed) return c;
+    return { ...c, attackUsed, controlUsed, defenseUsed };
+  });
 }
 
 function HandCard({
@@ -326,22 +343,34 @@ function RevealOverlay({
   );
 }
 
-function CountdownTimer({ initialSeconds, total = 45 }: { initialSeconds: number; total?: number }) {
+
+function CountdownTimer({
+  initialSeconds,
+  total = 45,
+  onExpire,
+}: {
+  initialSeconds: number;
+  total?: number;
+  onExpire?: () => void;
+}) {
   const mountMs      = useRef(Date.now());
   const startSeconds = useRef(initialSeconds);
 
   const [secs, setSecs] = useState(initialSeconds);
 
-  useEffect(() => {
-    mountMs.current      = Date.now();
-    startSeconds.current = initialSeconds;
-    setSecs(initialSeconds);
-  }, [initialSeconds]);
+
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
 
   useEffect(() => {
     const id = setInterval(() => {
       const elapsed = (Date.now() - mountMs.current) / 1000;
-      setSecs(Math.max(0, Math.ceil(startSeconds.current - elapsed)));
+      const next = Math.max(0, Math.ceil(startSeconds.current - elapsed));
+      setSecs(next);
+      if (next === 0) {
+        clearInterval(id);
+        onExpireRef.current?.();
+      }
     }, 250);
     return () => clearInterval(id);
   }, []);
@@ -547,7 +576,7 @@ function FinishedOverlay({
   }, []);
 
   return (
-    <Modal visible transparent animationType="none">
+    <Modal visible transparent animationType="none" onRequestClose={onDone}>
       <Animated.View style={[styles.foOverlay, { backgroundColor: bgColor, opacity: bgOp }]}>
 
 <View style={styles.foIconWrap}>
@@ -603,6 +632,10 @@ export default function GameScreen() {
   
   const lastRevealedKeyRef = useRef<string>('');
 
+  const pollInFlightRef = useRef(false);
+  const decksLengthRef  = useRef(decks.length);
+  useEffect(() => { decksLengthRef.current = decks.length; }, [decks]);
+
   const pendingRoundStartRef   = useRef<number | null>(null);
   const pendingFinishedAnimRef = useRef(false);
   const finishedAnimShownRef   = useRef(false);
@@ -628,10 +661,52 @@ export default function GameScreen() {
   const [showRoundStart,   setShowRoundStart]   = useState<number | null>(null);
   const [showFinishedAnim, setShowFinishedAnim] = useState(false);
   
-  const [resultsReady,     setResultsReady]     = useState(false);
   const prevStateRef = useRef<MatchStateResponse | null>(null);
 
   const didFinishInSessionRef = useRef(false);
+  const wasInLobbyRef = useRef(false);
+  const matchStartShownRef = useRef(false);
+
+  const turnDeadlineMsRef = useRef(0);
+
+  const [turnTimerExpired, setTurnTimerExpired] = useState(false);
+
+  const pendingTurnKey = state?.pendingTurn
+    ? `${state.pendingTurn.roundNumber}_${state.pendingTurn.turnNumber}`
+    : null;
+
+  useEffect(() => {
+    setTurnTimerExpired(false);
+  }, [pendingTurnKey]);
+
+  useEffect(() => {
+    setPickedCard(null);
+    setShowPicker(false);
+  }, [pendingTurnKey]);
+
+  useEffect(() => {
+    if (turnTimerExpired) {
+      setShowPicker(false);
+      setPickedCard(null);
+    }
+  }, [turnTimerExpired]);
+
+  const lastCompletedKey = (state?.lastCompletedTurn && state.lastCompletedTurn.result !== 'PENDING')
+    ? `${state.lastCompletedTurn.roundNumber}_${state.lastCompletedTurn.turnNumber}`
+    : null;
+
+  useEffect(() => {
+    if (!lastCompletedKey) return;
+    if (state?.wonByAbandon && state?.status === 'FINISHED') {
+      lastRevealedKeyRef.current = lastCompletedKey;
+      return;
+    }
+    if (lastCompletedKey !== lastRevealedKeyRef.current) {
+      lastRevealedKeyRef.current = lastCompletedKey;
+      const turn = state?.lastCompletedTurn;
+      if (turn) setRevealTurn(turn);
+    }
+  }, [lastCompletedKey]);
 
   const [legendMsgVisible, setLegendMsgVisible] = useState(false);
   const legendMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -657,8 +732,24 @@ export default function GameScreen() {
     if (!state) return;
     const prev = prevStateRef.current;
 
-    if (prev?.status === 'WAITING_READY' && state.status === 'IN_PROGRESS') {
+    if (state.status === 'WAITING_READY') {
+      wasInLobbyRef.current = true;
+    }
+
+    if (
+      state.status === 'IN_PROGRESS' &&
+      wasInLobbyRef.current &&
+      !matchStartShownRef.current
+    ) {
+      matchStartShownRef.current = true;
       setShowGameStart(true);
+    }
+
+    if (state.pendingTurn && state.pendingTurn.result === 'PENDING') {
+      const d = Date.now() + state.pendingTurn.turnSecondsRemaining * 1000;
+      if (d > turnDeadlineMsRef.current) turnDeadlineMsRef.current = d;
+    } else {
+      turnDeadlineMsRef.current = 0;
     }
 
     if (
@@ -699,10 +790,7 @@ export default function GameScreen() {
   }, [state?.player1WantsRematch, state?.player2WantsRematch, state?.rematchMatchId]);
 
   const drainAnimQueue = useCallback(() => {
-    if (pendingRoundStartRef.current !== null) {
-      setShowRoundStart(pendingRoundStartRef.current);
-      pendingRoundStartRef.current = null;
-    } else if (pendingFinishedAnimRef.current && !finishedAnimShownRef.current) {
+    if (pendingFinishedAnimRef.current && !finishedAnimShownRef.current) {
       finishedAnimShownRef.current  = true;
       pendingFinishedAnimRef.current = false;
       setShowFinishedAnim(true);
@@ -710,10 +798,22 @@ export default function GameScreen() {
   }, []);
 
   useEffect(() => {
+    if (revealTurn !== null) return;
+    if (pendingRoundStartRef.current === null) return;
+    setShowRoundStart(pendingRoundStartRef.current);
+    pendingRoundStartRef.current = null;
+  }, [revealTurn]);
+
+  useEffect(() => {
+    if (state?.status !== 'FINISHED' || !state?.wonByAbandon) return;
+    if (revealTurn !== null) setRevealTurn(null);
+  }, [state?.status, state?.wonByAbandon]);
+
+  useEffect(() => {
     if (state?.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
     if (finishedAnimShownRef.current) return;
-    if (revealTurn !== null) return; 
+    if (revealTurn !== null) return;
     const timer = setTimeout(() => {
       if (!finishedAnimShownRef.current && pendingFinishedAnimRef.current) {
         finishedAnimShownRef.current  = true;
@@ -734,13 +834,79 @@ export default function GameScreen() {
         return s;
       }
 
-      if (s.lastCompletedTurn && s.lastCompletedTurn.result !== 'PENDING') {
-        const key = `${s.lastCompletedTurn.roundNumber}_${s.lastCompletedTurn.turnNumber}`;
-        if (key !== lastRevealedKeyRef.current) {
-          lastRevealedKeyRef.current = key;
-          setRevealTurn(s.lastCompletedTurn);
+      const STATUS_RANK: Partial<Record<string, number>> = {
+        'PENDING_INVITE': 0,
+        'WAITING_READY':  1,
+        'IN_PROGRESS':    2,
+        'FINISHED':       3,
+        'REJECTED':       3,
+        'CANCELLED':      3,
+      };
+      if ((STATUS_RANK[s.status] ?? 0) < (STATUS_RANK[prev.status] ?? 0)) {
+        return prev;
+      }
+
+      if (
+        prev.pendingTurn && s.pendingTurn &&
+        prev.pendingTurn.roundNumber === s.pendingTurn.roundNumber &&
+        prev.pendingTurn.turnNumber  === s.pendingTurn.turnNumber
+      ) {
+        const p1Sub = prev.pendingTurn.player1Submitted || s.pendingTurn.player1Submitted;
+        const p2Sub = prev.pendingTurn.player2Submitted || s.pendingTurn.player2Submitted;
+        if (p1Sub !== s.pendingTurn.player1Submitted || p2Sub !== s.pendingTurn.player2Submitted) {
+          s = { ...s, pendingTurn: { ...s.pendingTurn, player1Submitted: p1Sub, player2Submitted: p2Sub } };
         }
       }
+
+      if (prev.pendingTurn && !s.pendingTurn && s.status === 'IN_PROGRESS') {
+        s = { ...s, pendingTurn: prev.pendingTurn };
+      }
+
+      if (prev.pendingTurn && s.pendingTurn) {
+        const ptPrevNewer =
+          prev.pendingTurn.roundNumber > s.pendingTurn.roundNumber ||
+          (prev.pendingTurn.roundNumber === s.pendingTurn.roundNumber &&
+           prev.pendingTurn.turnNumber  >  s.pendingTurn.turnNumber);
+        if (ptPrevNewer) {
+          s = {
+            ...s,
+            pendingTurn:            prev.pendingTurn,
+            currentRoundNumber:     prev.currentRoundNumber,
+            turnsWonPlayer1InRound: prev.turnsWonPlayer1InRound,
+            turnsWonPlayer2InRound: prev.turnsWonPlayer2InRound,
+            roundsWonPlayer1:       prev.roundsWonPlayer1,
+            roundsWonPlayer2:       prev.roundsWonPlayer2,
+          };
+        }
+      }
+
+      const p1Cards = mergeCardAttributes(prev.player1Cards ?? [], s.player1Cards ?? []);
+      const p2Cards = mergeCardAttributes(prev.player2Cards ?? [], s.player2Cards ?? []);
+      if (p1Cards !== s.player1Cards || p2Cards !== s.player2Cards) {
+        s = { ...s, player1Cards: p1Cards, player2Cards: p2Cards };
+      }
+
+      if (prev.status === 'WAITING_READY' && s.status === 'WAITING_READY') {
+        if (prev.player1Ready && !s.player1Ready) {
+          s = { ...s, player1Ready: true, deck1Id: prev.deck1Id };
+        }
+        if (prev.player2Ready && !s.player2Ready) {
+          s = { ...s, player2Ready: true, deck2Id: prev.deck2Id };
+        }
+      }
+
+      if (prev.lastCompletedTurn && !s.lastCompletedTurn) {
+        s = { ...s, lastCompletedTurn: prev.lastCompletedTurn };
+      } else if (prev.lastCompletedTurn && s.lastCompletedTurn) {
+        const prevNewer =
+          prev.lastCompletedTurn.roundNumber > s.lastCompletedTurn.roundNumber ||
+          (prev.lastCompletedTurn.roundNumber === s.lastCompletedTurn.roundNumber &&
+           prev.lastCompletedTurn.turnNumber  >  s.lastCompletedTurn.turnNumber);
+        if (prevNewer) {
+          s = { ...s, lastCompletedTurn: prev.lastCompletedTurn };
+        }
+      }
+
       return s;
     });
   }, []);
@@ -777,15 +943,23 @@ useEffect(() => {
     const terminal = ['FINISHED', 'REJECTED', 'CANCELLED'];
     if (terminal.includes(state.status)) return;
 
+    const delay = (state.status === 'IN_PROGRESS' && mySubmitted) ? 500 : 1000;
+
     const interval = setInterval(async () => {
-      const s = await fetchState();
-      if (s?.status === 'WAITING_READY' && user && decks.length === 0) {
-        apiGetDecks(user.id).then(setDecks).catch(() => {});
+      if (pollInFlightRef.current) return;
+      pollInFlightRef.current = true;
+      try {
+        const s = await fetchState();
+        if (s?.status === 'WAITING_READY' && user && decksLengthRef.current === 0) {
+          apiGetDecks(user.id).then(setDecks).catch(() => {});
+        }
+      } finally {
+        pollInFlightRef.current = false;
       }
-    }, 2500);
+    }, delay);
 
     return () => clearInterval(interval);
-  }, [state?.status, fetchState, user, decks.length]);
+  }, [state?.status, mySubmitted, fetchState, user]);
 
 useEffect(() => {
     if (!user || !state || state.status !== 'IN_PROGRESS') return;
@@ -794,6 +968,12 @@ useEffect(() => {
     const id = setInterval(tick, 15_000);
     return () => clearInterval(id);
   }, [matchId, user, state?.status]);
+
+  useEffect(() => {
+    if (state?.status !== 'IN_PROGRESS') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    return () => sub.remove();
+  }, [state?.status]);
 
   useEffect(() => {
     if (!state || state.status !== 'FINISHED') return;
@@ -842,12 +1022,30 @@ const handleRespondInvite = async (accept: boolean) => {
 
   const handleSetReady = async () => {
     if (!user || selectedDeck === null) return;
+    wasInLobbyRef.current = true;
     setReadying(true);
     try {
-      await apiSetReady(matchId, user.id, selectedDeck);
+      const s = await apiSetReady(matchId, user.id, selectedDeck);
+      applyMatchState(s);
       await fetchState();
     } catch (e: any) {
-      setError(e.message);
+      const isConflict = e instanceof ApiError && e.isConflict;
+      const isBusiness = e instanceof ApiError && e.status === 400;
+
+      if (isConflict) {
+        await new Promise(r => setTimeout(r, 350));
+        try {
+          const s2 = await apiSetReady(matchId, user.id, selectedDeck);
+          applyMatchState(s2);
+          await fetchState();
+        } catch {
+          await fetchState().catch(() => {});
+        }
+      } else if (isBusiness) {
+        setError(e.message);
+      } else {
+        await fetchState().catch(() => {});
+      }
     } finally {
       setReadying(false);
     }
@@ -881,25 +1079,52 @@ const handleRespondInvite = async (accept: boolean) => {
     if (!user || !pickedCard || submitting) return;
     setShowPicker(false);
     setSubmitting(true);
+    const submittedCard = pickedCard;
     try {
-      const s = await apiSubmitMove(matchId, user.id, pickedCard.cardId, attr);
-      applyMatchState(s); 
-      setPickedCard(null);
-    } catch (e: any) {
-      setError(e.message);
+      let submitted = false;
+      for (let attempt = 0; attempt < 5 && !submitted; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 300 * attempt));
+        try {
+          const s = await apiSubmitMove(matchId, user.id, submittedCard.cardId, attr);
+          applyMatchState(s);
+          await fetchState();
+          submitted = true;
+        } catch (e: any) {
+          const msg = e.message ?? '';
+          const alreadySent = msg.includes('Ya has enviado');
+          const turnGone    = msg.includes('No hay turno pendiente')
+                           || msg.includes('No hay ronda activa')
+                           || msg.includes('La partida no está en curso');
+          const isBusiness  = e instanceof ApiError && e.status === 400
+                           && !alreadySent && !turnGone;
+
+          if (alreadySent || turnGone) {
+            await fetchState().catch(() => {});
+            submitted = true;
+          } else if (isBusiness) {
+            setError(e.message);
+            submitted = true;
+          }
+        }
+      }
+      if (!submitted) {
+        await fetchState().catch(() => {});
+      }
     } finally {
+      setPickedCard(null);
       setSubmitting(false);
     }
   };
 
   const handleForfeit = async () => {
     if (!user || forfeiting) return;
-    setShowForfeit(false);
     setForfeiting(true);
     try {
       const s = await apiForfeit(matchId, user.id);
+      setShowForfeit(false);
       applyMatchState(s);
     } catch (e: any) {
+      setShowForfeit(false);
       setError(e.message);
     } finally {
       setForfeiting(false);
@@ -943,11 +1168,16 @@ if (loading || !state) {
 
 return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-      
+      <Stack.Screen options={{ gestureEnabled: state.status !== 'IN_PROGRESS' }} />
+
       <View style={styles.topBar}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textDark} />
-        </Pressable>
+        {state.status === 'IN_PROGRESS' ? (
+          <View style={{ width: 40 }} />
+        ) : (
+          <Pressable style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={22} color={Colors.textDark} />
+          </Pressable>
+        )}
         <Text style={styles.topBarTitle} numberOfLines={1}>
           {state.status === 'IN_PROGRESS'
             ? `Ronda ${state.currentRoundNumber}`
@@ -966,7 +1196,6 @@ return (
       {state.status === 'IN_PROGRESS'    && renderInProgress()}
       
       {['FINISHED', 'REJECTED', 'CANCELLED'].includes(state.status)
-        && (resultsReady || !didFinishInSessionRef.current)
         && renderFinished()}
 
 {revealTurn && myRole && (
@@ -1005,12 +1234,12 @@ return (
         <FinishedOverlay
           state={state}
           userId={user!.id}
-          onDone={() => { setShowFinishedAnim(false); setResultsReady(true); }}
+          onDone={() => setShowFinishedAnim(false)}
         />
       )}
 
 {showForfeit && (
-        <Modal visible transparent animationType="fade">
+        <Modal visible transparent animationType="fade" onRequestClose={() => { if (!forfeiting) setShowForfeit(false); }}>
           <View style={styles.dialogOverlay}>
             <View style={styles.dialogCard}>
               <Ionicons name="flag" size={36} color="#EF4444" />
@@ -1019,7 +1248,7 @@ return (
                 Si abandonas, tu rival gana automáticamente.
               </Text>
               <View style={styles.dialogBtns}>
-                <Pressable style={styles.dialogBtnCancel} onPress={() => setShowForfeit(false)}>
+                <Pressable style={[styles.dialogBtnCancel, forfeiting && { opacity: 0.4 }]} onPress={() => { if (!forfeiting) setShowForfeit(false); }} disabled={forfeiting}>
                   <Text style={styles.dialogBtnCancelText}>Seguir jugando</Text>
                 </Pressable>
                 <Pressable style={styles.dialogBtnConfirm} onPress={handleForfeit} disabled={forfeiting}>
@@ -1344,7 +1573,16 @@ function renderInProgress() {
             ) : (
               <>
                 
-                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={pt.turnSecondsRemaining} />
+                <CountdownTimer
+                  key={pt.turnCreatedAt}
+                  initialSeconds={
+                    turnDeadlineMsRef.current > 0
+                      ? Math.max(0, Math.ceil((turnDeadlineMsRef.current - Date.now()) / 1000))
+                      : pt.turnSecondsRemaining
+                  }
+                  total={45}
+                  onExpire={() => setTurnTimerExpired(true)}
+                />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
                     {rivalLate
@@ -1389,7 +1627,7 @@ function renderInProgress() {
                     key={c.cardId}
                     card={c}
                     selected={pickedCard?.cardId === c.cardId}
-                    isMine={!iWaiting && !submitting}
+                    isMine={!iWaiting && !submitting && !turnTimerExpired}
                     onPress={() => handleCardSelect(c)}
                   />
                 ))}

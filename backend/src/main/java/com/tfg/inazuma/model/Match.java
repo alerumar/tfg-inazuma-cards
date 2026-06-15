@@ -6,6 +6,11 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Metadatos de la partida: participantes, estado, resultado y rematch.
+ * Los datos por jugador (baraja, listos, rondas ganadas, actividad…) viven
+ * en {@link MatchPlayer}, una fila independiente por jugador.
+ */
 @Entity
 @Table(name = "matches")
 @Data
@@ -16,63 +21,24 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-@ManyToOne(optional = false)
+    /** Jugador que envió la invitación (ordena la presentación en el frontend). */
+    @ManyToOne(optional = false)
     @JoinColumn(name = "player1_id")
     private Person player1;
 
-@ManyToOne(optional = false)
+    /** Jugador que recibió la invitación. */
+    @ManyToOne(optional = false)
     @JoinColumn(name = "player2_id")
     private Person player2;
-
-    @ManyToOne
-    @JoinColumn(name = "deck1_id")
-    private Deck deck1;
-
-    @ManyToOne
-    @JoinColumn(name = "deck2_id")
-    private Deck deck2;
-
-    @Column(nullable = false)
-    private boolean player1Ready = false;
-
-    @Column(nullable = false)
-    private boolean player2Ready = false;
-
-    @Column(nullable = false)
-    private int roundsWonPlayer1 = 0;
-
-    @Column(nullable = false)
-    private int roundsWonPlayer2 = 0;
-
-@Column(nullable = false)
-    private int consecutiveLegendPlayer1 = 0;
-
-@Column(nullable = false)
-    private int consecutiveLegendPlayer2 = 0;
-
-@Column(nullable = false)
-    private int turnsWonPlayer1LastRound = 0;
-
-@Column(nullable = false)
-    private int turnsWonPlayer2LastRound = 0;
-
-    private LocalDateTime lastActivityPlayer1;
-    private LocalDateTime lastActivityPlayer2;
 
     @ManyToOne
     @JoinColumn(name = "winner_id")
     private Person winner;
 
-@Column(nullable = false)
+    @Column(nullable = false)
     private boolean wonByAbandon = false;
 
-@Column(nullable = false)
-    private boolean player1WantsRematch = false;
-
-@Column(nullable = false)
-    private boolean player2WantsRematch = false;
-
-@Column
+    @Column
     private Long rematchMatchId;
 
     @Enumerated(EnumType.STRING)

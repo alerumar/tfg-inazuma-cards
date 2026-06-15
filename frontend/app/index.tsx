@@ -11,14 +11,12 @@ export default function SplashScreen() {
   const insets        = useSafeAreaInsets();
   const { user, loading } = useAuth();
 
-  // Si ya hay sesión guardada, saltar directamente a las tabs
   useEffect(() => {
     if (!loading && user) {
       router.replace('/(tabs)/');
     }
   }, [loading, user]);
 
-  // Mientras AsyncStorage carga, mostrar spinner en lugar de la pantalla de splash
   if (loading) {
     return (
       <View style={[styles.root, styles.center]}>
@@ -27,7 +25,6 @@ export default function SplashScreen() {
     );
   }
 
-  // Si ya hay usuario (la redirección está en marcha), no renderizar nada más
   if (user) return null;
 
   return (

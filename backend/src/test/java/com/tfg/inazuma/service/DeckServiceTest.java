@@ -19,12 +19,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DeckServiceTest {
 
-    @Mock DeckRepository       deckRepository;
-    @Mock DeckCardRepository   deckCardRepository;
-    @Mock PersonRepository     personRepository;
-    @Mock CardRepository       cardRepository;
-    @Mock PersonCardRepository personCardRepository;
-    @Mock MatchRepository      matchRepository;
+    @Mock DeckRepository          deckRepository;
+    @Mock DeckCardRepository      deckCardRepository;
+    @Mock PersonRepository        personRepository;
+    @Mock CardRepository          cardRepository;
+    @Mock PersonCardRepository    personCardRepository;
+    @Mock MatchPlayerRepository   matchPlayerRepository;
 
     @InjectMocks
     DeckService deckService;

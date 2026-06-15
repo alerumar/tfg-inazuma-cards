@@ -19,6 +19,7 @@ import {
   apiMarkAllRead,
 } from '../services/notificationService';
 import { NotificationData, NotificationType } from '../types/notifications';
+import { timeAgo } from '../utils/date';
 
 const TYPE_ICON: Record<NotificationType, React.ComponentProps<typeof Ionicons>['name']> = {
   FRIEND_REQUEST_ACCEPTED: 'person-add',
@@ -38,18 +39,6 @@ const TYPE_COLOR: Record<NotificationType, string> = {
   TRADE_WITHDRAWN:         '#F59E0B',
 };
 
-function timeAgo(dateStr: string): string {
-  const date    = new Date(dateStr);
-  const diffMs  = Date.now() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1)  return 'Ahora mismo';
-  if (diffMin < 60) return `Hace ${diffMin} min`;
-  const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24)   return `Hace ${diffH}h`;
-  const diffD = Math.floor(diffH / 24);
-  if (diffD < 7)    return `Hace ${diffD}d`;
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-}
 
 export default function NotificationsScreen() {
   const router                                = useRouter();

@@ -156,7 +156,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.background,
   },
 
-  // Pressable contenedor del avatar
   avatar: {
     width: 48,
     height: 48,
@@ -168,13 +167,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Image cuando hay foto real
   avatarImg: {
     width: '100%',
     height: '100%',
     borderRadius: 24,
   },
-  // Placeholder cuando no hay foto
   avatarPlaceholder: {
     flex: 1,
     alignItems: 'center',
