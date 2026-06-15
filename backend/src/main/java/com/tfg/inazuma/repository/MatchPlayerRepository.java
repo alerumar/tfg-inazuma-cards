@@ -4,6 +4,7 @@ import com.tfg.inazuma.model.Match;
 import com.tfg.inazuma.model.MatchPlayer;
 import com.tfg.inazuma.model.Person;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,10 +22,10 @@ public interface MatchPlayerRepository extends JpaRepository<MatchPlayer, Long> 
     Optional<MatchPlayer> findByMatchAndPlayerId(@Param("match") Match match,
                                                   @Param("playerId") Long playerId);
 
-    /**
-     * Pone a null la baraja en todos los MatchPlayer que la referencian.
-     * Sustituye a clearDeck1References + clearDeck2References del antiguo MatchRepository.
-     */
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT mp FROM MatchPlayer mp WHERE mp.match = :match")
+    List<MatchPlayer> findByMatchForUpdate(@Param("match") Match match);
+
     @Modifying
     @Query("UPDATE MatchPlayer mp SET mp.deck = null WHERE mp.deck.id = :deckId")
     void clearDeckReferences(@Param("deckId") Long deckId);

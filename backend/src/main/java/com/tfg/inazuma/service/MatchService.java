@@ -272,14 +272,13 @@ public class MatchService {
 
     @Transactional
     public MatchStateResponse voteRematch(Long matchId, Long playerId, boolean wants) {
-        Match match = findMatch(matchId);
+        Match match = findMatchForUpdate(matchId);
 
         if (match.getStatus() != MatchStatus.FINISHED)
             throw new IllegalStateException("La partida no ha terminado");
 
-        List<MatchPlayer> allPlayers = matchPlayerRepo.findByMatch(match);
-
         if (!wants) {
+            List<MatchPlayer> allPlayers = matchPlayerRepo.findByMatch(match);
             allPlayers.forEach(mp -> mp.setWantsRematch(false));
             matchPlayerRepo.saveAll(allPlayers);
             match.setRematchMatchId(null);
@@ -287,21 +286,29 @@ public class MatchService {
             return buildState(match);
         }
 
-        MatchPlayer me = allPlayers.stream()
-                .filter(mp -> mp.getPlayer().getId().equals(playerId))
-                .findFirst()
+        MatchPlayer me = matchPlayerRepo.findByMatchAndPlayerId(match, playerId)
                 .orElseThrow(() -> new IllegalArgumentException("No eres participante de esta partida"));
 
         me.setWantsRematch(true);
         matchPlayerRepo.save(me);
 
-        boolean allWantRematch = allPlayers.stream().allMatch(MatchPlayer::isWantsRematch);
+        List<MatchPlayer> freshPlayers = matchPlayerRepo.findByMatchForUpdate(match);
+        boolean allWantRematch = freshPlayers.stream().allMatch(MatchPlayer::isWantsRematch);
 
         if (allWantRematch && match.getRematchMatchId() == null) {
+            List<MatchPlayer> playersForDecks = matchPlayerRepo.findByMatch(match);
+            Deck deck1 = playersForDecks.stream()
+                    .filter(mp -> mp.getPlayer().getId().equals(match.getPlayer1().getId()))
+                    .findFirst().map(MatchPlayer::getDeck).orElse(null);
+            Deck deck2 = playersForDecks.stream()
+                    .filter(mp -> mp.getPlayer().getId().equals(match.getPlayer2().getId()))
+                    .findFirst().map(MatchPlayer::getDeck).orElse(null);
+            boolean canStartDirect = deck1 != null && deck2 != null;
+
             Match rematch = new Match();
             rematch.setPlayer1(match.getPlayer1());
             rematch.setPlayer2(match.getPlayer2());
-            rematch.setStatus(MatchStatus.WAITING_READY);
+            rematch.setStatus(canStartDirect ? MatchStatus.IN_PROGRESS : MatchStatus.WAITING_READY);
             rematch.setCreatedAt(LocalDateTime.now());
             matchRepo.save(rematch);
 
@@ -310,7 +317,17 @@ public class MatchService {
             rmp1.setLastActivity(now);
             MatchPlayer rmp2 = new MatchPlayer(rematch, match.getPlayer2());
             rmp2.setLastActivity(now);
+            if (canStartDirect) {
+                rmp1.setDeck(deck1);
+                rmp1.setReady(true);
+                rmp2.setDeck(deck2);
+                rmp2.setReady(true);
+            }
             matchPlayerRepo.saveAll(List.of(rmp1, rmp2));
+
+            if (canStartDirect) {
+                createNextRoundAndTurn(rematch, 1);
+            }
 
             match.setRematchMatchId(rematch.getId());
         }
@@ -365,11 +382,6 @@ public class MatchService {
                 .toList();
     }
 
-    /**
-     * Construye el MatchResponse de forma defensiva: si la partida no tiene
-     * filas en match_players (partidas antiguas previas al refactor, o datos
-     * corruptos), la omite silenciosamente en lugar de propagar un 500.
-     */
     private Optional<MatchResponse> toMatchResponse(Match m) {
         List<MatchPlayer> players = matchPlayerRepo.findByMatch(m);
         Optional<MatchPlayer> mp1 = players.stream()

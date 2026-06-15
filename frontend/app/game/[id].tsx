@@ -67,12 +67,6 @@ function imgUri(path: string | null) {
   return `${BASE_URL}${path}`;
 }
 
-/**
- * Combina dos listas de cartas aplicando anti-regresión en los flags de atributos usados.
- * Una vez que un atributo está marcado como usado, nunca puede revertirse a false
- * por una respuesta de polling antigua. Esto evita que una carta aparezca en el
- * descarte de forma prematura o que el picker muestre atributos ya gastados como disponibles.
- */
 function mergeCardAttributes(prev: CardStateDto[], next: CardStateDto[]): CardStateDto[] {
   if (prev.length === 0) return next;
   const prevMap = new Map(prev.map(c => [c.cardId, c]));
@@ -235,10 +229,12 @@ function AttributePicker({
 function RevealOverlay({
   turn,
   myRole,
+  isRoundWin,
   onDismiss,
 }: {
   turn: TurnStateDto;
   myRole: 'player1' | 'player2';
+  isRoundWin: boolean;
   onDismiss: () => void;
 }) {
   const opacity   = useRef(new Animated.Value(0)).current;
@@ -259,7 +255,7 @@ function RevealOverlay({
         Animated.timing(resultOp, { toValue: 1, duration: 300, useNativeDriver: true }),
         Animated.spring(resultScale, { toValue: 1, useNativeDriver: true, tension: 100, friction: 8 }),
       ]),
-      Animated.delay(1800),
+      Animated.delay(700),
     ]).start(() => onDismiss());
   }, []);
 
@@ -277,7 +273,11 @@ function RevealOverlay({
   const oppWins = turn.result === (isP1 ? 'PLAYER2_WINS' : 'PLAYER1_WINS');
   const isTie   = turn.result === 'TIE';
 
-  const resultText  = isTie ? '¡Empate!' : myWins ? '¡Punto tuyo!' : '¡Punto rival!';
+  const resultText  = isTie
+    ? '¡Empate!'
+    : myWins
+      ? (isRoundWin ? '¡Ronda ganada!' : '¡Punto tuyo!')
+      : (isRoundWin ? '¡Ronda perdida!' : '¡Punto rival!');
   const resultColor = isTie ? '#F59E0B' : myWins ? '#22C55E' : '#EF4444';
 
   return (
@@ -644,14 +644,14 @@ export default function GameScreen() {
   const [forfeiting,  setForfeiting]  = useState(false);
 
   const [votingRematch,       setVotingRematch]       = useState(false);
-  
+
   const [rematchDeclined,     setRematchDeclined]     = useState(false);
-  
+
   const [rematchRejectedBy,   setRematchRejectedBy]   = useState<string | null>(null);
+
+  const myExplicitRematchVoteRef = useRef<boolean>(false);
   
-  const prevMyVoteRef = useRef<boolean>(false);
-  
-  const [rematchTick, setRematchTick] = useState(0);
+  const [rematchTick,             setRematchTick]             = useState(0);
   
   const matchFinishedAtRef = useRef<number | null>(null);
   
@@ -736,13 +736,11 @@ export default function GameScreen() {
       wasInLobbyRef.current = true;
     }
 
-    if (
-      state.status === 'IN_PROGRESS' &&
-      wasInLobbyRef.current &&
-      !matchStartShownRef.current
-    ) {
+    if (state.status === 'IN_PROGRESS' && !matchStartShownRef.current) {
       matchStartShownRef.current = true;
-      setShowGameStart(true);
+      if (wasInLobbyRef.current) {
+        setShowGameStart(true);
+      }
     }
 
     if (state.pendingTurn && state.pendingTurn.result === 'PENDING') {
@@ -755,7 +753,8 @@ export default function GameScreen() {
     if (
       state.status === 'IN_PROGRESS' && prev &&
       state.currentRoundNumber > (prev.currentRoundNumber ?? 0) &&
-      state.currentRoundNumber > 1
+      state.currentRoundNumber > 1 &&
+      matchStartShownRef.current
     ) {
       pendingRoundStartRef.current = state.currentRoundNumber;
     }
@@ -780,13 +779,14 @@ export default function GameScreen() {
 
   useEffect(() => {
     if (!state || state.status !== 'FINISHED' || !myRole) return;
-    const myVote     = myRole === 'player1' ? state.player1WantsRematch : state.player2WantsRematch;
-    const oppNick    = (myRole === 'player1' ? state.player2 : state.player1).nickname;
-    if (prevMyVoteRef.current === true && !myVote && state.rematchMatchId == null) {
+    if (!myExplicitRematchVoteRef.current) return;
+    const myVote  = myRole === 'player1' ? state.player1WantsRematch : state.player2WantsRematch;
+    const oppNick = (myRole === 'player1' ? state.player2 : state.player1).nickname;
+    if (!myVote && state.rematchMatchId == null) {
       setRematchRejectedBy(oppNick);
       setTimeout(() => setRematchDeclined(true), 3000);
+      myExplicitRematchVoteRef.current = false;
     }
-    prevMyVoteRef.current = myVote;
   }, [state?.player1WantsRematch, state?.player2WantsRematch, state?.rematchMatchId]);
 
   const drainAnimQueue = useCallback(() => {
@@ -907,6 +907,22 @@ export default function GameScreen() {
         }
       }
 
+      if (s.status === 'FINISHED' && prev.status === 'FINISHED' && s.rematchMatchId == null) {
+        const p1 = prev.player1WantsRematch || s.player1WantsRematch;
+        const p2 = prev.player2WantsRematch || s.player2WantsRematch;
+        if (p1 !== s.player1WantsRematch || p2 !== s.player2WantsRematch) {
+          s = { ...s, player1WantsRematch: p1, player2WantsRematch: p2 };
+        }
+      }
+
+      {
+        const r1 = Math.max(prev.roundsWonPlayer1, s.roundsWonPlayer1);
+        const r2 = Math.max(prev.roundsWonPlayer2, s.roundsWonPlayer2);
+        if (r1 !== s.roundsWonPlayer1 || r2 !== s.roundsWonPlayer2) {
+          s = { ...s, roundsWonPlayer1: r1, roundsWonPlayer2: r2 };
+        }
+      }
+
       return s;
     });
   }, []);
@@ -977,7 +993,6 @@ useEffect(() => {
 
   useEffect(() => {
     if (!state || state.status !== 'FINISHED') return;
-    if (!didFinishInSessionRef.current) return;
     if (state.rematchMatchId != null) return;
 
     const interval = setInterval(fetchState, 2000);
@@ -985,7 +1000,7 @@ useEffect(() => {
   }, [state?.status, state?.rematchMatchId]);
 
   useEffect(() => {
-    if (state?.rematchMatchId != null && didFinishInSessionRef.current) {
+    if (state?.rematchMatchId != null) {
       router.replace(`/game/${state.rematchMatchId}` as any);
     }
   }, [state?.rematchMatchId]);
@@ -1133,13 +1148,18 @@ const handleRespondInvite = async (accept: boolean) => {
 
 const handleRematchVote = async (wants: boolean) => {
     if (!user || votingRematch) return;
-    if (!wants) setRematchDeclined(true);
+    if (!wants) {
+      setRematchDeclined(true);
+    } else {
+      myExplicitRematchVoteRef.current = true;
+    }
     setVotingRematch(true);
     try {
       const s = await apiVoteRematch(matchId, user.id, wants);
       applyMatchState(s);
     } catch (e: any) {
       if (!wants) setRematchDeclined(false);
+      if (wants) myExplicitRematchVoteRef.current = false;
       setError(e?.message || 'No se pudo procesar el voto');
     } finally {
       setVotingRematch(false);
@@ -1202,6 +1222,12 @@ return (
         <RevealOverlay
           turn={revealTurn}
           myRole={myRole}
+          isRoundWin={
+            state.currentRoundNumber > revealTurn.roundNumber ||
+            (state.status === 'FINISHED' &&
+             state.currentRoundNumber === revealTurn.roundNumber &&
+             revealTurn.result !== 'TIE')
+          }
           onDismiss={() => {
             setRevealTurn(null);
             drainAnimQueue();
@@ -1730,11 +1756,11 @@ function renderFinished() {
       ? Math.max(0, Math.ceil((matchFinishedAtRef.current + REMATCH_WINDOW_MS - Date.now()) / 1000))
       : 0;
     void rematchTick;
+    const myVotedRematch  = isP1 ? state.player1WantsRematch : state.player2WantsRematch;
     const showRematchSection = isFinished
       && didFinishInSessionRef.current
       && !rematchDeclined
-      && (rematchSecsLeft > 0 || state.rematchMatchId != null);
-    const myVotedRematch  = isP1 ? state.player1WantsRematch : state.player2WantsRematch;
+      && (rematchSecsLeft > 0 || state.rematchMatchId != null || myVotedRematch);
     const oppVotedRematch = isP1 ? state.player2WantsRematch : state.player1WantsRematch;
 
     const lastTurn = state.lastCompletedTurn;
@@ -1859,15 +1885,17 @@ function renderFinished() {
               
               <View style={styles.rematchHeader}>
                 <Text style={styles.rematchTitle}>¿Revancha?</Text>
-                <View style={styles.rematchCountdownBadge}>
-                  <Ionicons name="time-outline" size={13} color={rematchSecsLeft <= 10 ? '#EF4444' : Colors.primary} />
-                  <Text style={[
-                    styles.rematchCountdownText,
-                    rematchSecsLeft <= 10 && { color: '#EF4444' },
-                  ]}>
-                    {rematchSecsLeft}s
-                  </Text>
-                </View>
+                {(rematchSecsLeft > 0 || !myVotedRematch) && (
+                  <View style={styles.rematchCountdownBadge}>
+                    <Ionicons name="time-outline" size={13} color={rematchSecsLeft <= 10 ? '#EF4444' : Colors.primary} />
+                    <Text style={[
+                      styles.rematchCountdownText,
+                      rematchSecsLeft <= 10 && { color: '#EF4444' },
+                    ]}>
+                      {rematchSecsLeft}s
+                    </Text>
+                  </View>
+                )}
               </View>
 
 <View style={styles.rematchPlayers}>
