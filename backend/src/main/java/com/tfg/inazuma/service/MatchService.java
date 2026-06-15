@@ -347,28 +347,42 @@ public class MatchService {
     public List<MatchResponse> getActive(Long personId) {
         Person p = findPerson(personId);
         return matchRepo.findActiveForPerson(p).stream()
-                .map(m -> MatchResponse.from(m,
-                        findMatchPlayer(m, m.getPlayer1().getId()),
-                        findMatchPlayer(m, m.getPlayer2().getId())))
+                .flatMap(m -> toMatchResponse(m).stream())
                 .toList();
     }
 
     public List<MatchResponse> getHistory(Long personId) {
         Person p = findPerson(personId);
         return matchRepo.findHistoryForPerson(p).stream()
-                .map(m -> MatchResponse.from(m,
-                        findMatchPlayer(m, m.getPlayer1().getId()),
-                        findMatchPlayer(m, m.getPlayer2().getId())))
+                .flatMap(m -> toMatchResponse(m).stream())
                 .toList();
     }
 
     public List<MatchResponse> getPendingInvites(Long personId) {
         Person p = findPerson(personId);
         return matchRepo.findPendingInvitesForReceiver(p).stream()
-                .map(m -> MatchResponse.from(m,
-                        findMatchPlayer(m, m.getPlayer1().getId()),
-                        findMatchPlayer(m, m.getPlayer2().getId())))
+                .flatMap(m -> toMatchResponse(m).stream())
                 .toList();
+    }
+
+    /**
+     * Construye el MatchResponse de forma defensiva: si la partida no tiene
+     * filas en match_players (partidas antiguas previas al refactor, o datos
+     * corruptos), la omite silenciosamente en lugar de propagar un 500.
+     */
+    private Optional<MatchResponse> toMatchResponse(Match m) {
+        List<MatchPlayer> players = matchPlayerRepo.findByMatch(m);
+        Optional<MatchPlayer> mp1 = players.stream()
+                .filter(mp -> mp.getPlayer().getId().equals(m.getPlayer1().getId()))
+                .findFirst();
+        Optional<MatchPlayer> mp2 = players.stream()
+                .filter(mp -> mp.getPlayer().getId().equals(m.getPlayer2().getId()))
+                .findFirst();
+        if (mp1.isEmpty() || mp2.isEmpty()) {
+            log.warn("Partida id={} sin match_players — omitida del listado", m.getId());
+            return Optional.empty();
+        }
+        return Optional.of(MatchResponse.from(m, mp1.get(), mp2.get()));
     }
 
 
