@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,7 +71,10 @@ class PackServiceTest {
         Card card = crearCartaNormal();
 
         when(personRepository.findById(1L)).thenReturn(Optional.of(person));
-        when(cardRepository.findAll(any(Sort.class))).thenReturn(
+        when(cardRepository.findByCardPackageAndType(any(), eq(CardType.NORMAL))).thenReturn(
+                List.of(card, card, card, card, card)
+        );
+        when(cardRepository.findByCardPackageAndType(any(), eq(CardType.LEGEND))).thenReturn(
                 List.of(card, card, card, card, card)
         );
         when(personCardRepository.existsByPersonAndCard(any(), any())).thenReturn(false);
@@ -108,7 +111,10 @@ class PackServiceTest {
         Card card = crearCartaNormal();
 
         when(personRepository.findById(1L)).thenReturn(Optional.of(person));
-        when(cardRepository.findAll(any(Sort.class))).thenReturn(
+        when(cardRepository.findByCardPackageAndType(any(), eq(CardType.NORMAL))).thenReturn(
+                List.of(card, card, card, card, card)
+        );
+        when(cardRepository.findByCardPackageAndType(any(), eq(CardType.LEGEND))).thenReturn(
                 List.of(card, card, card, card, card)
         );
         when(personCardRepository.existsByPersonAndCard(any(), any())).thenReturn(false);

@@ -22,7 +22,7 @@ public class DeckService {
     private final PersonRepository    personRepository;
     private final CardRepository      cardRepository;
     private final PersonCardRepository personCardRepository;
-    private final MatchRepository     matchRepository;
+    private final MatchPlayerRepository matchPlayerRepository;
 
     public List<Deck> getDecks(Long personId) {
         return deckRepository.findByPerson(findPersonOrThrow(personId));
@@ -136,8 +136,7 @@ public class DeckService {
     public void deleteDeck(Long personId, Long deckId) {
         Deck deck = findDeckOrThrow(deckId);
         validateOwner(deck, personId);
-        matchRepository.clearDeck1References(deckId);
-        matchRepository.clearDeck2References(deckId);
+        matchPlayerRepository.clearDeckReferences(deckId);
         deckCardRepository.deleteByDeck(deck);
         deckRepository.delete(deck);
     }

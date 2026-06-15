@@ -29,6 +29,7 @@ import { useAuth } from '../../context/AuthContext';
 import { apiGetPerson } from '../../services/authService';
 import { apiGetDecks } from '../../services/deckService';
 import {
+  ApiError,
   apiCancelMatch,
   apiForfeit,
   apiGetMatchState,
@@ -48,7 +49,6 @@ import {
   MatchStateResponse,
   TurnStateDto,
 } from '../../types/match';
-import { parseServerDate } from '../../utils/date';
 import { DeckData } from '../../types/decks';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -65,11 +65,6 @@ function imgUri(path: string | null) {
   if (!path) return null;
   if (path.startsWith('http')) return path;
   return `${BASE_URL}${path}`;
-}
-
-function secondsLeft(iso: string, total = 45): number {
-  const elapsed = (Date.now() - parseServerDate(iso).getTime()) / 1000;
-  return Math.max(0, Math.ceil(total - elapsed));
 }
 
 /**
@@ -348,17 +343,34 @@ function RevealOverlay({
   );
 }
 
-function CountdownTimer({ initialSeconds, total = 45 }: { initialSeconds: number; total?: number }) {
+
+function CountdownTimer({
+  initialSeconds,
+  total = 45,
+  onExpire,
+}: {
+  initialSeconds: number;
+  total?: number;
+  onExpire?: () => void;
+}) {
   const mountMs      = useRef(Date.now());
   const startSeconds = useRef(initialSeconds);
 
   const [secs, setSecs] = useState(initialSeconds);
 
 
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
+
   useEffect(() => {
     const id = setInterval(() => {
       const elapsed = (Date.now() - mountMs.current) / 1000;
-      setSecs(Math.max(0, Math.ceil(startSeconds.current - elapsed)));
+      const next = Math.max(0, Math.ceil(startSeconds.current - elapsed));
+      setSecs(next);
+      if (next === 0) {
+        clearInterval(id);
+        onExpireRef.current?.();
+      }
     }, 250);
     return () => clearInterval(id);
   }, []);
@@ -620,6 +632,10 @@ export default function GameScreen() {
   
   const lastRevealedKeyRef = useRef<string>('');
 
+  const pollInFlightRef = useRef(false);
+  const decksLengthRef  = useRef(decks.length);
+  useEffect(() => { decksLengthRef.current = decks.length; }, [decks]);
+
   const pendingRoundStartRef   = useRef<number | null>(null);
   const pendingFinishedAnimRef = useRef(false);
   const finishedAnimShownRef   = useRef(false);
@@ -648,6 +664,49 @@ export default function GameScreen() {
   const prevStateRef = useRef<MatchStateResponse | null>(null);
 
   const didFinishInSessionRef = useRef(false);
+  const wasInLobbyRef = useRef(false);
+  const matchStartShownRef = useRef(false);
+
+  const turnDeadlineMsRef = useRef(0);
+
+  const [turnTimerExpired, setTurnTimerExpired] = useState(false);
+
+  const pendingTurnKey = state?.pendingTurn
+    ? `${state.pendingTurn.roundNumber}_${state.pendingTurn.turnNumber}`
+    : null;
+
+  useEffect(() => {
+    setTurnTimerExpired(false);
+  }, [pendingTurnKey]);
+
+  useEffect(() => {
+    setPickedCard(null);
+    setShowPicker(false);
+  }, [pendingTurnKey]);
+
+  useEffect(() => {
+    if (turnTimerExpired) {
+      setShowPicker(false);
+      setPickedCard(null);
+    }
+  }, [turnTimerExpired]);
+
+  const lastCompletedKey = (state?.lastCompletedTurn && state.lastCompletedTurn.result !== 'PENDING')
+    ? `${state.lastCompletedTurn.roundNumber}_${state.lastCompletedTurn.turnNumber}`
+    : null;
+
+  useEffect(() => {
+    if (!lastCompletedKey) return;
+    if (state?.wonByAbandon && state?.status === 'FINISHED') {
+      lastRevealedKeyRef.current = lastCompletedKey;
+      return;
+    }
+    if (lastCompletedKey !== lastRevealedKeyRef.current) {
+      lastRevealedKeyRef.current = lastCompletedKey;
+      const turn = state?.lastCompletedTurn;
+      if (turn) setRevealTurn(turn);
+    }
+  }, [lastCompletedKey]);
 
   const [legendMsgVisible, setLegendMsgVisible] = useState(false);
   const legendMsgTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -673,8 +732,24 @@ export default function GameScreen() {
     if (!state) return;
     const prev = prevStateRef.current;
 
-    if (prev?.status === 'WAITING_READY' && state.status === 'IN_PROGRESS') {
+    if (state.status === 'WAITING_READY') {
+      wasInLobbyRef.current = true;
+    }
+
+    if (
+      state.status === 'IN_PROGRESS' &&
+      wasInLobbyRef.current &&
+      !matchStartShownRef.current
+    ) {
+      matchStartShownRef.current = true;
       setShowGameStart(true);
+    }
+
+    if (state.pendingTurn && state.pendingTurn.result === 'PENDING') {
+      const d = Date.now() + state.pendingTurn.turnSecondsRemaining * 1000;
+      if (d > turnDeadlineMsRef.current) turnDeadlineMsRef.current = d;
+    } else {
+      turnDeadlineMsRef.current = 0;
     }
 
     if (
@@ -715,10 +790,7 @@ export default function GameScreen() {
   }, [state?.player1WantsRematch, state?.player2WantsRematch, state?.rematchMatchId]);
 
   const drainAnimQueue = useCallback(() => {
-    if (pendingRoundStartRef.current !== null) {
-      setShowRoundStart(pendingRoundStartRef.current);
-      pendingRoundStartRef.current = null;
-    } else if (pendingFinishedAnimRef.current && !finishedAnimShownRef.current) {
+    if (pendingFinishedAnimRef.current && !finishedAnimShownRef.current) {
       finishedAnimShownRef.current  = true;
       pendingFinishedAnimRef.current = false;
       setShowFinishedAnim(true);
@@ -726,10 +798,22 @@ export default function GameScreen() {
   }, []);
 
   useEffect(() => {
+    if (revealTurn !== null) return;
+    if (pendingRoundStartRef.current === null) return;
+    setShowRoundStart(pendingRoundStartRef.current);
+    pendingRoundStartRef.current = null;
+  }, [revealTurn]);
+
+  useEffect(() => {
+    if (state?.status !== 'FINISHED' || !state?.wonByAbandon) return;
+    if (revealTurn !== null) setRevealTurn(null);
+  }, [state?.status, state?.wonByAbandon]);
+
+  useEffect(() => {
     if (state?.status !== 'FINISHED') return;
     if (!didFinishInSessionRef.current) return;
     if (finishedAnimShownRef.current) return;
-    if (revealTurn !== null) return; 
+    if (revealTurn !== null) return;
     const timer = setTimeout(() => {
       if (!finishedAnimShownRef.current && pendingFinishedAnimRef.current) {
         finishedAnimShownRef.current  = true;
@@ -750,8 +834,15 @@ export default function GameScreen() {
         return s;
       }
 
-      const TERMINAL = ['FINISHED', 'REJECTED', 'CANCELLED'] as const;
-      if (TERMINAL.includes(prev.status as any) && !TERMINAL.includes(s.status as any)) {
+      const STATUS_RANK: Partial<Record<string, number>> = {
+        'PENDING_INVITE': 0,
+        'WAITING_READY':  1,
+        'IN_PROGRESS':    2,
+        'FINISHED':       3,
+        'REJECTED':       3,
+        'CANCELLED':      3,
+      };
+      if ((STATUS_RANK[s.status] ?? 0) < (STATUS_RANK[prev.status] ?? 0)) {
         return prev;
       }
 
@@ -765,6 +856,10 @@ export default function GameScreen() {
         if (p1Sub !== s.pendingTurn.player1Submitted || p2Sub !== s.pendingTurn.player2Submitted) {
           s = { ...s, pendingTurn: { ...s.pendingTurn, player1Submitted: p1Sub, player2Submitted: p2Sub } };
         }
+      }
+
+      if (prev.pendingTurn && !s.pendingTurn && s.status === 'IN_PROGRESS') {
+        s = { ...s, pendingTurn: prev.pendingTurn };
       }
 
       if (prev.pendingTurn && s.pendingTurn) {
@@ -791,7 +886,18 @@ export default function GameScreen() {
         s = { ...s, player1Cards: p1Cards, player2Cards: p2Cards };
       }
 
-      if (prev.lastCompletedTurn && s.lastCompletedTurn) {
+      if (prev.status === 'WAITING_READY' && s.status === 'WAITING_READY') {
+        if (prev.player1Ready && !s.player1Ready) {
+          s = { ...s, player1Ready: true, deck1Id: prev.deck1Id };
+        }
+        if (prev.player2Ready && !s.player2Ready) {
+          s = { ...s, player2Ready: true, deck2Id: prev.deck2Id };
+        }
+      }
+
+      if (prev.lastCompletedTurn && !s.lastCompletedTurn) {
+        s = { ...s, lastCompletedTurn: prev.lastCompletedTurn };
+      } else if (prev.lastCompletedTurn && s.lastCompletedTurn) {
         const prevNewer =
           prev.lastCompletedTurn.roundNumber > s.lastCompletedTurn.roundNumber ||
           (prev.lastCompletedTurn.roundNumber === s.lastCompletedTurn.roundNumber &&
@@ -801,13 +907,6 @@ export default function GameScreen() {
         }
       }
 
-      if (s.lastCompletedTurn && s.lastCompletedTurn.result !== 'PENDING') {
-        const key = `${s.lastCompletedTurn.roundNumber}_${s.lastCompletedTurn.turnNumber}`;
-        if (key !== lastRevealedKeyRef.current) {
-          lastRevealedKeyRef.current = key;
-          setRevealTurn(s.lastCompletedTurn);
-        }
-      }
       return s;
     });
   }, []);
@@ -844,17 +943,23 @@ useEffect(() => {
     const terminal = ['FINISHED', 'REJECTED', 'CANCELLED'];
     if (terminal.includes(state.status)) return;
 
-    const delay = (state.status === 'IN_PROGRESS' && mySubmitted) ? 500 : 2000;
+    const delay = (state.status === 'IN_PROGRESS' && mySubmitted) ? 500 : 1000;
 
     const interval = setInterval(async () => {
-      const s = await fetchState();
-      if (s?.status === 'WAITING_READY' && user && decks.length === 0) {
-        apiGetDecks(user.id).then(setDecks).catch(() => {});
+      if (pollInFlightRef.current) return;
+      pollInFlightRef.current = true;
+      try {
+        const s = await fetchState();
+        if (s?.status === 'WAITING_READY' && user && decksLengthRef.current === 0) {
+          apiGetDecks(user.id).then(setDecks).catch(() => {});
+        }
+      } finally {
+        pollInFlightRef.current = false;
       }
     }, delay);
 
     return () => clearInterval(interval);
-  }, [state?.status, mySubmitted, fetchState, user, decks.length]);
+  }, [state?.status, mySubmitted, fetchState, user]);
 
 useEffect(() => {
     if (!user || !state || state.status !== 'IN_PROGRESS') return;
@@ -917,12 +1022,30 @@ const handleRespondInvite = async (accept: boolean) => {
 
   const handleSetReady = async () => {
     if (!user || selectedDeck === null) return;
+    wasInLobbyRef.current = true;
     setReadying(true);
     try {
-      await apiSetReady(matchId, user.id, selectedDeck);
+      const s = await apiSetReady(matchId, user.id, selectedDeck);
+      applyMatchState(s);
       await fetchState();
     } catch (e: any) {
-      setError(e.message);
+      const isConflict = e instanceof ApiError && e.isConflict;
+      const isBusiness = e instanceof ApiError && e.status === 400;
+
+      if (isConflict) {
+        await new Promise(r => setTimeout(r, 350));
+        try {
+          const s2 = await apiSetReady(matchId, user.id, selectedDeck);
+          applyMatchState(s2);
+          await fetchState();
+        } catch {
+          await fetchState().catch(() => {});
+        }
+      } else if (isBusiness) {
+        setError(e.message);
+      } else {
+        await fetchState().catch(() => {});
+      }
     } finally {
       setReadying(false);
     }
@@ -956,14 +1079,36 @@ const handleRespondInvite = async (accept: boolean) => {
     if (!user || !pickedCard || submitting) return;
     setShowPicker(false);
     setSubmitting(true);
+    const submittedCard = pickedCard;
     try {
-      const s = await apiSubmitMove(matchId, user.id, pickedCard.cardId, attr);
-      applyMatchState(s);
-    } catch (e: any) {
-      if (e.message?.includes('Ya has enviado')) {
-        fetchState().catch(() => {});
-      } else {
-        setError(e.message);
+      let submitted = false;
+      for (let attempt = 0; attempt < 5 && !submitted; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 300 * attempt));
+        try {
+          const s = await apiSubmitMove(matchId, user.id, submittedCard.cardId, attr);
+          applyMatchState(s);
+          await fetchState();
+          submitted = true;
+        } catch (e: any) {
+          const msg = e.message ?? '';
+          const alreadySent = msg.includes('Ya has enviado');
+          const turnGone    = msg.includes('No hay turno pendiente')
+                           || msg.includes('No hay ronda activa')
+                           || msg.includes('La partida no está en curso');
+          const isBusiness  = e instanceof ApiError && e.status === 400
+                           && !alreadySent && !turnGone;
+
+          if (alreadySent || turnGone) {
+            await fetchState().catch(() => {});
+            submitted = true;
+          } else if (isBusiness) {
+            setError(e.message);
+            submitted = true;
+          }
+        }
+      }
+      if (!submitted) {
+        await fetchState().catch(() => {});
       }
     } finally {
       setPickedCard(null);
@@ -1428,7 +1573,16 @@ function renderInProgress() {
             ) : (
               <>
                 
-                <CountdownTimer key={pt.turnCreatedAt} initialSeconds={secondsLeft(pt.turnCreatedAt)} />
+                <CountdownTimer
+                  key={pt.turnCreatedAt}
+                  initialSeconds={
+                    turnDeadlineMsRef.current > 0
+                      ? Math.max(0, Math.ceil((turnDeadlineMsRef.current - Date.now()) / 1000))
+                      : pt.turnSecondsRemaining
+                  }
+                  total={45}
+                  onExpire={() => setTurnTimerExpired(true)}
+                />
                 {iWaiting && (
                   <View style={[styles.waitChip, rivalLate && styles.waitChipLate]}>
                     {rivalLate
@@ -1473,7 +1627,7 @@ function renderInProgress() {
                     key={c.cardId}
                     card={c}
                     selected={pickedCard?.cardId === c.cardId}
-                    isMine={!iWaiting && !submitting}
+                    isMine={!iWaiting && !submitting && !turnTimerExpired}
                     onPress={() => handleCardSelect(c)}
                   />
                 ))}

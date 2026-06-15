@@ -31,9 +31,11 @@ public class PersonService {
     private final PersonMissionRepository personMissionRepository;
     private final DeckCardRepository      deckCardRepository;
     private final DeckRepository          deckRepository;
-    private final MatchTurnRepository     matchTurnRepository;
-    private final MatchRoundRepository    matchRoundRepository;
-    private final MatchRepository         matchRepository;
+    private final MatchTurnMoveRepository  matchTurnMoveRepository;
+    private final MatchTurnRepository      matchTurnRepository;
+    private final MatchRoundRepository     matchRoundRepository;
+    private final MatchPlayerRepository    matchPlayerRepository;
+    private final MatchRepository          matchRepository;
     private final MissionService          missionService;
     private final CardRepository          cardRepository;
 
@@ -135,8 +137,10 @@ public void heartbeat(Long id) {
     public boolean delete(Long id) {
         if (!personRepository.existsById(id)) return false;
 
+        matchTurnMoveRepository.deleteByMatchPlayer(id);
         matchTurnRepository.deleteByMatchPlayer(id);
         matchRoundRepository.deleteByMatchPlayer(id);
+        matchPlayerRepository.deleteByMatchPlayer(id);
         matchRepository.nullifyWinner(id);
         matchRepository.deleteByPlayer(id);
 

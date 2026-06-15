@@ -4,12 +4,16 @@ import com.tfg.inazuma.dto.MatchResponse;
 import com.tfg.inazuma.model.CardAttribute;
 import com.tfg.inazuma.service.MatchService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/matches")
 @RequiredArgsConstructor
@@ -61,6 +65,10 @@ public class MatchController {
             if (playerId == null || deckId == null)
                 return ResponseEntity.badRequest().body("playerId y deckId son obligatorios");
             return ResponseEntity.ok(matchService.setReady(id, playerId, deckId));
+        } catch (PessimisticLockingFailureException e) {
+            log.warn("Lock conflict en setReady matchId={}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Conflicto de acceso concurrente, reintenta");
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -96,6 +104,10 @@ public class MatchController {
             Long cardId    = ((Number) body.get("cardId")).longValue();
             CardAttribute attribute = CardAttribute.valueOf((String) body.get("attribute"));
             return ResponseEntity.ok(matchService.submitMove(id, playerId, cardId, attribute));
+        } catch (PessimisticLockingFailureException e) {
+            log.warn("Lock conflict en submitMove matchId={}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Conflicto de acceso concurrente, reintenta");
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

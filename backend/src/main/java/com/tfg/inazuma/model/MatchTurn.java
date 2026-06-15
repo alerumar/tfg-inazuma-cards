@@ -6,6 +6,11 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Turno dentro de una ronda.
+ * Las jugadas concretas de cada jugador viven en {@link MatchTurnMove},
+ * una fila por jugador, eliminando la carrera de escritura anterior.
+ */
 @Entity
 @Table(name = "match_turns")
 @Data
@@ -23,28 +28,8 @@ public class MatchTurn {
     @Column(nullable = false)
     private int turnNumber;
 
-@Column(nullable = false)
+    @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
-
-    @ManyToOne
-    @JoinColumn(name = "p1_card_id")
-    private Card player1Card;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "p1_attribute")
-    private CardAttribute player1Attribute;
-
-    private LocalDateTime player1SubmittedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "p2_card_id")
-    private Card player2Card;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "p2_attribute")
-    private CardAttribute player2Attribute;
-
-    private LocalDateTime player2SubmittedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

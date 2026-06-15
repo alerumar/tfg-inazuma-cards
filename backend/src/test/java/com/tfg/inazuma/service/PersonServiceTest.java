@@ -30,8 +30,10 @@ class PersonServiceTest {
     @Mock PersonMissionRepository personMissionRepository;
     @Mock DeckCardRepository      deckCardRepository;
     @Mock DeckRepository          deckRepository;
+    @Mock MatchTurnMoveRepository matchTurnMoveRepository;
     @Mock MatchTurnRepository     matchTurnRepository;
     @Mock MatchRoundRepository    matchRoundRepository;
+    @Mock MatchPlayerRepository   matchPlayerRepository;
     @Mock MatchRepository         matchRepository;
     @Mock MissionService          missionService;
     @Mock CardRepository          cardRepository;

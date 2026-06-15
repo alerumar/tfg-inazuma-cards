@@ -4,6 +4,23 @@ import { CardAttribute, MatchResponse, MatchStateResponse } from '../types/match
 const base = `${BASE_URL}/api/matches`;
 const H = { 'Content-Type': 'application/json' };
 
+/** Error enriquecido con el código HTTP para que el cliente pueda decidir si reintentar. */
+export class ApiError extends Error {
+    constructor(
+        public readonly status: number,
+        message: string,
+    ) {
+        super(message);
+        this.name = 'ApiError';
+    }
+    /** true si el error es un conflicto de lock — se puede reintentar. */
+    get isConflict() { return this.status === 409; }
+}
+
+async function throwIfNotOk(res: Response): Promise<void> {
+    if (!res.ok) throw new ApiError(res.status, await res.text());
+}
+
 export async function apiInvitePlayer(
   initiatorId: number,
   receiverId: number,
@@ -45,12 +62,12 @@ export async function apiSetReady(
   matchId: number,
   playerId: number,
   deckId: number,
-): Promise<MatchResponse> {
+): Promise<MatchStateResponse> {
   const res = await fetch(`${base}/${matchId}/ready`, {
     method: 'PATCH', headers: H,
     body: JSON.stringify({ playerId, deckId }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  await throwIfNotOk(res);
   return res.json();
 }
 
@@ -82,7 +99,7 @@ export async function apiSubmitMove(
     method: 'POST', headers: H,
     body: JSON.stringify({ playerId, cardId, attribute }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  await throwIfNotOk(res);
   return res.json();
 }
 
