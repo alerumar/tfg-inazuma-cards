@@ -655,9 +655,15 @@ class MatchServiceTest {
 
         mockBuildState(match, mp1, mp2);
 
-        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
-        when(matchPlayerRepo.findByMatch(match)).thenReturn(List.of(mp1, mp2));
+        // voteRematch llama a findByIdForUpdate (no findById)
+        when(matchRepo.findByIdForUpdate(20L)).thenReturn(Optional.of(match));
+        // findByMatchAndPlayerId se usa para localizar al jugador votante
+        when(matchPlayerRepo.findByMatchAndPlayerId(eq(match), eq(1L))).thenReturn(Optional.of(mp1));
         when(matchPlayerRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // findByMatchForUpdate para leer votos con current-read
+        when(matchPlayerRepo.findByMatchForUpdate(match)).thenReturn(List.of(mp1, mp2));
+        // findByMatch (sin lock) para leer los decks de la revancha
+        when(matchPlayerRepo.findByMatch(match)).thenReturn(List.of(mp1, mp2));
         when(matchRepo.save(any(Match.class))).thenAnswer(inv -> {
             Match m = inv.getArgument(0);
             if (m.getId() == null) m.setId(21L);
@@ -680,7 +686,7 @@ class MatchServiceTest {
         Person p2 = crearPersona(2L, "luis");
         Match match = crearPartida(20L, p1, p2, MatchStatus.IN_PROGRESS);
 
-        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+        when(matchRepo.findByIdForUpdate(20L)).thenReturn(Optional.of(match));
 
         IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
@@ -704,7 +710,7 @@ class MatchServiceTest {
 
         mockBuildState(match, mp1, mp2);
 
-        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+        when(matchRepo.findByIdForUpdate(20L)).thenReturn(Optional.of(match));
         when(matchPlayerRepo.findByMatch(match)).thenReturn(List.of(mp1, mp2));
         when(matchPlayerRepo.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
         when(matchRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -724,7 +730,7 @@ class MatchServiceTest {
         Person p2 = crearPersona(2L, "luis");
         Match match = crearPartida(20L, p1, p2, MatchStatus.IN_PROGRESS);
 
-        when(matchRepo.findById(20L)).thenReturn(Optional.of(match));
+        when(matchRepo.findByIdForUpdate(20L)).thenReturn(Optional.of(match));
 
         IllegalStateException ex = assertThrows(
                 IllegalStateException.class,
