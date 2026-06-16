@@ -73,30 +73,30 @@ Match ──< MatchRound ──< MatchTurn ──< MatchTurnMove
 
 ## Funcionalidades
 
-### 📌 Cabecera global (todas las pantallas excepto partida)
+### Cabecera global (todas las pantallas excepto partida)
 - **Perfil** — avatar y nombre del jugador; acceso a la pantalla de perfil (editar datos, cambiar contraseña)
 - **Puntos de sobre** — contador de puntos disponibles para abrir sobres, actualizado en tiempo real
 - **Desplegable superior** — panel colapsable con acceso rápido a:
-  - 🃏 **Barajas** — lista de barajas creadas; acceso al deck builder
-  - 🔔 **Notificaciones** — solicitudes de amistad, resultados de intercambio
-  - 🎯 **Misiones** — progreso de misiones activas y reclamación de recompensas
+  - **Barajas** — lista de barajas creadas; acceso al deck builder
+  - **Notificaciones** — solicitudes de amistad, resultados de intercambio
+  - **Misiones** — progreso de misiones activas y reclamación de recompensas
 
-### 🏠 Inicio (Home)
+### Inicio (Home)
 - Apertura de sobres de cartas con probabilidades por rareza
 - Tienda para adquirir puntos de sobre
 
-### 🃏 Colección
+### Colección
 - Grid completo de todas las cartas del juego
 - Cartas no obtenidas → boca abajo en su posición
 - Cartas obtenidas → visibles con sus atributos (Ataque, Control, Defensa)
 - Tipos de carta: **Normal** y **Leyenda**
 
-### 👥 Social
+### Social
 - Búsqueda de jugadores
 - Solicitudes de amistad (envío / aceptación / rechazo)
 - Lista de amigos
 
-### ⚔️ Partidas
+### Partidas
 - **Intercambio de cartas** entre amigos (Trade)
 - **Partidas 1v1** en tiempo real con mecánica de selección simultánea
 - Sistema de revancha
@@ -130,7 +130,7 @@ Match ──< MatchRound ──< MatchTurn ──< MatchTurnMove
 
 ### Timeouts y abandono
 - **45 s** por turno sin respuesta → el backend selecciona movimiento aleatorio automáticamente
-- **60 s** desconectado durante `IN_PROGRESS` → derrota por abandono
+- **90 s** desconectado durante `IN_PROGRESS` → derrota por abandono
 
 ---
 

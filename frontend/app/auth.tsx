@@ -44,11 +44,12 @@ export default function AuthScreen() {
       if (!nickname.trim()) return setError('El nombre de usuario es obligatorio');
       if (!password.trim()) return setError('La contraseña es obligatoria');
     } else {
-      if (!name.trim())        return setError('El nombre es obligatorio');
-      if (!nickname.trim())    return setError('El nombre de usuario es obligatorio');
-      if (!email.trim())       return setError('El correo es obligatorio');
-      if (password.length < 8) return setError('La contraseña debe tener al menos 8 caracteres');
-      if (password !== confirm) return setError('Las contraseñas no coinciden');
+      if (!name.trim())                              return setError('El nombre es obligatorio');
+      if (!nickname.trim())                          return setError('El nombre de usuario es obligatorio');
+      if (!email.trim())                             return setError('El correo es obligatorio');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError('El correo no tiene un formato válido');
+      if (password.length < 8)                       return setError('La contraseña debe tener al menos 8 caracteres');
+      if (password !== confirm)                      return setError('Las contraseñas no coinciden');
     }
 
     setLoading(true);
