@@ -53,7 +53,7 @@ public class PersonController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody UpdatePersonRequest req) {
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody UpdatePersonRequest req) {
         try {
             return personService.update(id, req)
                     .map(p -> ResponseEntity.ok(personService.toResponse(p)))

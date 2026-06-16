@@ -1,7 +1,7 @@
 ﻿import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -218,6 +218,10 @@ export default function ProfileScreen() {
         visible={showPassword}
         userId={user.id}
         onClose={() => setShowPassword(false)}
+        onPasswordChanged={() => {
+          setShowPassword(false);
+          setTimeout(() => showAlert('¡Listo!', 'Contraseña cambiada correctamente.'), 350);
+        }}
       />
 
       <AppDialog {...dialogCfg} />
@@ -233,17 +237,28 @@ interface EditModalProps {
 }
 
 function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
-  const { dialogCfg, showAlert } = useDialog();
-  const [name,     setName]     = useState(user.name);
-  const [surname,  setSurname]  = useState(user.surname ?? '');
-  const [nickname, setNickname] = useState(user.nickname);
-  const [email,    setEmail]    = useState(user.email);
-  const [saving,   setSaving]   = useState(false);
+  const [name,      setName]      = useState(user.name);
+  const [surname,   setSurname]   = useState(user.surname ?? '');
+  const [nickname,  setNickname]  = useState(user.nickname);
+  const [email,     setEmail]     = useState(user.email);
+  const [saving,    setSaving]    = useState(false);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (visible) {
+      setName(user.name);
+      setSurname(user.surname ?? '');
+      setNickname(user.nickname);
+      setEmail(user.email);
+      setFormError('');
+    }
+  }, [visible]);
 
   const handleSave = async () => {
-    if (!name.trim())     { showAlert('Error', 'El nombre no puede estar vacío.');  return; }
-    if (!nickname.trim()) { showAlert('Error', 'El usuario no puede estar vacío.'); return; }
-    if (!email.trim())    { showAlert('Error', 'El correo no puede estar vacío.');  return; }
+    if (!name.trim())     { setFormError('El nombre no puede estar vacío.');  return; }
+    if (!nickname.trim()) { setFormError('El usuario no puede estar vacío.'); return; }
+    if (!email.trim())    { setFormError('El correo no puede estar vacío.');  return; }
+    setFormError('');
     setSaving(true);
     try {
       const updated = await apiUpdatePerson(user.id, {
@@ -255,7 +270,7 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
       await onSaved(updated);
       onClose();
     } catch (e: unknown) {
-      showAlert('Error', e instanceof Error ? e.message : 'Error al guardar los cambios');
+      setFormError(e instanceof Error ? e.message : 'Error al guardar los cambios');
     } finally {
       setSaving(false);
     }
@@ -270,6 +285,7 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
           <Field label="Apellidos"  value={surname}  onChange={setSurname} />
           <Field label="Usuario *"  value={nickname} onChange={setNickname} autoCapitalize="none" />
           <Field label="Correo *"   value={email}    onChange={setEmail}    autoCapitalize="none" keyboardType="email-address" />
+          {!!formError && <Text style={styles.formError}>{formError}</Text>}
           <View style={styles.modalButtons}>
             <Pressable style={[styles.btn, styles.btnSecondary]} onPress={onClose} disabled={saving}>
               <Text style={styles.btnTextSecondary}>Cancelar</Text>
@@ -281,32 +297,38 @@ function EditModal({ visible, user, onClose, onSaved }: EditModalProps) {
           </View>
         </View>
       </KeyboardAvoidingView>
-      <AppDialog {...dialogCfg} />
     </Modal>
   );
 }
 
-function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId: number; onClose: () => void }) {
-  const { dialogCfg, showAlert } = useDialog();
-  const [current,  setCurrent]  = useState('');
-  const [next,     setNext]     = useState('');
-  const [confirm,  setConfirm]  = useState('');
-  const [saving,   setSaving]   = useState(false);
+function PasswordModal({ visible, userId, onClose, onPasswordChanged }: {
+  visible: boolean;
+  userId: number;
+  onClose: () => void;
+  onPasswordChanged: () => void;
+}) {
+  const [current,   setCurrent]   = useState('');
+  const [next,      setNext]      = useState('');
+  const [confirm,   setConfirm]   = useState('');
+  const [saving,    setSaving]    = useState(false);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => { if (visible) setFormError(''); }, [visible]);
 
   const reset = () => { setCurrent(''); setNext(''); setConfirm(''); };
 
   const handleSave = async () => {
-    if (!current)         { showAlert('Error', 'Introduce tu contraseña actual.');                       return; }
-    if (next.length < 6)  { showAlert('Error', 'La nueva contraseña debe tener al menos 6 caracteres.'); return; }
-    if (next !== confirm)  { showAlert('Error', 'Las contraseñas nuevas no coinciden.');                  return; }
+    if (!current)         { setFormError('Introduce tu contraseña actual.');                        return; }
+    if (next.length < 8)  { setFormError('La nueva contraseña debe tener al menos 8 caracteres.'); return; }
+    if (next !== confirm)  { setFormError('Las contraseñas nuevas no coinciden.');                  return; }
+    setFormError('');
     setSaving(true);
     try {
       await apiChangePassword(userId, current, next);
-      showAlert('¡Listo!', 'Contraseña cambiada correctamente.');
       reset();
-      onClose();
+      onPasswordChanged();
     } catch (e: unknown) {
-      showAlert('Error', e instanceof Error ? e.message : 'Error al cambiar la contraseña');
+      setFormError(e instanceof Error ? e.message : 'Error al cambiar la contraseña');
     } finally {
       setSaving(false);
     }
@@ -320,6 +342,7 @@ function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId:
           <Field label="Contraseña actual"    value={current} onChange={setCurrent} secure />
           <Field label="Nueva contraseña"     value={next}    onChange={setNext}    secure />
           <Field label="Confirmar contraseña" value={confirm} onChange={setConfirm} secure />
+          {!!formError && <Text style={styles.formError}>{formError}</Text>}
           <View style={styles.modalButtons}>
             <Pressable style={[styles.btn, styles.btnSecondary]} onPress={() => { reset(); onClose(); }} disabled={saving}>
               <Text style={styles.btnTextSecondary}>Cancelar</Text>
@@ -331,7 +354,6 @@ function PasswordModal({ visible, userId, onClose }: { visible: boolean; userId:
           </View>
         </View>
       </KeyboardAvoidingView>
-      <AppDialog {...dialogCfg} />
     </Modal>
   );
 }
@@ -500,6 +522,12 @@ const styles = StyleSheet.create({
   btnText:          { fontSize: 15, fontWeight: '700', color: Colors.white },
   btnTextSecondary: { fontSize: 15, fontWeight: '600', color: Colors.textDark },
 
+  formError: {
+    color: Colors.error,
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: -4,
+  },
   fieldGroup: { gap: 4 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: Colors.textMid },
   input: {

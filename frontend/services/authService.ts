@@ -4,6 +4,17 @@ import { LoginRequest, PersonResponse, RegisterRequest } from '../types/auth';
 
 const HEADERS = { 'Content-Type': 'application/json' };
 
+async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
+  const text = await res.text();
+  console.log('[API ERROR]', res.status, res.url, text);
+  try {
+    const json = JSON.parse(text);
+    if (json && typeof json === 'object')
+      return json.message || json.detail || json.error || json.title || fallback;
+  } catch {}
+  return text || fallback;
+}
+
 async function fetchWithTimeout(
   url: string,
   options: RequestInit,
@@ -29,10 +40,7 @@ export async function apiLogin(data: LoginRequest): Promise<PersonResponse> {
   });
 
   if (res.status === 401) throw new Error('El usuario o la contraseña no son correctos');
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || 'Error al iniciar sesión');
-  }
+  if (!res.ok) throw new Error(await extractErrorMessage(res, 'Error al iniciar sesión'));
   return res.json();
 }
 
@@ -43,10 +51,7 @@ export async function apiRegister(data: RegisterRequest): Promise<PersonResponse
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || 'Error al registrarse');
-  }
+  if (!res.ok) throw new Error(await extractErrorMessage(res, 'Error al registrarse'));
   return res.json();
 }
 
@@ -54,16 +59,13 @@ export async function apiUpdatePerson(
   personId: number,
   data: { name?: string; surname?: string; nickname?: string; email?: string },
 ): Promise<PersonResponse> {
-  const res = await fetch(`${BASE_URL}/api/persons/${personId}`, {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/persons/${personId}`, {
     method: 'PUT',
     headers: HEADERS,
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || 'Error al actualizar el perfil');
-  }
+  if (!res.ok) throw new Error(await extractErrorMessage(res, 'Error al actualizar el perfil'));
   return res.json();
 }
 
@@ -72,15 +74,12 @@ export async function apiChangePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  const res = await fetch(`${BASE_URL}/api/persons/${personId}/change-password`, {
+  const res = await fetchWithTimeout(`${BASE_URL}/api/persons/${personId}/change-password`, {
     method: 'POST',
     headers: HEADERS,
     body: JSON.stringify({ currentPassword, newPassword }),
   });
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || 'Error al cambiar la contraseña');
-  }
+  if (!res.ok) throw new Error(await extractErrorMessage(res, 'Error al cambiar la contraseña'));
 }
 
 export async function apiGetPerson(personId: number): Promise<PersonResponse> {
@@ -127,9 +126,6 @@ export async function apiUploadPhoto(
     body: form,
   });
 
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || 'Error al subir la foto');
-  }
+  if (!res.ok) throw new Error(await extractErrorMessage(res, 'Error al subir la foto'));
   return res.json();
 }
